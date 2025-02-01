@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
           child: Container(
             height: 200,
             color: const Color.fromARGB(255, 118, 218, 232),
-            child: Center(child: Text("Main Branch!"),),
+            child: Center(child: Text("Demo!"),),
           ),
         ),
       ),
