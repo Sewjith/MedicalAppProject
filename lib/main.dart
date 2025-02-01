@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
       home: Scaffold(
         body: Center(
           child: Container(
-            height: 100,
+            height: 300,
             color: const Color.fromARGB(255, 118, 218, 232),
             child: Center(child: Text("Demo!"),),
           ),
