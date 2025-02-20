@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'bottom_nav_bar.dart'; 
+import 'package:medical_app/core/router.dart';
+import 'package:medical_app/core/themes/app_themes.dart';
 
 void main() {
   runApp(MyApp());
@@ -11,26 +12,13 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  int _selectedIndex = 0; // To track the current selected index
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        appBar: AppBar(title: Text('Demo!')),
-        
-        bottomNavigationBar: BottomNavBar(
-          selectedIndex: _selectedIndex, // Pass selected index
-          onItemTapped: _onItemTapped, // Pass onTap callback
-        ),
-      ),
+      routerConfig: appRouter,
+      title: 'Medical App',
+      theme: AppTheme.lightThemeMode,
     );
   }
 }
