@@ -8,7 +8,9 @@ class AppPallete {
   static const Color darkText = Color(0xFFE8E8E8); // Grayish White
   static const Color borderColor = Color(0xFFF7F7F7); // Muted Gray
   static const Color whiteColor = Colors.white;
+  static const Color textColor = Colors.black;
   static const Color greyColor = Colors.grey;
   static const Color errorColor = Colors.redAccent;
   static const Color transparentColor = Colors.transparent;
+  static const Color headings = Colors.blueAccent;
 }

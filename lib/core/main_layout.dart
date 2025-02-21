@@ -37,9 +37,9 @@ class _MainLayoutState extends State<MainLayout> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Project: Medical App'),
-      ),
+      // appBar: AppBar(
+      //   title: const Text('Taskbar'),
+      // ),
       body: SafeArea(child: widget.child),
       bottomNavigationBar: BottomNavBar(
         selectedIndex: _selectedIndex, // Pass selected index
