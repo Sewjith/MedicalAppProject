@@ -70,7 +70,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                     ),
                   ),
                   const SizedBox(height: 15),
-                  const AuthDetails(hintText: '********************'),
+                  const AuthDetails(hintText: '*******************'),
                   const SizedBox(height: 30,),
                   FilledButton(
                     onPressed: () {
