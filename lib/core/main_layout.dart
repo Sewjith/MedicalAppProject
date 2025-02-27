@@ -29,7 +29,7 @@ class _MainLayoutState extends State<MainLayout> {
         context.go('/register'); // Navigate to Profile
         break;
       case 3:
-        context.go('/home'); // Navigate to Calendar
+        context.go('/earnings'); // Navigate to Calendar
         break;
     }
   }
