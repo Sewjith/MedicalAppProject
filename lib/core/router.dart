@@ -4,6 +4,9 @@ import 'package:medical_app/features/analytics/earnings.dart';
 import 'package:medical_app/features/auth/presentation/screens/login_page.dart';
 import 'package:medical_app/features/auth/presentation/screens/register_page.dart';
 import 'package:medical_app/features/auth/presentation/screens/reset_password_page.dart';
+import 'package:medical_app/features/doctor-search/domain/entities/doctor_profiles.dart';
+import 'package:medical_app/features/doctor-search/presentation/screen/doctor_profile_page.dart';
+import 'package:medical_app/features/doctor-search/presentation/screen/doctor_search_page.dart';
 import 'package:medical_app/features/main/presentation/screens/home_page.dart';
 
 final GoRouter appRouter =
@@ -28,4 +31,15 @@ final GoRouter appRouter =
     path: '/earnings',
     builder: (context, state) => const MainLayout(child: Earnings()),
   ),
+  GoRoute(
+    path: '/doctor-profiles',
+    builder: (context, state) => const MainLayout(child: DoctorProfilesPage()),
+  ),
+  GoRoute(
+  path: '/doctor-profile',
+  builder: (context, state) {
+    final profile = state.extra as DoctorProfiles; // Cast to your entity
+    return MainLayout(child: DoctorProfile(profile: profile)); // Pass the profile to the DoctorProfile widget
+  },
+)
 ]);
