@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:medical_app/core/main_layout.dart';
+import 'package:medical_app/features/Subscription/presentation/screens/subscription_screen.dart';
 import 'package:medical_app/features/analytics/earnings.dart';
 import 'package:medical_app/features/auth/presentation/screens/login_page.dart';
 import 'package:medical_app/features/auth/presentation/screens/register_page.dart';
@@ -34,6 +35,10 @@ final GoRouter appRouter =
   GoRoute(
     path: '/doctor-profiles',
     builder: (context, state) => const MainLayout(child: DoctorProfilesPage()),
+  ),
+  GoRoute(
+    path: '/Subscription',
+    builder: (context, state) => MainLayout(child: SubscriptionScreen()),
   ),
   GoRoute(
   path: '/doctor-profile',
