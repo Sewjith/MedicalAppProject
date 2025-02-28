@@ -26,10 +26,10 @@ class _MainLayoutState extends State<MainLayout> {
         context.go('/login'); // Navigate to Chat
         break;
       case 2:
-        context.go('/register'); // Navigate to Profile
+        context.go('/doctor-profiles'); // Navigate to Profile
         break;
       case 3:
-        context.go('/home'); // Navigate to Calendar
+        context.go('/earnings'); // Navigate to Calendar
         break;
     }
   }
@@ -37,9 +37,9 @@ class _MainLayoutState extends State<MainLayout> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Project: Medical App'),
-      ),
+      // appBar: AppBar(
+      //   title: const Text('Taskbar'),
+      // ),
       body: SafeArea(child: widget.child),
       bottomNavigationBar: BottomNavBar(
         selectedIndex: _selectedIndex, // Pass selected index
