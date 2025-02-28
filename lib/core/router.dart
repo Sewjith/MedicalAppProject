@@ -7,6 +7,7 @@ import 'package:medical_app/features/auth/presentation/screens/reset_password_pa
 import 'package:medical_app/features/doctor-search/domain/entities/doctor_profiles.dart';
 import 'package:medical_app/features/doctor-search/presentation/screen/doctor_profile_page.dart';
 import 'package:medical_app/features/doctor-search/presentation/screen/doctor_search_page.dart';
+import 'package:medical_app/features/help-center/presentation/pages/help_center_page.dart';
 import 'package:medical_app/features/main/presentation/screens/home_page.dart';
 
 final GoRouter appRouter =
@@ -34,6 +35,10 @@ final GoRouter appRouter =
   GoRoute(
     path: '/doctor-profiles',
     builder: (context, state) => const MainLayout(child: DoctorProfilesPage()),
+  ),
+   GoRoute(
+    path: '/help-center',
+    builder: (context, state) => const MainLayout(child: HelpCentrePage()),
   ),
   GoRoute(
   path: '/doctor-profile',
