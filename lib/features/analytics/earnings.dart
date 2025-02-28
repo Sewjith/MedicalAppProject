@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:medical_app/core/themes/color_palette.dart';
-import 'package:medical_app/features/auth/presentation/widgets/auth_form.dart';
-import 'package:go_router/go_router.dart';
 import 'category_card.dart';
 import 'doctor_card.dart';
+import 'package:lottie/lottie.dart';
 
 
 class Earnings extends StatefulWidget {
@@ -32,7 +30,7 @@ class _EarningsState extends State<Earnings> {
                 Text("Hello,",style: TextStyle(fontWeight: FontWeight.bold,
                 fontSize: 18),),
                 SizedBox(height: 8),
-                Text("Jerome Bell",
+                Text("User",
                 style: TextStyle(fontWeight: FontWeight.bold,
                 fontSize: 24
                 ),
@@ -68,7 +66,7 @@ class _EarningsState extends State<Earnings> {
               Container(
                 height: 100,
                 width: 100,
-                //child: Lottie.network('https://assets2.lottiefiles.com/packages/lf20_9zjzjz.json')
+                child: Lottie.asset("assets/images/Animation - 1740714679870.json"),
                 ),
                 SizedBox(
                   width: 20,
@@ -85,7 +83,7 @@ class _EarningsState extends State<Earnings> {
                   ),
                   ),
                   SizedBox(height: 12),
-                  Text("Fill out your medical card",
+                  Text("Find the Doctor",
                   style: TextStyle(
                     fontSize: 14,
                   ),
@@ -119,7 +117,7 @@ class _EarningsState extends State<Earnings> {
             ),
             child: TextField(
               decoration: InputDecoration(
-                hintText: "How can we help you?",
+                hintText: "Earning Search?",
                 prefixIcon: Icon(Icons.search),
                 border: InputBorder.none
               ),

@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'package:medical_app/core/main_layout.dart';
 import 'package:medical_app/features/analytics/earnings.dart';
+import 'package:medical_app/features/analytics/presentation/screens/earning_page.dart';
 import 'package:medical_app/features/auth/presentation/screens/login_page.dart';
 import 'package:medical_app/features/auth/presentation/screens/register_page.dart';
 import 'package:medical_app/features/auth/presentation/screens/reset_password_page.dart';
@@ -41,5 +42,9 @@ final GoRouter appRouter =
     final profile = state.extra as DoctorProfiles; // Cast to your entity
     return MainLayout(child: DoctorProfile(profile: profile)); // Pass the profile to the DoctorProfile widget
   },
-)
+  ),
+    GoRoute(
+    path: '/doctor-earning',
+    builder: (context, state) =>  MainLayout(child: DoctorEarningsPage()),
+  ),
 ]);

@@ -19,11 +19,11 @@ class DoctorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return  Padding(
-      padding: const EdgeInsets.only(left: 25.0),
+      padding: const EdgeInsets.only(left: 0.0),
       child: Container(
         padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.deepPurple[100],
+            color: Colors.blue[100],
             borderRadius: BorderRadius.circular(12),
           ),
           child: Center(
@@ -40,6 +40,7 @@ class DoctorCard extends StatelessWidget {
                 ),
                 //rating
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(Icons.star,
                     color: Colors.yellow[600],
