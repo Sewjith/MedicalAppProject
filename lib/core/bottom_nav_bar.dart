@@ -4,7 +4,7 @@ class BottomNavBar extends StatelessWidget {
   final int selectedIndex;
   final Function(int) onItemTapped;
 
-  BottomNavBar({required this.selectedIndex, required this.onItemTapped});
+  const BottomNavBar({super.key, required this.selectedIndex, required this.onItemTapped});
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +14,7 @@ class BottomNavBar extends StatelessWidget {
       selectedItemColor: Colors.blue, // Change color when selected
       unselectedItemColor: Colors.grey[700], // Change color when unselected
       type: BottomNavigationBarType.fixed, // Fixed navigation bar, no animation
-      items: [
+      items: const [
         BottomNavigationBarItem(
           icon: Icon(Icons.home),
           label: "", // Empty label (icon only)

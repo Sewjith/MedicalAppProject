@@ -26,7 +26,7 @@ class _EarningsState extends State<Earnings> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children:[
-              Column( 
+              const Column( 
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                 Text("Hello,",style: TextStyle(fontWeight: FontWeight.bold,
@@ -41,36 +41,36 @@ class _EarningsState extends State<Earnings> {
               ),
               //Profile image
               Container(
-                padding: EdgeInsets.all(12),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: Colors.deepPurple[100],
                   borderRadius: BorderRadius.circular(12)
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.person,
                   )
                 ),
             ],
           ),
         ),
-        SizedBox(height: 25),
+        const SizedBox(height: 25),
         //card
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 25.0 ),
           child: Container(
-            padding: EdgeInsets.all(20),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: Colors.pink[100],
               borderRadius: BorderRadius.circular(12)
             ),
             child: Row(children: [
               //animation
-              Container(
+              SizedBox(
                 height: 100,
                 width: 100,
                 //child: Lottie.network('https://assets2.lottiefiles.com/packages/lf20_9zjzjz.json')
                 ),
-                SizedBox(
+                const SizedBox(
                   width: 20,
                 ),
               //how do u feel + button
@@ -78,25 +78,25 @@ class _EarningsState extends State<Earnings> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                  Text("Earnings this Month",
+                  const Text("Earnings this Month",
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold
                   ),
                   ),
-                  SizedBox(height: 12),
-                  Text("Fill out your medical card",
+                  const SizedBox(height: 12),
+                  const Text("Fill out your medical card",
                   style: TextStyle(
                     fontSize: 14,
                   ),
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.deepPurple[300],
                       borderRadius: BorderRadius.circular(12)
                     ),
-                    child: Center(
+                    child: const Center(
                       child: Text("Get Started",
                       style: TextStyle(color: Colors.white,),
                       )
@@ -107,17 +107,17 @@ class _EarningsState extends State<Earnings> {
             ],),
           ),
         ),
-        SizedBox(height: 25),
+        const SizedBox(height: 25),
         //search bar
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 25.0),
           child: Container(
-            padding: EdgeInsets.all(12),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: Colors.deepPurple[100],
               borderRadius: BorderRadius.circular(12)
             ),
-            child: TextField(
+            child: const TextField(
               decoration: InputDecoration(
                 hintText: "How can we help you?",
                 prefixIcon: Icon(Icons.search),
@@ -126,10 +126,10 @@ class _EarningsState extends State<Earnings> {
             ),
           ),
         ),
-        SizedBox(height: 25),
+        const SizedBox(height: 25),
 
         //horizontal view - categories
-        Container(
+        SizedBox(
           height: 80,
           child: ListView(
             scrollDirection: Axis.horizontal,
@@ -150,14 +150,14 @@ class _EarningsState extends State<Earnings> {
           ),
         ),
 
-        SizedBox(height: 25),
+        const SizedBox(height: 25),
         //doctor list
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 25.0),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text("Doctor List",
+            const Text("Doctor List",
             style: TextStyle(fontWeight: FontWeight.bold,
             fontSize: 20,
             )
@@ -171,7 +171,7 @@ class _EarningsState extends State<Earnings> {
           ],
         ),
       ),
-      SizedBox(height: 25),
+      const SizedBox(height: 25),
       //doctor card
      Expanded(child: ListView(
       scrollDirection: Axis.horizontal,

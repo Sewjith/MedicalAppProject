@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart'; // Import GoRouter
 import 'package:medical_app/core/themes/color_palette.dart'; // Import theme
 
 class ChatScreen extends StatefulWidget {
+  const ChatScreen({super.key});
+
   @override
   _ChatScreenState createState() => _ChatScreenState();
 }
@@ -22,7 +24,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _botReply() {
-    Future.delayed(Duration(seconds: 1), () {
+    Future.delayed(const Duration(seconds: 1), () {
       setState(() {
         messages.add({'text': 'This is a bot response.', 'sender': 'bot'});
       });
@@ -33,10 +35,10 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Healthcare Chatbot"),
+        title: const Text("Healthcare Chatbot"),
         backgroundColor: AppPallete.primaryColor,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             context.pop(); // Navigate back using GoRouter
           },
@@ -46,7 +48,7 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           Expanded(
             child: ListView.builder(
-              padding: EdgeInsets.all(10.0),
+              padding: const EdgeInsets.all(10.0),
               itemCount: messages.length,
               itemBuilder: (context, index) {
                 final message = messages[index];
@@ -54,8 +56,8 @@ class _ChatScreenState extends State<ChatScreen> {
                 return Align(
                   alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
                   child: Container(
-                    padding: EdgeInsets.all(12),
-                    margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                     decoration: BoxDecoration(
                       color: isUser ? AppPallete.primaryColor : AppPallete.greyColor,
                       borderRadius: BorderRadius.circular(12),
@@ -73,7 +75,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           Padding(
-            padding: EdgeInsets.all(10.0),
+            padding: const EdgeInsets.all(10.0),
             child: Row(
               children: [
                 Expanded(
@@ -85,14 +87,14 @@ class _ChatScreenState extends State<ChatScreen> {
                       fillColor: AppPallete.backgroundColor,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide(color: AppPallete.borderColor),
+                        borderSide: const BorderSide(color: AppPallete.borderColor),
                       ),
                     ),
                   ),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 IconButton(
-                  icon: Icon(Icons.send, color: AppPallete.primaryColor),
+                  icon: const Icon(Icons.send, color: AppPallete.primaryColor),
                   onPressed: _sendMessage,
                 ),
               ],

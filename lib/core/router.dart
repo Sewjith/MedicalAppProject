@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:medical_app/core/main_layout.dart';
+import 'package:medical_app/features/Patient_Notes/presentation/screens/Patient_Notes.dart';
 import 'package:medical_app/features/analytics/earnings.dart';
 import 'package:medical_app/features/auth/presentation/screens/login_page.dart';
 import 'package:medical_app/features/auth/presentation/screens/register_page.dart';
@@ -35,11 +36,16 @@ final GoRouter appRouter =
     path: '/doctor-profiles',
     builder: (context, state) => const MainLayout(child: DoctorProfilesPage()),
   ),
+   GoRoute(
+    path: '/Patient_Notes',
+    builder: (context, state) => MainLayout(child: PatientManagementScreen()),
+  ),
   GoRoute(
   path: '/doctor-profile',
   builder: (context, state) {
     final profile = state.extra as DoctorProfiles; // Cast to your entity
     return MainLayout(child: DoctorProfile(profile: profile)); // Pass the profile to the DoctorProfile widget
   },
+  
 )
 ]);

@@ -8,7 +8,7 @@ class DoctorCard extends StatelessWidget {
   final String doctorProfession;
   final String DoctorEarning;
 
-  DoctorCard({
+  const DoctorCard({super.key, 
     required this.doctorImagePath,
     required this.rating,
     required this.doctorName,
@@ -21,7 +21,7 @@ class DoctorCard extends StatelessWidget {
     return  Padding(
       padding: const EdgeInsets.only(left: 25.0),
       child: Container(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: Colors.deepPurple[100],
             borderRadius: BorderRadius.circular(12),
@@ -35,7 +35,7 @@ class DoctorCard extends StatelessWidget {
                   doctorImagePath,
                    height: 100,),
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 10,
                 ),
                 //rating
@@ -46,29 +46,29 @@ class DoctorCard extends StatelessWidget {
                     ),
                     Text(
                       rating,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold
                     ),)
               ]),
-              SizedBox(
+              const SizedBox(
                 height: 10,
               ),
               //doc name
               Text(
                 doctorName,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold
               ),),
-              SizedBox(
+              const SizedBox(
                 height: 10,
               ),
               Text(
-                doctorProfession+ ' 7 y.exp',
+                '$doctorProfession 7 y.exp',
               ),
               Text(
                 DoctorEarning,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold
               ),),

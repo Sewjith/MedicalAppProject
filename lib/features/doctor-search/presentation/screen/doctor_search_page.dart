@@ -4,7 +4,7 @@ import 'package:medical_app/features/doctor-search/domain/usecases/get_doctors_u
 import 'package:medical_app/features/doctor-search/presentation/widgets/profile_widget.dart';
 
 class DoctorProfilesPage extends StatelessWidget {
-  const DoctorProfilesPage({Key? key}) : super(key: key);
+  const DoctorProfilesPage({super.key});
 
   @override
   Widget build(BuildContext context) {
