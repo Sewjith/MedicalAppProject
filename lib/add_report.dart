@@ -61,10 +61,10 @@ class _AddReportPageState extends State<AddReportPage> {
     }
   }
 
-  // Function to submit the form (you can handle the data submission here)
+  // Function to submit the form
   void _submitForm() {
     if (_formKey.currentState?.validate() ?? false) {
-      // Simulate submission (print or send data to backend, etc.)
+      _formKey.currentState?.save();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Submitting Report...')),
       );
@@ -74,6 +74,7 @@ class _AddReportPageState extends State<AddReportPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white, // White background
       appBar: AppBar(
         title: const Text('Add Report'),
         backgroundColor: const Color(0xFF2260FF),
@@ -88,66 +89,67 @@ class _AddReportPageState extends State<AddReportPage> {
               children: [
                 // Document Title
                 TextFormField(
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Document Title',
+                    filled: true,
+                    fillColor: const Color(0xFFCAD6FF), // Light blue background
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // Curved corners
+                    ),
                   ),
-                  onSaved: (value) {
-                    documentTitle = value;
-                  },
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a document title';
-                    }
-                    return null;
-                  },
+                  onSaved: (value) => documentTitle = value,
+                  validator: (value) => (value == null || value.isEmpty)
+                      ? 'Please enter a document title'
+                      : null,
                 ),
                 const SizedBox(height: 10),
 
                 // Document Type
                 TextFormField(
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Document Type',
+                    filled: true,
+                    fillColor: const Color(0xFFCAD6FF),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  onSaved: (value) {
-                    documentType = value;
-                  },
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a document type';
-                    }
-                    return null;
-                  },
+                  onSaved: (value) => documentType = value,
+                  validator: (value) => (value == null || value.isEmpty)
+                      ? 'Please enter a document type'
+                      : null,
                 ),
                 const SizedBox(height: 10),
 
                 // Confidentiality Level
                 TextFormField(
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Confidentiality Level',
+                    filled: true,
+                    fillColor: const Color(0xFFCAD6FF),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  onSaved: (value) {
-                    confidentialityLevel = value;
-                  },
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a confidentiality level';
-                    }
-                    return null;
-                  },
+                  onSaved: (value) => confidentialityLevel = value,
+                  validator: (value) => (value == null || value.isEmpty)
+                      ? 'Please enter a confidentiality level'
+                      : null,
                 ),
                 const SizedBox(height: 10),
 
                 // Category (Dropdown)
                 DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Category',
+                    filled: true,
+                    fillColor: const Color(0xFFCAD6FF),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   value: category,
-                  onChanged: (value) {
-                    setState(() {
-                      category = value;
-                    });
-                  },
+                  onChanged: (value) => setState(() => category = value),
                   items: <String>[
                     'Medical History',
                     'Appointments',
@@ -155,26 +157,24 @@ class _AddReportPageState extends State<AddReportPage> {
                     'Vaccinations',
                     'Emergency Data',
                     'Dental & Vision',
-                    'Other',
-                  ].map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please select a category';
-                    }
-                    return null;
-                  },
+                    'Other'
+                  ]
+                      .map((String value) => DropdownMenuItem<String>(
+                          value: value, child: Text(value)))
+                      .toList(),
+                  validator: (value) => (value == null || value.isEmpty)
+                      ? 'Please select a category'
+                      : null,
                 ),
                 const SizedBox(height: 10),
 
                 // Upload File
                 TextButton(
                   onPressed: _pickFile,
-                  child: const Text('Upload File'),
+                  child: const Text(
+                    'Upload File',
+                    style: TextStyle(color: Color(0xFF2260FF)), // Blue text
+                  ),
                 ),
                 if (selectedFile != null)
                   Text('File selected: ${selectedFile?.path.split('/').last}'),
@@ -186,9 +186,13 @@ class _AddReportPageState extends State<AddReportPage> {
                     const Text('Date of Record: '),
                     TextButton(
                       onPressed: () => _pickDate(context),
-                      child: Text(recordDate == null
-                          ? 'Pick a Date'
-                          : recordDate!.toLocal().toString().split(' ')[0]),
+                      child: Text(
+                        recordDate == null
+                            ? 'Pick a Date'
+                            : recordDate!.toLocal().toString().split(' ')[0],
+                        style: const TextStyle(
+                            color: Color(0xFF2260FF)), // Blue text
+                      ),
                     ),
                   ],
                 ),
@@ -196,49 +200,56 @@ class _AddReportPageState extends State<AddReportPage> {
 
                 // Issuing Authority
                 TextFormField(
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Issuing Authority',
+                    filled: true,
+                    fillColor: const Color(0xFFCAD6FF),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  onSaved: (value) {
-                    issuingAuthority = value;
-                  },
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter the issuing authority';
-                    }
-                    return null;
-                  },
+                  onSaved: (value) => issuingAuthority = value,
+                  validator: (value) => (value == null || value.isEmpty)
+                      ? 'Please enter the issuing authority'
+                      : null,
                 ),
                 const SizedBox(height: 10),
 
-                // Notes / Description (Large TextBox)
+                // Notes / Description
                 TextFormField(
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Notes / Description',
+                    filled: true,
+                    fillColor: const Color(0xFFCAD6FF),
                     alignLabelWithHint: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   maxLines: 5,
-                  onSaved: (value) {
-                    notesDescription = value;
-                  },
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a description';
-                    }
-                    return null;
-                  },
+                  onSaved: (value) => notesDescription = value,
+                  validator: (value) => (value == null || value.isEmpty)
+                      ? 'Please enter a description'
+                      : null,
                 ),
                 const SizedBox(height: 20),
 
                 // Submit Button
                 Center(
-                    child: ElevatedButton(
-                  onPressed: _submitForm,
-                  child: const Text('Submit Report'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2260FF),
+                  child: ElevatedButton(
+                    onPressed: _submitForm,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          const Color(0xFF2260FF), // Blue background
+                      foregroundColor: Colors.white, // White text
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.circular(12), // Rounded corners
+                      ),
+                    ),
+                    child: const Text('Submit Report'),
                   ),
-                )),
+                ),
               ],
             ),
           ),
