@@ -14,7 +14,9 @@ class DoctorConsultation extends StatefulWidget {
 class _DoctorConsultationState extends State<DoctorConsultation> {
   late final RtcEngine _engine;
   late TextEditingController _consultController;
-  bool hasJoined = false;
+  bool _hasJoined = false;
+  int? _remoteUID;
+  late final RtcEngineEventHandler _rtcEngineEventHandler;
 
   @override
   void initState() {
@@ -23,44 +25,75 @@ class _DoctorConsultationState extends State<DoctorConsultation> {
     _initAgoraEngine();
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+    _cleanupAgoraEngine();
+  }
+
+  Future<void> _cleanupAgoraEngine() async {
+    await _engine.leaveChannel();
+    await _engine.release();
+  }
+
   Future<void> _initAgoraEngine() async {
+    await [Permission.microphone, Permission.camera].request();
     _engine = createAgoraRtcEngine();
     await _engine.initialize(const RtcEngineContext(
       appId: "<-- Insert app Id -->",
       channelProfile: ChannelProfileType.channelProfileCommunication,
     ));
+    _engine.registerEventHandler(
+      RtcEngineEventHandler(
+        onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
+          debugPrint("Local user ${connection.localUid} joined");
+          setState(() => _hasJoined = true);
+        },
+        onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
+          debugPrint("Remote user $remoteUid joined");
+          setState(() => _remoteUID = remoteUid);
+        },
+        onUserOffline: (RtcConnection connection, int remoteUid,
+            UserOfflineReasonType reason) {
+          debugPrint("Remote user $remoteUid left");
+          setState(() => _remoteUID = null);
+        },
+      ),
+    );
+    _engine.registerEventHandler(_rtcEngineEventHandler);
+    await _engine.enableVideo();
+    await _engine.startPreview();
   }
 
   Future<void> _joinChannel() async {
     await _engine.joinChannel(
       token: "add token",
-      channelId: _consultController.text,// based on agora doc sample code
+      channelId: _consultController.text, // based on agora doc sample code
       uid: 0,
       options: const ChannelMediaOptions(
-        autoSubscribeVideo:
-            true, // Automatically subscribe to all video streams
-        autoSubscribeAudio:
-            true, // Automatically subscribe to all audio streams
-        publishCameraTrack: true, // Publish camera-captured video
-        publishMicrophoneTrack: true, // Publish microphone-captured audio
-        // Use clientRoleBroadcaster to act as a host or clientRoleAudience for audience
+        autoSubscribeVideo: true,
+        autoSubscribeAudio: true,
+        publishCameraTrack: true,
+        publishMicrophoneTrack: true,
         clientRoleType: ClientRoleType.clientRoleBroadcaster,
       ),
     );
   }
 
-  Future<void> _cleanupAgoraEngine() async {
-  await _engine.leaveChannel();
-  await _engine.release();
-}
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
-      body: Column(
-        children: [],
+      appBar: AppBar(
+        title: const Text("Meeting in Session"),
       ),
-    );
+       body: Stack(
+        children: [
+          //stats tracker
+          Align(
+            alignment: Alignment.bottomRight,
+          ),
+        ],
+       )
+      );
   }
 }

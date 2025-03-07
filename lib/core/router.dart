@@ -8,6 +8,7 @@ import 'package:medical_app/features/doctor-search/domain/entities/doctor_profil
 import 'package:medical_app/features/doctor-search/presentation/screen/doctor_profile_page.dart';
 import 'package:medical_app/features/doctor-search/presentation/screen/doctor_search_page.dart';
 import 'package:medical_app/features/main/presentation/screens/home_page.dart';
+import 'package:medical_app/features/teleconsultation/presentation/consultation_page.dart';
 
 final GoRouter appRouter =
     GoRouter(initialLocation: '/home', routes: <RouteBase>[
@@ -34,6 +35,10 @@ final GoRouter appRouter =
   GoRoute(
     path: '/doctor-profiles',
     builder: (context, state) => const MainLayout(child: DoctorProfilesPage()),
+  ),
+  GoRoute(
+    path: '/consults',
+    builder: (context, state) => const MainLayout(child: DoctorConsultation()),
   ),
   GoRoute(
   path: '/doctor-profile',
