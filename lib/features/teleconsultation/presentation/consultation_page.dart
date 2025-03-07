@@ -14,7 +14,12 @@ class DoctorConsultation extends StatefulWidget {
 class _DoctorConsultationState extends State<DoctorConsultation> {
   late final RtcEngine _engine;
   late TextEditingController _consultController;
-  bool _hasJoined = false;
+  bool _hasJoined = false,
+        switchCamera = true,
+        switchRender = true,
+        openCamera = true,
+        muteCamera = false,
+        muteAllRemoteVideo = false;
   int? _remoteUID;
   late final RtcEngineEventHandler _rtcEngineEventHandler;
 
@@ -78,6 +83,43 @@ class _DoctorConsultationState extends State<DoctorConsultation> {
         clientRoleType: ClientRoleType.clientRoleBroadcaster,
       ),
     );
+  }
+
+  Future<void> _leaveChannel() async {
+    await _engine.leaveChannel();
+    setState(() {
+      _hasJoined = false;
+      _remoteUID = null;
+      openCamera = true;
+      muteCamera = false;
+      muteAllRemoteVideo = false;
+    });
+  }
+
+  Future<void> _switchCamera() async {
+    await _engine.switchCamera();
+    setState(() => switchCamera = !switchCamera);
+  }
+
+  _openCamera() async {
+    await _engine.enableLocalVideo(!openCamera);
+    setState(() {
+      openCamera = !openCamera;
+    });
+  }
+
+  _muteCamera() async {
+    await _engine.muteLocalVideoStream(!muteCamera);
+    setState(() {
+      muteCamera = !muteCamera;
+    });
+  }
+
+  _muteAllRemoteVideo() async {
+    await _engine.muteAllRemoteVideoStreams(!muteAllRemoteVideo);
+    setState(() {
+      muteAllRemoteVideo = !muteAllRemoteVideo;
+    });
   }
 
   @override
