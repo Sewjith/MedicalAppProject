@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:medical_app/core/themes/color_palette.dart';
 import 'package:medical_app/features/doctor-search/domain/entities/doctor_profiles.dart';
 
 class ProfileWidget extends StatelessWidget {
@@ -10,6 +11,7 @@ class ProfileWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      color: AppPallete.headings,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Row(
@@ -49,17 +51,15 @@ class ProfileWidget extends StatelessWidget {
                         onPressed: () => context.go('/doctor-profile', extra: profile),
                         child: const Text(
                           'Learn More',
-                          style: TextStyle(color: Colors.blueAccent),
+                          style: TextStyle(color: Colors.black),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 2),
-                  Text("Location: ${profile.location}", style: const TextStyle(fontSize: 16)),
-                  const SizedBox(height: 2),
-                  Text(profile.email, style: TextStyle(fontSize: 14, color: Colors.grey[700])),
-                  const SizedBox(height: 2),
-                  Text(profile.contact, style: const TextStyle(fontSize: 16)),
+                  Text(profile.location.toString() , style: const TextStyle(fontSize: 16, color: AppPallete.textColor)),
+                  Text(profile.email, style: const TextStyle(fontSize: 14, color: AppPallete.textColor)),
+                  Text(profile.contact, style: const TextStyle(fontSize: 16, color: AppPallete.textColor)),
                 ],
               ),
             ),
