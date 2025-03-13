@@ -46,5 +46,6 @@ final GoRouter appRouter =
     final profile = state.extra as DoctorProfiles; // Cast to your entity
     return MainLayout(child: DoctorProfile(profile: profile)); // Pass the profile to the DoctorProfile widget
   },
-)
+  ),
+
 ]);
