@@ -17,10 +17,16 @@ class Vaccination_Reminder extends StatelessWidget{
 }
 
 class Vaccination extends StatelessWidget{
+  final List<Map<String, String>> vaccinePlan= [
+    {'name': 'Pneumococcal Vaccine', 'details': '1 dose'},
+    {'name': 'Influenza Vaccine', 'details': '1 dose'},
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppPallete.headings,
+
     );
   }
 }
