@@ -15,4 +15,12 @@ class Medication_Reminder extends StatelessWidget{
     );
   }
 }
+class ReminderPage extends StatelessWidget{
+  final List<Map<String, String>> pillPlan= [
+    {'time': '8:00', 'name': 'Omega 3', 'details': '1 pill once per day'},
+    {'time': '12:30', 'name': 'Vitamin D', 'details': '2 pills once per day'},
+    {'time': '18:00', 'name': 'Vitamin C', 'details': '1 pill once per day'},
+    {'time': '21:00', 'name': 'Aspirin', 'details': '1 pill once per day'}
+  ];
+}
 
