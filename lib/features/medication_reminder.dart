@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
 import 'package:medical_app/core/bottom_nav.dart';
+import 'package:medical_app/features/Vaccination_Reminder.dart';
+import 'package:medical_app/features/pillDetails.dart';
 
 void main(){
   runApp(Medication_Reminder());
@@ -26,7 +28,36 @@ class ReminderPage extends StatelessWidget{
   @override
   Widget build(BuildContext context){
     return Scaffold(
-      backgroundColor: AppPallete.headings,
+      backgroundColor: AppPallete.whiteColor,
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: AppPallete.transparentColor,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_sharp, color: AppPallete.headings),
+          onPressed: () {
+            Navigator.pushReplacement(
+                context, MaterialPageRoute(builder: (context) => Placeholder()));
+          },
+        ),
+        title:
+        Text(
+          "Today's plan",
+          style: TextStyle(
+              color: AppPallete.headings,
+              fontWeight: FontWeight.bold,
+              fontSize: 35
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(icon: Icon(Icons.vaccines_outlined, color: AppPallete.headings,),
+    onPressed: () {
+      Navigator.push(
+        context, MaterialPageRoute(builder: (context) => Vaccination()),);
+    }
+          ),
+        ],
+      ),
       body: SafeArea(
           child: Padding(padding: const EdgeInsets.all(20.0),
           child: Column(
@@ -35,17 +66,8 @@ class ReminderPage extends StatelessWidget{
               Text(
                 "Friday, 23 Nov 2024",
                 style: TextStyle(
-                  color: AppPallete.secondaryColor,
+                  color: AppPallete.textColor,
                   fontSize: 16
-                ),
-              ),
-              SizedBox(height: 6),
-              Text(
-                "Today's plan:",
-                style: TextStyle(
-                  color: AppPallete.whiteColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 35
                 ),
               ),
               SizedBox(height: 20),
@@ -87,7 +109,7 @@ class PillCard extends StatelessWidget{
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 18,
-            color: AppPallete.whiteColor
+            color: AppPallete.textColor
           ),
         ),
         Card(
@@ -122,7 +144,10 @@ class PillCard extends StatelessWidget{
                 icon: Icon(Icons.arrow_forward_ios_outlined, color: Colors.black45,),
                 onPressed: (){
                   Navigator.push(context,
-                  MaterialPageRoute(builder:(context) => Placeholder()),);
+                  MaterialPageRoute(builder:(context) => pillDetails(
+                    name: name,
+                    details: details
+                  ),),);
                 },
               ),
             ],
@@ -132,6 +157,4 @@ class PillCard extends StatelessWidget{
     );
   }
 }
-
-
 
