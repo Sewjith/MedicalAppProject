@@ -56,7 +56,8 @@ class Vaccination extends StatelessWidget{
       Text(
       'Friday, 23 Nov 2024',
       style: TextStyle(
-    color: AppPallete.textColor
+    color: AppPallete.textColor,
+        fontSize: 16
     ),
       ),
       SizedBox(height: 20),
@@ -98,7 +99,7 @@ class vaccineCard extends StatelessWidget{
           child: Padding(padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
-                  Icon(Icons.medication_rounded, color: AppPallete.headings,
+                  Icon(Icons.vaccines_outlined, color: AppPallete.headings,
                     size: 40,),
                   SizedBox(width: 10),
                   Expanded(child: Column(
@@ -119,15 +120,6 @@ class vaccineCard extends StatelessWidget{
                       ),
                     ],
                   ),),
-                  IconButton(
-                    icon: Icon(
-                      Icons.arrow_forward_ios_outlined, color: Colors.black45,),
-                    onPressed: () {
-                      Navigator.push(context,
-                        MaterialPageRoute(
-                            builder: (context) => Placeholder()),);
-                    },
-                  ),
                 ],
               )),
         )
