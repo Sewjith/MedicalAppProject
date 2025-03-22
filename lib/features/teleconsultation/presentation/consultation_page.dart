@@ -4,7 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class DoctorConsultation extends StatefulWidget {
-  const DoctorConsultation({Key? key}) : super(key: key);
+  final String appId;
+  final String token;
+  final String channelName;
+
+  const DoctorConsultation({
+    Key? key,
+    required this.appId,
+    required this.token,
+    required this.channelName,
+  }) : super(key: key);
 
   @override
   State<DoctorConsultation> createState() => _DoctorConsultationState();
@@ -12,24 +21,20 @@ class DoctorConsultation extends StatefulWidget {
 
 class _DoctorConsultationState extends State<DoctorConsultation> {
   late final RtcEngine _engine;
-  late TextEditingController _consultController;
-  bool _hasJoined = false, openCamera = true, muteCamera = false, muteAllRemoteVideo = false;
+  bool _hasJoined = false;
   int? _remoteUID;
-
-  // Replace these with secure methods to store/retrieve credentials
-  final String appId = "bc06bf6bab7645abbc9b9d56db3f2868";
-  final String token = "b18838802df04970aa5bc4fc96f54d4f";
+  bool _cameraOn = true;
+  bool _micOn = true;
+  bool _speakerOn = true;
 
   @override
   void initState() {
-    _consultController = TextEditingController();
     super.initState();
     _initAgoraEngine();
   }
 
   @override
   void dispose() {
-    _consultController.dispose();
     _cleanupAgoraEngine();
     super.dispose();
   }
@@ -40,20 +45,18 @@ class _DoctorConsultationState extends State<DoctorConsultation> {
   }
 
   Future<void> _initAgoraEngine() async {
-    // Request permissions
     await [Permission.microphone, Permission.camera].request();
 
     _engine = createAgoraRtcEngine();
     await _engine.initialize(
-      RtcEngineContext(appId: appId, channelProfile: ChannelProfileType.channelProfileCommunication),
+      RtcEngineContext(
+        appId: widget.appId,
+        channelProfile: ChannelProfileType.channelProfileCommunication,
+      ),
     );
 
-    // Set up local video before preview
-    await _engine.setupLocalVideo(const VideoCanvas(uid: 0));
-
-    // Disable face detection warnings
-    await _engine.setParameters("{\"che.video.face_detect\": false}");
-    await _engine.setParameters("{\"che.video.low_camera\": true}");
+    await _engine.enableVideo();
+    await _engine.startPreview();
 
     _engine.registerEventHandler(
       RtcEngineEventHandler(
@@ -71,24 +74,13 @@ class _DoctorConsultationState extends State<DoctorConsultation> {
         },
       ),
     );
-
-    await _engine.enableVideo();
-    await _engine.startPreview();
   }
 
   Future<void> _joinChannel() async {
-    if (_consultController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter a valid Channel ID")),
-      );
-      return;
-    }
-
     try {
-      debugPrint("Joining channel: ${_consultController.text}");
       await _engine.joinChannel(
-        token: token,
-        channelId: _consultController.text,
+        token: widget.token,
+        channelId: widget.channelName,
         uid: 0,
         options: const ChannelMediaOptions(
           autoSubscribeVideo: true,
@@ -108,102 +100,114 @@ class _DoctorConsultationState extends State<DoctorConsultation> {
     setState(() {
       _hasJoined = false;
       _remoteUID = null;
-      openCamera = true;
-      muteCamera = false;
-      muteAllRemoteVideo = false;
     });
   }
 
-  Future<void> _toggleCamera() async {
-    await _engine.enableLocalVideo(!openCamera);
-    setState(() => openCamera = !openCamera);
+  void _toggleCamera() {
+    setState(() {
+      _cameraOn = !_cameraOn;
+      _engine.enableLocalVideo(_cameraOn);
+    });
   }
 
-  Future<void> _muteCameraToggle() async {
-    await _engine.muteLocalVideoStream(!muteCamera);
-    setState(() => muteCamera = !muteCamera);
+  void _toggleMic() {
+    setState(() {
+      _micOn = !_micOn;
+      _engine.muteLocalAudioStream(!_micOn);
+    });
   }
 
-  Future<void> _muteAllRemoteVideos() async {
-    await _engine.muteAllRemoteVideoStreams(!muteAllRemoteVideo);
-    setState(() => muteAllRemoteVideo = !muteAllRemoteVideo);
+  void _toggleSpeaker() {
+    setState(() {
+      _speakerOn = !_speakerOn;
+      _engine.setEnableSpeakerphone(_speakerOn);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Doctor Consultation")),
-      body: Stack(
+      body: Column(
         children: [
-          if (_remoteUID != null)
-            Positioned.fill(
-              child: AgoraVideoView(
-                controller: VideoViewController.remote(
-                  rtcEngine: _engine,
-                  canvas: VideoCanvas(uid: _remoteUID),
-                  connection: RtcConnection(channelId: _consultController.text),
-                ),
-              ),
-            ),
-          Positioned(
-            bottom: 20,
-            right: 20,
-            width: 120,
-            height: 160,
-            child: _hasJoined
-                ? AgoraVideoView(
-  controller: VideoViewController(
-    rtcEngine: _engine,
-    canvas: const VideoCanvas(uid: 0),
-  ),
-)
-
-                : Container(
-                    color: Colors.black,
-                    child: const Center(child: Text("Join a Channel", style: TextStyle(color: Colors.white))),
-                  ),
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  FloatingActionButton(
-                    onPressed: _hasJoined ? _leaveChannel : _joinChannel,
-                    child: Icon(_hasJoined ? Icons.call_end : Icons.call),
-                    backgroundColor: _hasJoined ? Colors.red : Colors.green,
-                  ),
-                  const SizedBox(width: 10),
-                  FloatingActionButton(onPressed: _toggleCamera, child: Icon(openCamera ? Icons.videocam : Icons.videocam_off)),
-                  const SizedBox(width: 10),
-                  FloatingActionButton(onPressed: _muteCameraToggle, child: Icon(muteCamera ? Icons.visibility_off : Icons.visibility)),
-                  const SizedBox(width: 10),
-                  FloatingActionButton(onPressed: _muteAllRemoteVideos, child: Icon(muteAllRemoteVideo ? Icons.mic_off : Icons.mic)),
-                ],
-              ),
-            ),
-          ),
-          if (!_hasJoined)
-            Align(
-              alignment: Alignment.topCenter,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: TextField(
-                  controller: _consultController,
-                  decoration: InputDecoration(
-                    hintText: "Enter Channel ID",
-                    filled: true,
-                    border: OutlineInputBorder(),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () => _consultController.clear(),
+          Expanded(
+            child: Stack(
+              children: [
+                // Remote Video View
+                if (_remoteUID != null)
+                  Positioned.fill(
+                    child: AgoraVideoView(
+                      controller: VideoViewController.remote(
+                        rtcEngine: _engine,
+                        canvas: VideoCanvas(uid: _remoteUID),
+                        connection: RtcConnection(channelId: widget.channelName),
+                      ),
                     ),
                   ),
+
+                // Local Video View (Floating)
+                Positioned(
+                  bottom: 0, // Adjusted so it's above buttons
+                  right: 20,
+                  width: 120,
+                  height: 160,
+                  child: _hasJoined
+                      ? _cameraOn
+                          ? AgoraVideoView(
+                              controller: VideoViewController(
+                                rtcEngine: _engine,
+                                canvas: const VideoCanvas(uid: 0),
+                              ),
+                            )
+                          : Container(
+                              color: Colors.black,
+                              child: const Center(
+                                child: Text(
+                                  "Video Off",
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            )
+                      : Container(
+                          color: Colors.black,
+                          child: const Center(
+                            child: Text(
+                              "Join a Channel",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ),
                 ),
-              ),
+              ],
             ),
+          ),
+
+          // Control Buttons at the Bottom
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                FloatingActionButton(
+                  onPressed: _hasJoined ? _leaveChannel : _joinChannel,
+                  child: Icon(_hasJoined ? Icons.call_end : Icons.call),
+                  backgroundColor: _hasJoined ? Colors.red : Colors.green,
+                ),
+                FloatingActionButton(
+                  onPressed: _toggleCamera,
+                  child: Icon(_cameraOn ? Icons.videocam : Icons.videocam_off),
+                ),
+                FloatingActionButton(
+                  onPressed: _toggleMic,
+                  child: Icon(_micOn ? Icons.mic : Icons.mic_off),
+                ),
+                FloatingActionButton(
+                  onPressed: _toggleSpeaker,
+                  child: Icon(_speakerOn ? Icons.volume_up : Icons.volume_off),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
