@@ -24,6 +24,13 @@ class _AuthDetailsState extends State<AuthDetails> {
   bool isPasswordVisible = false;
 
   @override
+  void initState() {
+    super.initState();
+    isPasswordVisible =
+        widget.isPassword; // Initially hide text if it's a password field
+  }
+
+  @override
   Widget build(BuildContext context) {
     return TextFormField(
       controller: widget.controller,

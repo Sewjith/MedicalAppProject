@@ -9,9 +9,11 @@ class AuthReposImpl implements AuthRepos {
   AuthReposImpl(this.remoteAuthData);
   @override
   Future<Either<Failure, String>> signInWithEmailAndPassword(
-      {required String email, required String password}) {
-    // TODO: implement signInWithEmailAndPassword
-    throw UnimplementedError();
+      {required String email, required String password}) async {
+    return _getUserDetails(
+      () async => await remoteAuthData.signInWithEmail(
+          email: email, password: password),
+    );
   }
 
   @override
@@ -20,9 +22,17 @@ class AuthReposImpl implements AuthRepos {
       required String dob,
       required String email,
       required String password}) async {
+    return _getUserDetails(
+      () async => await remoteAuthData.signUpWithEmail(
+          phone: phone, dob: dob, email: email, password: password),
+    );
+  }
+
+  Future<Either<Failure, String>> _getUserDetails(
+    Future<String> Function() userDetails,
+  ) async {
     try {
-      final data = await remoteAuthData.signUpWithEmail(
-          phone: phone, dob: dob, email: email, password: password);
+      final data = await userDetails();
       return right(data);
     } on ServerExpection catch (e) {
       return left(Failure(e.exception));

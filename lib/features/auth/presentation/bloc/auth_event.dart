@@ -12,3 +12,11 @@ final class AuthRegister extends AuthEvent {
   AuthRegister(
       { required this.email, required this.password, required this.phone, required this.dob });
 }
+
+final class AuthLogin extends AuthEvent {
+  final String email;
+  final String password;
+
+  AuthLogin(
+      { required this.email, required this.password, });
+}

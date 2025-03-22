@@ -19,7 +19,6 @@ class _RegisterState extends State<Register> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _contactController = TextEditingController();
   final TextEditingController _dobController = TextEditingController();
-
   bool isLoading = false;
 
   @override
@@ -39,21 +38,27 @@ class _RegisterState extends State<Register> {
     final phone = _contactController.text.trim();
     final dob = _dobController.text.trim();
 
-    // Trigger the Bloc event for registration
     context.read<AuthBloc>().add(
           AuthRegister(
             email: email,
             password: password,
-            phone : phone,
+            phone: phone,
             dob: dob,
           ),
         );
   }
 
+  void _clearForm() {
+    _emailController.clear();
+    _passwordController.clear();
+    _contactController.clear();
+    _dobController.clear();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: BlocListener<AuthBloc, AuthState>(
+      body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthLoading) {
             setState(() => isLoading = true);
@@ -65,109 +70,154 @@ class _RegisterState extends State<Register> {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("Check email for verification")),
             );
-            context.go('/home'); // Redirect to home page after registration
+            _clearForm();
+            context.go('/home'); // Redirect after success
           } else if (state is AuthFailed) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.error)),
             );
           }
         },
-        child: Padding(
-          padding: const EdgeInsets.all(5.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Row(
+        builder: (context, state) {
+          return SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(5.0),
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  BackButton(onPressed: () => context.go('/login')),
-                  const SizedBox(width: 65),
-                  const Text(
-                    'Register',
-                    style: TextStyle(
-                      fontSize: 50,
-                      fontWeight: FontWeight.bold,
-                      color: AppPallete.headings,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      BackButton(onPressed: () => context.go('/login')),
+                      const SizedBox(width: 65),
+                      const Text(
+                        'Register',
+                        style: TextStyle(
+                          fontSize: 50,
+                          fontWeight: FontWeight.bold,
+                          color: AppPallete.headings,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(35.0),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          const Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Email Address',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          AuthDetails(
+                            hintText: 'example@example.com',
+                            controller: _emailController,
+                            validator: FormValidators.emailValidation,
+                          ),
+                          const SizedBox(height: 10),
+                          const Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Password',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          AuthDetails(
+                            hintText: '**********',
+                            controller: _passwordController,
+                            validator: FormValidators.passwordValidation,
+                          ),
+                          const SizedBox(height: 10),
+                          const Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Contact Number',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          AuthDetails(
+                            hintText: '(**) ***-***-***',
+                            controller: _contactController,
+                            validator: FormValidators.phoneValidation,
+                          ),
+                          const SizedBox(height: 10),
+                          const Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Date of Birth',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          AuthDetails(
+                            hintText: 'DD/MM/YYYY',
+                            controller: _dobController,
+                            validator: FormValidators.dobValidation,
+                          ),
+                          const SizedBox(height: 20),
+                          FilledButton(
+                            onPressed: isLoading ? null : _registerAccount,
+                            style: const ButtonStyle(
+                              backgroundColor:
+                                  WidgetStatePropertyAll(Colors.blueAccent),
+                              foregroundColor:
+                                  WidgetStatePropertyAll(Colors.white),
+                              padding: WidgetStatePropertyAll(
+                                EdgeInsets.symmetric(
+                                    horizontal: 80, vertical: 10),
+                              ),
+                            ),
+                            child: isLoading
+                                ? const CircularProgressIndicator(
+                                    color: Colors.white,
+                                  )
+                                : const Text(
+                                    'Register',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 25,
+                                    ),
+                                  ),
+                          ),
+                          const SizedBox(height: 10),
+                          const Text('Or sign up with'),
+                          const SizedBox(height: 10),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text("Already have an Account? "),
+                              InkWell(
+                                onTap: () => context.go('/login'),
+                                child: const Text(
+                                  'Sign in',
+                                  style: TextStyle(
+                                    color: Colors.blueAccent,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
               ),
-              Padding(
-                padding: const EdgeInsets.all(35.0),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      AuthDetails(
-                        hintText: 'example@example.com',
-                        controller: _emailController,
-                        validator: FormValidators.emailValidation,
-                      ),
-                      const SizedBox(height: 10),
-                      AuthDetails(
-                        hintText: '**********',
-                        controller: _passwordController,
-                        validator: FormValidators.passwordValidation,
-                      ),
-                      const SizedBox(height: 10),
-                      AuthDetails(
-                        hintText: '(**) ***-***-***',
-                        controller: _contactController,
-                        validator: FormValidators.phoneValidation,
-                      ),
-                      const SizedBox(height: 10),
-                      AuthDetails(
-                        hintText: 'DD/MM/YYYY',
-                        controller: _dobController,
-                        validator: FormValidators.dobValidation,
-                      ),
-                      const SizedBox(height: 20),
-                      FilledButton(
-                        onPressed: isLoading ? null : _registerAccount,
-                        style: const ButtonStyle(
-                          backgroundColor:
-                              WidgetStatePropertyAll(Colors.blueAccent),
-                          foregroundColor:
-                              WidgetStatePropertyAll(Colors.white),
-                          padding: WidgetStatePropertyAll(
-                            EdgeInsets.symmetric(horizontal: 80, vertical: 10),
-                          ),
-                        ),
-                        child: isLoading
-                            ? const CircularProgressIndicator(
-                                color: Colors.white)
-                            : const Text(
-                                'Register',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 25),
-                              ),
-                      ),
-                      const SizedBox(height: 10),
-                      const Text('Or sign up with'),
-                      const SizedBox(height: 10),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text("Already have an Account? "),
-                          InkWell(
-                            onTap: () => context.go('/login'),
-                            child: const Text(
-                              'Sign in',
-                              style: TextStyle(
-                                color: Colors.blueAccent,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

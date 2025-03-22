@@ -18,9 +18,19 @@ class AuthRemoteSourceImp implements AuthRemoteSource {
   final SupabaseClient supabaseClient;
   AuthRemoteSourceImp(this.supabaseClient);
   @override
-  Future<String> signInWithEmail({required String email, required String password}) {
-    // TODO: implement signInWithEmail
-    throw UnimplementedError();
+  Future<String> signInWithEmail({required String email, required String password}) async {
+    try {
+      final res = await supabaseClient.auth.signInWithPassword(
+        password: password,
+        email: email,
+        );
+      if (res.user == "null"){
+        throw const ServerExpection("User is not available");
+      }
+      return res.user!.id;
+    } catch (e) {
+      throw ServerExpection(e.toString());
+    }
   }
 
   @override
