@@ -68,6 +68,7 @@ class _RegisterState extends State<Register> {
 
           // Navigate to OTP Input screen when OTP is sent
           if (state is AuthOtpSent) {
+            debugPrint("OTP Sent. Navigating to OTP Screen...");
             _clearForm();
             context.go('/otp', extra: state.email);
           }

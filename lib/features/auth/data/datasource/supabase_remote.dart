@@ -52,7 +52,6 @@ class AuthRemoteSourceImp implements AuthRemoteSource {
         throw const ServerException("User is not available");
       }
 
-      // Request OTP after sign-up
       await requestEmailOtp(email);
 
       return UserModel.fromJson(res.user!.toJson());
