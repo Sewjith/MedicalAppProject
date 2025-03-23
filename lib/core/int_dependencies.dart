@@ -1,10 +1,13 @@
 import 'package:get_it/get_it.dart';
+import 'package:medical_app/core/common/cubits/user_session/app_user_cubit.dart';
 import 'package:medical_app/core/secrets/supabase_secrets.dart';
 import 'package:medical_app/features/auth/data/datasource/supabase_remote.dart';
 import 'package:medical_app/features/auth/data/repos/auth_repo_implementation.dart';
 import 'package:medical_app/features/auth/domain/repos/auth_repos.dart';
+import 'package:medical_app/features/auth/domain/usecases/active_user.dart';
 import 'package:medical_app/features/auth/domain/usecases/user_login.dart';
 import 'package:medical_app/features/auth/domain/usecases/user_register.dart';
+import 'package:medical_app/features/auth/domain/usecases/user_sign_out.dart';
 import 'package:medical_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -16,7 +19,7 @@ Future<void> initDependencies() async {
     anonKey: SupabaseSecrets.key,
   );
   initializedServices.registerLazySingleton(() => supabase.client);
-  
+  initializedServices.registerLazySingleton(() => AppUserCubit());
    _initAuth();
 }
 
@@ -41,10 +44,23 @@ void _initAuth() {
       initializedServices()
       )
     );
+  initializedServices.registerFactory(
+    () =>ActiveUser(
+      initializedServices()
+      )
+    );
+  initializedServices.registerFactory(
+    () => UserSignOut(
+      initializedServices()
+      )
+    );
   initializedServices.registerLazySingleton(
     () => AuthBloc(
       userRegister: initializedServices(),
-      userLogin: initializedServices()
+      userLogin: initializedServices(),
+      activeUser: initializedServices(),
+      userCubit: initializedServices(),
+      userSignOut: initializedServices(),
       )
     );
 }

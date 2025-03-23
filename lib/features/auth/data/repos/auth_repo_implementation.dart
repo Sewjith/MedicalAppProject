@@ -1,14 +1,16 @@
-import 'package:fpdart/src/either.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:medical_app/core/errors/auth/failure.dart';
 import 'package:medical_app/core/errors/common/expection.dart';
 import 'package:medical_app/features/auth/data/datasource/supabase_remote.dart';
+import 'package:medical_app/core/common/entities/user_type.dart';
 import 'package:medical_app/features/auth/domain/repos/auth_repos.dart';
 
 class AuthReposImpl implements AuthRepos {
   final AuthRemoteSource remoteAuthData;
   AuthReposImpl(this.remoteAuthData);
+  
   @override
-  Future<Either<Failure, String>> signInWithEmailAndPassword(
+  Future<Either<Failure, UserType>> signInWithEmailAndPassword(
       {required String email, required String password}) async {
     return _getUserDetails(
       () async => await remoteAuthData.signInWithEmail(
@@ -17,7 +19,7 @@ class AuthReposImpl implements AuthRepos {
   }
 
   @override
-  Future<Either<Failure, String>> signUpWithEmailAndPasword(
+  Future<Either<Failure, UserType>> signUpWithEmailAndPasword(
       {required String phone,
       required String dob,
       required String email,
@@ -28,14 +30,38 @@ class AuthReposImpl implements AuthRepos {
     );
   }
 
-  Future<Either<Failure, String>> _getUserDetails(
-    Future<String> Function() userDetails,
+  Future<Either<Failure, UserType>> _getUserDetails(
+    Future<UserType> Function() userDetails,
   ) async {
     try {
-      final data = await userDetails();
-      return right(data);
-    } on ServerExpection catch (e) {
+      final user = await userDetails();
+      return right(user);
+    } on ServerException catch (e) {
       return left(Failure(e.exception));
     }
   }
+  
+  @override
+ Future<Either<Failure, UserType>> activeUser() async {
+    try {
+      final user = await remoteAuthData.getIsActiveUser();
+      if (user == null) {
+        return left(Failure("No user logged in"));
+      }
+      return right(user);
+    } on ServerException catch (e) {
+      return left(Failure(e.exception));
+    }
+  }
+  
+  @override
+  Future<Either<Failure, void>> signOutUser() async {
+    try {
+      await remoteAuthData.signOut();
+      return right(null); // Use `unit` to represent a successful void result
+    } on ServerException catch (e) {
+      return left(Failure(e.exception));
+    }
+  }
+
 }
