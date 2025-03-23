@@ -8,6 +8,8 @@ import 'package:medical_app/features/auth/domain/usecases/active_user.dart';
 import 'package:medical_app/features/auth/domain/usecases/user_login.dart';
 import 'package:medical_app/features/auth/domain/usecases/user_register.dart';
 import 'package:medical_app/features/auth/domain/usecases/user_sign_out.dart';
+import 'package:medical_app/features/auth/domain/usecases/request_otp.dart';
+import 'package:medical_app/features/auth/domain/usecases/verify_otp.dart';
 import 'package:medical_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -18,49 +20,72 @@ Future<void> initDependencies() async {
     url: SupabaseSecrets.supabaseUrl,
     anonKey: SupabaseSecrets.key,
   );
+
   initializedServices.registerLazySingleton(() => supabase.client);
   initializedServices.registerLazySingleton(() => AppUserCubit());
-   _initAuth();
+
+  _initAuth();
 }
 
 void _initAuth() {
   initializedServices.registerFactory<AuthRemoteSource>(
-      () => AuthRemoteSourceImp(
-        initializedServices()
-        )
-    );
+    () => AuthRemoteSourceImp(
+      initializedServices(),
+    ),
+  );
+
   initializedServices.registerFactory<AuthRepos>(
     () => AuthReposImpl(
-      initializedServices()
-      )
-    );
+      initializedServices(),
+    ),
+  );
+
   initializedServices.registerFactory(
     () => UserRegister(
-      initializedServices()
-      )
-    );
+      initializedServices(),
+    ),
+  );
+
   initializedServices.registerFactory(
     () => UserLogin(
-      initializedServices()
-      )
-    );
+      initializedServices(),
+    ),
+  );
+
   initializedServices.registerFactory(
-    () =>ActiveUser(
-      initializedServices()
-      )
-    );
+    () => ActiveUser(
+      initializedServices(),
+    ),
+  );
+
   initializedServices.registerFactory(
     () => UserSignOut(
-      initializedServices()
-      )
-    );
+      initializedServices(),
+    ),
+  );
+
+  // ✅ Register OTP use cases
+  initializedServices.registerFactory(
+    () => RequestOtp(
+      initializedServices(),
+    ),
+  );
+
+  initializedServices.registerFactory(
+    () => VerifyOtp(
+      initializedServices(),
+    ),
+  );
+
   initializedServices.registerLazySingleton(
     () => AuthBloc(
       userRegister: initializedServices(),
       userLogin: initializedServices(),
       activeUser: initializedServices(),
-      userCubit: initializedServices(),
       userSignOut: initializedServices(),
-      )
-    );
+      requestOtp: initializedServices(), // Inject RequestOtp
+      verifyOtp: initializedServices(),  // Inject VerifyOtp
+      userCubit: initializedServices(),
+    ),
+  );
 }

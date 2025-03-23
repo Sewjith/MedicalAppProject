@@ -66,13 +66,13 @@ class _RegisterState extends State<Register> {
             setState(() => isLoading = false);
           }
 
-          if (state is AuthSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Check email for verification")),
-            );
+          // Navigate to OTP Input screen when OTP is sent
+          if (state is AuthOtpSent) {
             _clearForm();
-            context.go('/home'); // Redirect after success
-          } else if (state is AuthFailed) {
+            context.go('/otp', extra: state.email);
+          }
+
+          if (state is AuthFailed) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.error)),
             );

@@ -24,3 +24,20 @@ final class AuthLogin extends AuthEvent {
 final class AuthActiveUser extends AuthEvent {}
 
 final class AuthSignOut extends AuthEvent {}
+
+final class AuthRequestOtp extends AuthEvent {
+  final String email;
+
+  AuthRequestOtp(
+    { required this.email }
+  );
+}
+
+final class AuthVerifyOtp extends AuthEvent {
+  final String email;
+  final String otp;
+
+  AuthVerifyOtp(
+    { required this.email, required this.otp }
+  );
+}

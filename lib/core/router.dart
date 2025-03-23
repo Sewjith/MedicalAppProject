@@ -1,10 +1,10 @@
 import 'package:go_router/go_router.dart';
 import 'package:medical_app/core/main_layout.dart';
 import 'package:medical_app/features/analytics/earnings.dart';
+import 'package:medical_app/features/auth/presentation/screens/email_verify.dart';
 import 'package:medical_app/features/auth/presentation/screens/login_page.dart';
 import 'package:medical_app/features/auth/presentation/screens/register_page.dart';
 import 'package:medical_app/features/auth/presentation/screens/reset_password_email_link.dart';
-import 'package:medical_app/features/auth/presentation/screens/reset_password_page.dart';
 import 'package:medical_app/features/doctor-search/domain/entities/doctor_profiles.dart';
 import 'package:medical_app/features/doctor-search/presentation/screen/doctor_profile_page.dart';
 import 'package:medical_app/features/doctor-search/presentation/screen/doctor_search_page.dart';
@@ -26,7 +26,8 @@ final GoRouter appRouter =
   ),
   GoRoute(
     path: '/reset-password',
-    builder: (context, state) => const MainLayout(child: ForgotPasswordEmailLink()),
+    builder: (context, state) =>
+        const MainLayout(child: ForgotPasswordEmailLink()),
   ),
   GoRoute(
     path: '/earnings',
@@ -37,10 +38,20 @@ final GoRouter appRouter =
     builder: (context, state) => const MainLayout(child: DoctorProfilesPage()),
   ),
   GoRoute(
-  path: '/doctor-profile',
-  builder: (context, state) {
-    final profile = state.extra as DoctorProfiles; // Cast to your entity
-    return MainLayout(child: DoctorProfile(profile: profile)); // Pass the profile to the DoctorProfile widget
-  },
-)
+    path: '/doctor-profile',
+    builder: (context, state) {
+      final profile = state.extra as DoctorProfiles; // Cast to your entity
+      return MainLayout(
+          child: DoctorProfile(
+              profile:
+                  profile)); // Pass the profile to the DoctorProfile widget
+    },
+  ),
+  GoRoute(
+    path: '/otp',
+    builder: (context, state) {
+      final email = state.extra as String; // Retrieve email
+      return OtpInputScreen(email: email);
+    },
+  ),
 ]);

@@ -15,5 +15,7 @@ abstract interface class AuthRepos {
   });
   Future<Either<Failure, UserType>> activeUser();
   Future<Either<Failure, void>> signOutUser();
+  Future<Either<Failure, void>> requestEmailOtp(String email);
+  Future<Either<Failure, UserType>> verifyEmailOtp(String email, String otp);
 
 }

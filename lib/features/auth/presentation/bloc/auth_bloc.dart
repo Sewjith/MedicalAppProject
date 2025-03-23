@@ -7,6 +7,8 @@ import 'package:medical_app/features/auth/domain/usecases/active_user.dart';
 import 'package:medical_app/features/auth/domain/usecases/user_login.dart';
 import 'package:medical_app/features/auth/domain/usecases/user_register.dart';
 import 'package:medical_app/features/auth/domain/usecases/user_sign_out.dart';
+import 'package:medical_app/features/auth/domain/usecases/request_otp.dart';
+import 'package:medical_app/features/auth/domain/usecases/verify_otp.dart';
 
 part 'auth_event.dart';
 part 'auth_state.dart';
@@ -16,6 +18,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final UserLogin _userLogin;
   final ActiveUser _activeUser;
   final UserSignOut _userSignOut;
+  final RequestOtp _requestOtp;
+  final VerifyOtp _verifyOtp;
   final AppUserCubit _userCubit;
 
   AuthBloc({
@@ -23,17 +27,23 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required UserLogin userLogin,
     required ActiveUser activeUser,
     required UserSignOut userSignOut,
+    required RequestOtp requestOtp,
+    required VerifyOtp verifyOtp,
     required AppUserCubit userCubit,
   })  : _userRegister = userRegister,
         _userLogin = userLogin,
         _activeUser = activeUser,
         _userSignOut = userSignOut,
+        _requestOtp = requestOtp,
+        _verifyOtp = verifyOtp,
         _userCubit = userCubit,
         super(AuthInitial()) {
     on<AuthRegister>(_onAuthRegister);
     on<AuthLogin>(_onAuthLogin);
     on<AuthActiveUser>(_isActiveUser);
     on<AuthSignOut>(_onAuthSignOut);
+    on<AuthRequestOtp>(_onAuthRequestOtp);
+    on<AuthVerifyOtp>(_onAuthVerifyOtp);
   }
 
   void _isActiveUser(AuthActiveUser event, Emitter<AuthState> emit) async {
@@ -41,7 +51,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final res = await _activeUser(NoParams());
     res.fold(
       (fail) {
-        _userCubit.signOut(); // Emit guest on failure
+        _userCubit.signOut();
         emit(AuthFailed(fail.error));
       },
       (user) => _emitAuthSuccess(user, emit),
@@ -58,7 +68,31 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     ));
     res.fold(
       (fail) => emit(AuthFailed(fail.error)),
-      (user) => _emitAuthSuccess(user, emit),
+      (_) => add(AuthRequestOtp(email: event.email)),
+    );
+  }
+
+  void _onAuthRequestOtp(AuthRequestOtp event, Emitter<AuthState> emit) async {
+    emit(AuthLoading());
+    final res = await _requestOtp(RequestOtpParams(email: event.email));
+    res.fold(
+      (fail) => emit(AuthFailed(fail.error)),
+      (_) {
+        _userCubit.setPendingOtp(event.email); // Track OTP state
+        emit(AuthOtpSent(event.email));
+      },
+    );
+  }
+
+  void _onAuthVerifyOtp(AuthVerifyOtp event, Emitter<AuthState> emit) async {
+    emit(AuthLoading());
+    final res = await _verifyOtp(VerifyOtpParams(
+      email: event.email,
+      otp: event.otp,
+    ));
+    res.fold(
+      (fail) => emit(AuthFailed(fail.error)),
+      (user) => _emitAuthSuccess(user, emit), // Emit success if verified
     );
   }
 
@@ -79,7 +113,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     res.fold(
       (fail) => emit(AuthFailed(fail.error)),
       (_) {
-        _userCubit.signOut(); // Emit guest after sign-out
+        _userCubit.signOut();
         emit(AuthInitial());
       },
     );

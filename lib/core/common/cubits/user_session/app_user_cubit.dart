@@ -14,4 +14,9 @@ class AppUserCubit extends Cubit<AppUserState> {
   void signOut() {
     emit(AppUserGuest());
   }
+
+  // New: Set OTP pending state
+  void setPendingOtp(String email) {
+    emit(AppUserAwaitingOtp(email));
+  }
 }

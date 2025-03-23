@@ -18,3 +18,8 @@ final class AuthFailed extends AuthState {
   final String error;
   const AuthFailed(this.error);
 }
+
+class AuthOtpSent extends AuthState {
+  final String email;
+  const AuthOtpSent(this.email);
+}
