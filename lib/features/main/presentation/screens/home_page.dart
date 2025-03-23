@@ -31,9 +31,26 @@ class HomePage extends StatelessWidget {
                 'Welcome, ${state.user.email}',
                 style: const TextStyle(fontSize: 20),
               );
+            } else if (state is AppUserGuest) {
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Welcome, Guest',
+                    style: TextStyle(fontSize: 20),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () => context.go('/login'),
+                    child: const Text('Sign In'),
+                  ),
+                ],
+              );
             }
+
+            // Default state (if not logged in or guest)
             return const Text(
-              'Welcome, Guest',
+              'Loading...',
               style: TextStyle(fontSize: 20),
             );
           },
