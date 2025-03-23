@@ -8,25 +8,34 @@ import 'package:medical_app/features/auth/domain/repos/auth_repos.dart';
 class AuthReposImpl implements AuthRepos {
   final AuthRemoteSource remoteAuthData;
   AuthReposImpl(this.remoteAuthData);
-  
+
   @override
-  Future<Either<Failure, UserType>> signInWithEmailAndPassword(
-      {required String email, required String password}) async {
+  Future<Either<Failure, UserType>> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
     return _getUserDetails(
       () async => await remoteAuthData.signInWithEmail(
-          email: email, password: password),
+        email: email,
+        password: password,
+      ),
     );
   }
 
   @override
-  Future<Either<Failure, UserType>> signUpWithEmailAndPasword(
-      {required String phone,
-      required String dob,
-      required String email,
-      required String password}) async {
+  Future<Either<Failure, UserType>> signUpWithEmailAndPasword({
+    required String phone,
+    required String dob,
+    required String email,
+    required String password,
+  }) async {
     return _getUserDetails(
       () async => await remoteAuthData.signUpWithEmail(
-          phone: phone, dob: dob, email: email, password: password),
+        phone: phone,
+        dob: dob,
+        email: email,
+        password: password,
+      ),
     );
   }
 
@@ -40,9 +49,9 @@ class AuthReposImpl implements AuthRepos {
       return left(Failure(e.exception));
     }
   }
-  
+
   @override
- Future<Either<Failure, UserType>> activeUser() async {
+  Future<Either<Failure, UserType>> activeUser() async {
     try {
       final user = await remoteAuthData.getIsActiveUser();
       if (user == null) {
@@ -53,35 +62,35 @@ class AuthReposImpl implements AuthRepos {
       return left(Failure(e.exception));
     }
   }
-  
+
   @override
-  Future<Either<Failure, void>> signOutUser() async {
+  Future<Either<Failure, Unit>> signOutUser() async {
     try {
       await remoteAuthData.signOut();
-      return right(null); // Use `unit` to represent a successful void result
-    } on ServerException catch (e) {
-      return left(Failure(e.exception));
-    }
-  }
-  
-  @override
-  Future<Either<Failure, void>> requestEmailOtp(String email) async {
-    try {
-      await remoteAuthData.requestEmailOtp(email);
-      return right(null); // Use `unit` to represent a successful void result
-    } on ServerException catch (e) {
-      return left(Failure(e.exception));
-    }
-  }
-  
-  @override
-  Future<Either<Failure, UserType>> verifyEmailOtp(String email, String otp) async {
-   try {
-      final user = await remoteAuthData.verifyEmailOtp(email, otp);
-      return right(user); // Use `unit` to represent a successful void result
+      return right(unit); // Use `unit` to represent a successful void result
     } on ServerException catch (e) {
       return left(Failure(e.exception));
     }
   }
 
+  @override
+  Future<Either<Failure, Unit>> requestEmailOtp(String email) async {
+    try {
+      await remoteAuthData.requestEmailOtp(email);
+      return right(unit); // Use `unit` to represent a successful void result
+    } on ServerException catch (e) {
+      return left(Failure(e.exception));
+    }
+  }
+
+  @override
+  Future<Either<Failure, UserType>> verifyEmailOtp(
+      String email, String otp) async {
+    try {
+      final user = await remoteAuthData.verifyEmailOtp(email, otp);
+      return right(user);
+    } on ServerException catch (e) {
+      return left(Failure(e.exception));
+    }
+  }
 }

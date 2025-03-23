@@ -52,8 +52,7 @@ class AuthRemoteSourceImp implements AuthRemoteSource {
         throw const ServerException("User is not available");
       }
 
-      await requestEmailOtp(email);
-
+      // No need to request OTP again, Supabase already sends it
       return UserModel.fromJson(res.user!.toJson());
     } catch (e) {
       throw ServerException(e.toString());
@@ -64,7 +63,7 @@ class AuthRemoteSourceImp implements AuthRemoteSource {
   Future<void> requestEmailOtp(String email) async {
     try {
       await supabaseClient.auth.resend(
-        type: OtpType.signup,
+        type: OtpType.email, // Use OtpType.email for email verification
         email: email,
       );
     } catch (e) {
@@ -127,9 +126,14 @@ class AuthRemoteSourceImp implements AuthRemoteSource {
         final session = await supabaseClient
             .from('Users')
             .select()
-            .eq('id', isActiveUser!.user.id);
+            .eq('id', isActiveUser!.user.id)
+            .maybeSingle();
 
-        return UserModel.fromJson(session.first).copyWith(
+        if (session == null) {
+          throw ServerException("User not found in database.");
+        }
+
+        return UserModel.fromJson(session).copyWith(
           email: isActiveUser!.user.email,
         );
       }
