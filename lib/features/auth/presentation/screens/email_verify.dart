@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:medical_app/core/themes/color_palette.dart';
 import 'package:medical_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:medical_app/features/auth/presentation/widgets/auth_form.dart';
 
@@ -14,7 +15,6 @@ class OtpInputScreen extends StatefulWidget {
 
 class _OtpInputScreenState extends State<OtpInputScreen> {
   final TextEditingController _otpController = TextEditingController();
-  bool isLoading = false;
 
   @override
   void dispose() {
@@ -23,12 +23,19 @@ class _OtpInputScreenState extends State<OtpInputScreen> {
   }
 
   void _verifyOtp() {
-    if (_otpController.text.trim().isEmpty) return;
+    final otp = _otpController.text.trim();
+
+    if (otp.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('OTP cannot be empty')),
+      );
+      return;
+    }
 
     context.read<AuthBloc>().add(
           AuthVerifyOtp(
             email: widget.email,
-            otp: _otpController.text.trim(),
+            otp: otp,
           ),
         );
   }
@@ -36,19 +43,11 @@ class _OtpInputScreenState extends State<OtpInputScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Enter OTP"),
-      ),
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
-          if (state is AuthLoading) {
-            setState(() => isLoading = true);
-          } else {
-            setState(() => isLoading = false);
-          }
-
           if (state is AuthSuccess) {
-            context.go('/home'); // Redirect to home after successful verification
+            context
+                .go('/home'); // Redirect to home after successful verification
           } else if (state is AuthFailed) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.error)),
@@ -56,30 +55,84 @@ class _OtpInputScreenState extends State<OtpInputScreen> {
           }
         },
         builder: (context, state) {
-          return Center(
+          final isLoading = state is AuthLoading;
+
+          return SingleChildScrollView(
             child: Padding(
-              padding: const EdgeInsets.all(20.0),
+              padding: const EdgeInsets.all(5.0),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Enter the OTP sent to your email",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      BackButton(onPressed: () => context.go('/home')),
+                      const SizedBox(width: 70),
+                      const Text(
+                        'OTP',
+                        style: TextStyle(
+                          fontSize: 50,
+                          fontWeight: FontWeight.bold,
+                          color: AppPallete.headings,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 20),
-                  AuthDetails(
-                    hintText: 'Enter OTP',
-                    controller: _otpController,
-                  ),
-                  const SizedBox(height: 20),
-                  FilledButton(
-                    onPressed: isLoading ? null : _verifyOtp,
-                    child: isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
-                            "Verify OTP",
-                            style: TextStyle(fontSize: 20),
+                  Padding(
+                    padding: const EdgeInsets.all(35.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Verify Your Email',
+                          style: TextStyle(
+                            color: AppPallete.headings,
+                            fontSize: 25,
+                            fontWeight: FontWeight.bold,
                           ),
+                        ),
+                        const Text(
+                          'Enter the OTP sent to your email to continue.',
+                        ),
+                        const SizedBox(height: 30),
+                        const Text(
+                          'Enter OTP',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppPallete.textColor,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        AuthDetails(
+                          hintText: 'Enter OTP',
+                          controller: _otpController,
+                        ),
+                        const SizedBox(height: 30),
+                        FilledButton(
+                          onPressed: isLoading ? null : _verifyOtp,
+                          style: const ButtonStyle(
+                            backgroundColor:
+                                WidgetStatePropertyAll(Colors.blueAccent),
+                            foregroundColor:
+                                WidgetStatePropertyAll(Colors.white),
+                            padding: WidgetStatePropertyAll(
+                              EdgeInsets.symmetric(
+                                  horizontal: 80, vertical: 10),
+                            ),
+                          ),
+                          child: isLoading
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white)
+                              : const Text(
+                                  'Verify OTP',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 20),
+                                ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),

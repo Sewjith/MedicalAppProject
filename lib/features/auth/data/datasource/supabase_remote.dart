@@ -62,8 +62,7 @@ class AuthRemoteSourceImp implements AuthRemoteSource {
   @override
   Future<void> requestEmailOtp(String email) async {
     try {
-      await supabaseClient.auth.resend(
-        type: OtpType.email, // Use OtpType.email for email verification
+      await supabaseClient.auth.signInWithOtp(
         email: email,
       );
     } catch (e) {

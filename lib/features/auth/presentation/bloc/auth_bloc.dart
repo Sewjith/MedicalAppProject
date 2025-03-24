@@ -38,63 +38,78 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         _verifyOtp = verifyOtp,
         _userCubit = userCubit,
         super(AuthInitial()) {
+    // ✅ Registering all events with debug logs
     on<AuthRegister>(_onAuthRegister);
     on<AuthLogin>(_onAuthLogin);
     on<AuthActiveUser>(_isActiveUser);
     on<AuthSignOut>(_onAuthSignOut);
     on<AuthRequestOtp>(_onAuthRequestOtp);
     on<AuthVerifyOtp>(_onAuthVerifyOtp);
+
+    // Debug all unhandled events
+    on<AuthEvent>((event, emit) {
+      debugPrint("⚠️ Unhandled Event: ${event.runtimeType}");
+    });
+
+    debugPrint('🚀 AuthBloc Initialized');
   }
 
   void _isActiveUser(AuthActiveUser event, Emitter<AuthState> emit) async {
+    debugPrint("🔍 Checking for active user");
     emit(AuthLoading());
     final res = await _activeUser(NoParams());
+
     res.fold(
       (fail) {
-        debugPrint("Active user check failed: ${fail.error}");
+        debugPrint("❌ Active user check failed: ${fail.error}");
         _userCubit.signOut();
         emit(AuthFailed(fail.error));
       },
       (user) {
-        debugPrint("Active user found: ${user.email}");
+        debugPrint("✅ Active user found: ${user.email}");
         _emitAuthSuccess(user, emit);
       },
     );
   }
 
   void _onAuthRegister(AuthRegister event, Emitter<AuthState> emit) async {
-    emit(AuthLoading());
-    final res = await _userRegister(UserRegisterParams(
-      dob: event.dob,
-      phone: event.phone,
-      email: event.email,
-      password: event.password,
-    ));
+  debugPrint("📤 Registering user: ${event.email}");
+  emit(AuthLoading());
 
-    res.fold(
-      (fail) {
-        debugPrint("Registration failed: ${fail.error}");
-        emit(AuthFailed(fail.error));
-      },
-      (_) {
-        debugPrint("Registration success: ${event.email}");
-        add(AuthRequestOtp(email: event.email));
-      },
-    );
-  }
+  final res = await _userRegister(UserRegisterParams(
+    dob: event.dob,
+    phone: event.phone,
+    email: event.email,
+    password: event.password,
+  ));
+
+  res.fold(
+    (fail) {
+      debugPrint("❌ Registration failed: ${fail.error}");
+      emit(AuthFailed(fail.error));
+    },
+    (_) {
+      debugPrint("✅ Registration success: ${event.email}");
+      // Skip manual OTP request—Supabase already sends the OTP
+      _userCubit.setPendingOtp(event.email);
+      emit(AuthOtpSent(event.email));
+    },
+  );
+}
+
 
   void _onAuthRequestOtp(AuthRequestOtp event, Emitter<AuthState> emit) async {
+    debugPrint("📤 Requesting OTP for: ${event.email}");
     emit(AuthLoading());
     final res = await _requestOtp(RequestOtpParams(email: event.email));
-    debugPrint("Requesting OTP for: ${event.email}");
 
     res.fold(
       (fail) {
-        debugPrint("OTP Request Failed: ${fail.error}");
+        debugPrint("❌ OTP Request Failed: ${fail.error}");
         emit(AuthFailed(fail.error));
       },
       (_) {
-        debugPrint("OTP Request Success for: ${event.email}");
+        debugPrint("✅ OTP Sent Successfully: ${event.email}");
         _userCubit.setPendingOtp(event.email);
         emit(AuthOtpSent(event.email));
       },
@@ -102,57 +117,56 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   void _onAuthVerifyOtp(AuthVerifyOtp event, Emitter<AuthState> emit) async {
+    debugPrint("🔐 Verifying OTP for: ${event.email}");
     emit(AuthLoading());
     final res = await _verifyOtp(VerifyOtpParams(
       email: event.email,
       otp: event.otp,
     ));
 
-    debugPrint("Verifying OTP for: ${event.email} with OTP: ${event.otp}");
-
     res.fold(
       (fail) {
-        debugPrint("OTP Verification Failed: ${fail.error}");
+        debugPrint("❌ OTP Verification Failed: ${fail.error}");
         emit(AuthFailed(fail.error));
       },
       (user) {
-        debugPrint("OTP Verified Successfully: ${user.email}");
+        debugPrint("✅ OTP Verified Successfully: ${user.email}");
         _emitAuthSuccess(user, emit);
       },
     );
   }
 
   void _onAuthLogin(AuthLogin event, Emitter<AuthState> emit) async {
+    debugPrint("🔐 Logging in user: ${event.email}");
     emit(AuthLoading());
     final res = await _userLogin(
       UserLoginParams(email: event.email, password: event.password),
     );
 
-    debugPrint("Logging in user: ${event.email}");
-
     res.fold(
       (fail) {
-        debugPrint("Login failed: ${fail.error}");
+        debugPrint("❌ Login failed: ${fail.error}");
         emit(AuthFailed(fail.error));
       },
       (user) {
-        debugPrint("Login successful: ${user.email}");
+        debugPrint("✅ Login successful: ${user.email}");
         _emitAuthSuccess(user, emit);
       },
     );
   }
 
   void _onAuthSignOut(AuthSignOut event, Emitter<AuthState> emit) async {
+    debugPrint("👋 Signing out user");
     emit(AuthLoading());
     final res = await _userSignOut(NoParams());
 
     res.fold(
       (fail) {
-        debugPrint("Sign out failed: ${fail.error}");
+        debugPrint("❌ Sign out failed: ${fail.error}");
         emit(AuthFailed(fail.error));
       },
       (_) {
-        debugPrint("User signed out successfully");
+        debugPrint("✅ User signed out successfully");
         _userCubit.signOut();
         emit(AuthInitial());
       },
@@ -160,8 +174,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   void _emitAuthSuccess(UserType user, Emitter<AuthState> emit) {
+    debugPrint("📊 User session updated: ${user.email}");
     _userCubit.updateUser(user);
-    debugPrint("User session updated: ${user.email}");
     emit(AuthSuccess(user));
   }
 }
