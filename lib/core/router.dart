@@ -10,6 +10,7 @@ import 'package:medical_app/features/doctor-search/domain/entities/doctor_profil
 import 'package:medical_app/features/doctor-search/presentation/screen/doctor_profile_page.dart';
 import 'package:medical_app/features/doctor-search/presentation/screen/doctor_search_page.dart';
 import 'package:medical_app/features/main/presentation/screens/home_page.dart';
+import 'package:medical_app/features/p_appointment_schedule/p_appointment_schedule.dart';
 import 'package:medical_app/features/teleconsultation/presentation/consultation_page.dart';
 import 'package:medical_app/features/teleconsultation/presentation/index.dart';
 
@@ -70,6 +71,10 @@ final GoRouter appRouter = GoRouter(
         final email = state.extra as String; // Retrieve email
         return OtpInputScreen(email: email);
         },
+    ),
+    GoRoute(
+      path: '/p_appointment_schedule',
+      builder: (context, state) => const MainLayout(child: AppointmentSchedulePage()),
     ),
   ],
 );
