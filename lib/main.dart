@@ -1,48 +1,56 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_stripe/flutter_stripe.dart';
-import 'home.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:medical_app/core/common/cubits/user_session/app_user_cubit.dart';
+import 'package:medical_app/core/int_dependencies.dart';
 import 'package:medical_app/core/router.dart';
 import 'package:medical_app/core/supabase_config.dart';
 import 'package:medical_app/core/themes/app_themes.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:medical_app/features/auth/presentation/bloc/auth_bloc.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
-  Stripe.publishableKey = dotenv.env["STRIPE_PUBLISH_KEY"]!;
-  Stripe.merchantIdentifier = 'merchant.flutter.stripe.test';
-  Stripe.urlScheme = 'flutterstripe';
-  await Stripe.instance.applySettings();
+
+  try {
+    // Initialize dependencies (including Supabase, get_it setup)
+    await initDependencies();
+    debugPrint('✅ Dependencies initialized successfully.');
+  } catch (e) {
+    debugPrint('❌ Error during initialization: $e');
+  }
 
   runApp(const MyApp());
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await SupabaseConfig.initialize(); // Initialize Supabase
-  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-class MyApp extends StatefulWidget {
-  @override
-  _MyAppState createState() => _MyAppState();
-}
 
-class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Medical App Payment',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => initializedServices<AppUserCubit>()),
+        BlocProvider(
+          create: (context) => initializedServices<AuthBloc>()..add(AuthActiveUser()),
+        ),
+      ],
+      child: BlocListener<AuthBloc, AuthState>(
+        listener: (context, state) {
+          final userCubit = context.read<AppUserCubit>();
+          if (state is AuthSuccess) {
+            debugPrint('🔐 Authenticated: ${state.user.email}');
+            userCubit.updateUser(state.user);
+          } else if (state is AuthFailed) {
+            debugPrint('❌ Authentication Failed: ${state.error}');
+            userCubit.signOut();
+          }
+        },
+        child: MaterialApp.router(
+          debugShowCheckedModeBanner: false,
+          routerConfig: appRouter,
+          title: 'Medical App',
+          theme: AppTheme.lightThemeMode,
+        ),
       ),
-      home: const HomePage(),
-    return MaterialApp.router(
-      debugShowCheckedModeBanner: false,
-      routerConfig: appRouter,
-      title: 'Medical App',
-      theme: AppTheme.lightThemeMode,
     );
   }
 }
