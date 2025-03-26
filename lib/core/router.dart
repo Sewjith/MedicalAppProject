@@ -11,14 +11,16 @@ import 'package:medical_app/features/doctor-search/presentation/screen/doctor_se
 import 'package:medical_app/features/main/presentation/screens/home_page.dart';
 import 'package:medical_app/features/teleconsultation/presentation/consultation_page.dart';
 import 'package:medical_app/features/teleconsultation/presentation/index.dart';
+import 'package:medical_app/features/analytics/presentation/screens/earning_page.dart';
+import 'package:flutter/material.dart';
 
-  GoRoute(
-    path: '/otp',
-    builder: (context, state) {
-      final email = state.extra as String; // Retrieve email
-      return OtpInputScreen(email: email);
-    },
-  ),
+  // GoRoute(
+  //   path: '/otp',
+  //   builder: (context, state) {
+  //     final email = state.extra as String; // Retrieve email
+  //     return OtpInputScreen(email: email);
+  //   },
+  // ),
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/home',
@@ -35,10 +37,10 @@ final GoRouter appRouter = GoRouter(
       path: '/register',
       builder: (context, state) => const MainLayout(child: Register()),
     ),
-    GoRoute(
-      path: '/reset-password',
-      builder: (context, state) => const MainLayout(child: ForgotPassword()),
-    ),
+    // GoRoute(
+    //   path: '/reset-password',
+    //   builder: (context, state) => const MainLayout(child: ForgotPassword()),
+    // ),
     GoRoute(
       path: '/earnings',
       builder: (context, state) => const MainLayout(child: Earnings()),
@@ -69,6 +71,18 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) {
         final profile = state.extra as DoctorProfiles;
         return MainLayout(child: DoctorProfile(profile: profile));
+      },
+    ),
+ GoRoute(
+      path: '/doctor-earning/:doctorId',
+      builder: (context, state) {
+        final doctorId = state.pathParameters['doctorId'];
+        if (doctorId == null || doctorId.isEmpty) {
+          return Scaffold(
+            body: Center(child: Text('Doctor ID is required')),
+          );
+        }
+        return MainLayout(child: DoctorEarningsPage(doctorId: doctorId));
       },
     ),
   ],

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:medical_app/core/bottom_nav_bar.dart';
 
+import 'package:flutter/material.dart';
+
 class MainLayout extends StatefulWidget {
   final Widget child;
   const MainLayout({super.key, required this.child});
@@ -17,6 +19,7 @@ class _MainLayoutState extends State<MainLayout> {
     setState(() {
       _selectedIndex = index;
     });
+    String doctorId = '79ee85c5-c5da-41f5-b4a0-579f4792f32f';
 
     switch (index) {
       case 0:
@@ -29,7 +32,8 @@ class _MainLayoutState extends State<MainLayout> {
         context.go('/doctor-profiles'); // Navigate to Profile
         break;
       case 3:
-        context.go('/doctor-earning'); // Navigate to Calendar
+        final doctorId = '79ee85c5-c5da-41f5-b4a0-579f4792f32f';
+        context.go('/doctor-earning/$doctorId');
         break;
     }
   }
@@ -37,9 +41,6 @@ class _MainLayoutState extends State<MainLayout> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   title: const Text('Taskbar'),
-      // ),
       body: SafeArea(child: widget.child),
       bottomNavigationBar: BottomNavBar(
         selectedIndex: _selectedIndex, // Pass selected index
