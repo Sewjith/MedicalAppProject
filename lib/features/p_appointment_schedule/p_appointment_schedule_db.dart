@@ -11,6 +11,7 @@ class DatabaseService {
     required DateTime date,
     required String time,
     required String doctor,
+    required String payment,
   }) async {
     try {
       final response = await supabase.from('appointments').insert({
@@ -21,12 +22,14 @@ class DatabaseService {
         'appointment_datetime': date.toIso8601String(),
         'appointment_time': time,
         'doctor_name':doctor,
+        'Payment Status':payment,
       });
+
       print("Supabase Response: $response");
-      return true; // Success
+      return true; 
     } catch (error) {
-      print("Supabase Insert Error: $error"); // <-- PRINT ERROR
-      return false; // Failure
+      print("Supabase Insert Error: $error");
+      return false; 
     }
   }
 }

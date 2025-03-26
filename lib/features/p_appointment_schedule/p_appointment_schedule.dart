@@ -79,6 +79,7 @@ class _AppointmentSchedulePageState extends State<AppointmentSchedulePage> {
           date: _selectedDate.toString(),
           time: _selectedTime,
           doctor: _selectedDoctor,
+          payment: "Pending",
           problem: _problemController.text.isEmpty ? "No description" : _problemController.text,
           onConfirm: () {
             _saveAppointment();
@@ -96,9 +97,10 @@ class _AppointmentSchedulePageState extends State<AppointmentSchedulePage> {
       problemDesc: _problemController.text.isEmpty ? "No description" : _problemController.text,
       date: _selectedDate,
       time: _selectedTime,
-      doctor: _selectedDoctor
+      doctor: _selectedDoctor,
+      payment: "Pending"
     );
-
+    
     if (success) {
       print("Appointment inserted successfully!");
       ScaffoldMessenger.of(context).showSnackBar(

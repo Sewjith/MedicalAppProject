@@ -9,7 +9,8 @@ class AppointmentConfirmationPage extends StatelessWidget {
   final String time;
   final String doctor;
   final String problem;
-  final VoidCallback onConfirm; 
+  final String payment;
+  final VoidCallback onConfirm;
 
   const AppointmentConfirmationPage({
     super.key,
@@ -20,7 +21,8 @@ class AppointmentConfirmationPage extends StatelessWidget {
     required this.time,
     required this.doctor,
     required this.problem,
-    required this.onConfirm, 
+    required this.payment,
+    required this.onConfirm,
   });
 
   @override
@@ -28,7 +30,8 @@ class AppointmentConfirmationPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppPallete.backgroundColor,
       appBar: AppBar(
-        title: const Text("Your Appointment", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        title: const Text("Your Appointment",
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: AppPallete.primaryColor,
         elevation: 0,
@@ -52,12 +55,10 @@ class AppointmentConfirmationPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-
             _dateTimeSection(),
             const SizedBox(height: 24),
             _divider(),
             const SizedBox(height: 24),
-
             _infoSection("Full Name", name),
             _infoSection("Age", age),
             _infoSection("Gender", gender),
@@ -79,7 +80,10 @@ class AppointmentConfirmationPage extends StatelessWidget {
         color: AppPallete.primaryColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: AppPallete.greyColor.withOpacity(0.2), blurRadius: 8, offset: Offset(0, 4)),
+          BoxShadow(
+              color: AppPallete.greyColor.withOpacity(0.2),
+              blurRadius: 8,
+              offset: Offset(0, 4)),
         ],
       ),
       child: Row(
@@ -98,7 +102,10 @@ class AppointmentConfirmationPage extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppPallete.headings),
+          style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppPallete.headings),
         ),
         const SizedBox(height: 4),
         Text(
@@ -122,8 +129,16 @@ class AppointmentConfirmationPage extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppPallete.textColor)),
-          Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppPallete.textColor)),
+          Text(title,
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppPallete.textColor)),
+          Text(value,
+              style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppPallete.textColor)),
         ],
       ),
     );
@@ -135,7 +150,11 @@ class AppointmentConfirmationPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Problem Description", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppPallete.headings)),
+          const Text("Problem Description",
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppPallete.headings)),
           const SizedBox(height: 8),
           Text(
             problem.isEmpty ? "No description provided" : problem,
@@ -160,7 +179,8 @@ class AppointmentConfirmationPage extends StatelessWidget {
               ),
               elevation: 5,
             ),
-            child: const Text("Cancel", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            child: const Text("Cancel",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
         ),
         const SizedBox(width: 12),
@@ -177,12 +197,14 @@ class AppointmentConfirmationPage extends StatelessWidget {
               ),
               elevation: 5,
             ),
-            child: const Text("Confirm", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            child: const Text("Confirm",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
         ),
       ],
     );
   }
+
   void _showConfirmationDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -192,19 +214,23 @@ class AppointmentConfirmationPage extends StatelessWidget {
             children: [
               Icon(Icons.check_circle, color: Colors.green, size: 50),
               const SizedBox(height: 10),
-              const Text("Appointment Confirmed", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              const Text("Appointment Confirmed",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             ],
           ),
-          content: const Text("Your appointment has been successfully confirmed.", style: TextStyle(fontSize: 16)),
+          content: const Text(
+              "Your appointment has been successfully confirmed.",
+              style: TextStyle(fontSize: 16)),
           actions: [
             TextButton(
               onPressed: () {
                 onConfirm();
-                
+
                 Navigator.pop(context);
-                Navigator.pop(context); 
+                Navigator.pop(context);
               },
-              child: const Text("OK", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              child: const Text("OK",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),
           ],
         );
