@@ -6,9 +6,13 @@ import 'package:medical_app/core/router.dart';
 import 'package:medical_app/core/supabase_config.dart';
 import 'package:medical_app/core/themes/app_themes.dart';
 import 'package:medical_app/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-Future<void> main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SupabaseConfig.initialize(); // Initialize Supabase
+  runApp(MyApp());
+}
 
   try {
     // Initialize dependencies (including Supabase, get_it setup)
