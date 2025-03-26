@@ -1,0 +1,2 @@
+C:/Users/jaksh/flutter projects/Group/MedicalAppProject/android/app/.cxx/Debug/4yr3do5z/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/jaksh/flutter projects/Group/MedicalAppProject/android/app/.cxx/Debug/4yr3do5z/x86_64/CMakeFiles/rebuild_cache.dir
