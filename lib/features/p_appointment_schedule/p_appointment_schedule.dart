@@ -41,12 +41,10 @@ class _AppointmentSchedulePageState extends State<AppointmentSchedulePage> {
       lastDate: DateTime(2030),
     );
 
-    if (picked != null) {
-      setState(() {
-        _selectedDate = picked;
-      });
+    setState(() {
+      _selectedDate = picked!;
+    });
     }
-  }
 
   void _confirmAppointment() {
     if (_nameController.text.isEmpty || _ageController.text.isEmpty || _problemController.text.isEmpty) {
