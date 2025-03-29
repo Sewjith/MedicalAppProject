@@ -13,6 +13,7 @@ import 'package:medical_app/features/main/presentation/screens/home_page.dart';
 import 'package:medical_app/features/p_appointment_schedule/p_appointment_schedule.dart';
 import 'package:medical_app/features/teleconsultation/presentation/consultation_page.dart';
 import 'package:medical_app/features/teleconsultation/presentation/index.dart';
+import 'package:medical_app/features/in-app-payments/home.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/home',
@@ -44,6 +45,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/consults',
       builder: (context, state) => const MainLayout(child: IndexPage()),
+    ),
+    GoRoute(
+      path: '/in-app-payment',
+      builder: (context, state) => const MainLayout(child: PaymentHomePage()),
     ),
     GoRoute(
       path: '/video-call',

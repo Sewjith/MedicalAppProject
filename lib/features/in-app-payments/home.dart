@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'payment.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class PaymentHomePage extends StatefulWidget {
+  const PaymentHomePage({super.key});
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<PaymentHomePage> createState() => _PaymentHomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _PaymentHomePageState extends State<PaymentHomePage> {
   bool isPaymentProcessing = false;
   // Hardcoded payment details (amount in cents; e.g., 1000 = $10.00)
   final String amount = "500";
