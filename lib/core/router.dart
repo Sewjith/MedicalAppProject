@@ -12,13 +12,7 @@ import 'package:medical_app/features/main/presentation/screens/home_page.dart';
 import 'package:medical_app/features/teleconsultation/presentation/consultation_page.dart';
 import 'package:medical_app/features/teleconsultation/presentation/index.dart';
 
-  GoRoute(
-    path: '/otp',
-    builder: (context, state) {
-      final email = state.extra as String; // Retrieve email
-      return OtpInputScreen(email: email);
-    },
-  ),
+
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/home',
@@ -27,6 +21,13 @@ final GoRouter appRouter = GoRouter(
       path: '/home',
       builder: (context, state) => const MainLayout(child: HomePage()),
     ),
+    GoRoute(
+    path: '/otp',
+    builder: (context, state) {
+      final email = state.extra as String; // Retrieve email
+      return OtpInputScreen(email: email);
+    },
+  ),
     GoRoute(
       path: '/login',
       builder: (context, state) => const MainLayout(child: Login()),
@@ -37,7 +38,7 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/reset-password',
-      builder: (context, state) => const MainLayout(child: ForgotPassword()),
+      builder: (context, state) => const MainLayout(child: ForgotPasswordEmailLink()),
     ),
     GoRoute(
       path: '/earnings',
