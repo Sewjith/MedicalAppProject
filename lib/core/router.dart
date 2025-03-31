@@ -12,7 +12,7 @@ import 'package:medical_app/features/main/presentation/screens/home_page.dart';
 import 'package:medical_app/features/p_appointment_schedule/p_appointment_schedule.dart';
 import 'package:medical_app/features/teleconsultation/presentation/consultation_page.dart';
 import 'package:medical_app/features/teleconsultation/presentation/index.dart';
-import 'package:medical_app/features/in-app-payments/home.dart';
+import 'package:medical_app/features/in-app-payments/payment_home.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/home',

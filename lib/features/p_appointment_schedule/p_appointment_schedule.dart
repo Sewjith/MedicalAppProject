@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
-import 'package:medical_app/features/in-app-payments/home.dart';
+import 'package:medical_app/features/in-app-payments/payment_home.dart';
 import 'package:medical_app/features/p_appointment_schedule/p_appointment_confirmation.dart';
 import 'package:medical_app/features/p_appointment_schedule/p_appointment_schedule_db.dart';
 
