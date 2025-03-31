@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
+import 'package:medical_app/features/in-app-payments/home.dart';
 import 'package:medical_app/features/p_appointment_schedule/p_appointment_confirmation.dart';
 import 'package:medical_app/features/p_appointment_schedule/p_appointment_schedule_db.dart';
 
@@ -87,34 +88,41 @@ class _AppointmentSchedulePageState extends State<AppointmentSchedulePage> {
   }
 
   void _saveAppointment() async {
-    bool success = await _dbService.bookAppointment(
-      name: _nameController.text,
-      age: int.tryParse(_ageController.text) ?? 0,
-      gender: _selectedGender,
-      problemDesc: _problemController.text.isEmpty ? "No description" : _problemController.text,
-      date: _selectedDate,
-      time: _selectedTime,
-      doctor: _selectedDoctor
+  bool success = await _dbService.bookAppointment(
+    name: _nameController.text,
+    age: int.tryParse(_ageController.text) ?? 0,
+    gender: _selectedGender,
+    problemDesc: _problemController.text.isEmpty ? "No description" : _problemController.text,
+    date: _selectedDate,
+    time: _selectedTime,
+    doctor: _selectedDoctor,
+  );
+
+  if (success) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Appointment confirmed! Redirecting to payment..."),
+        backgroundColor: Colors.green,
+      ),
     );
 
-    if (success) {
-      print("Appointment inserted successfully!");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Appointment confirmed!"),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } else {
-      print("Failed to insert appointment.");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Failed to confirm appointment. Please try again."),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
+    // Redirect to PaymentHomePage
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PaymentHomePage(),
+      ),
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Failed to confirm appointment. Please try again."),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
