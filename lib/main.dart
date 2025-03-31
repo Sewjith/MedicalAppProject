@@ -5,7 +5,6 @@ import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:medical_app/core/common/cubits/user_session/app_user_cubit.dart';
 import 'package:medical_app/core/int_dependencies.dart';
 import 'package:medical_app/core/router.dart';
-import 'package:medical_app/core/supabase_config.dart';
 import 'package:medical_app/core/themes/app_themes.dart';
 import 'package:medical_app/features/auth/presentation/bloc/auth_bloc.dart';
 
@@ -18,6 +17,7 @@ Future<void> main() async {
     Stripe.merchantIdentifier = 'merchant.flutter.stripe.test';
     Stripe.urlScheme = 'flutterstripe';
     await Stripe.instance.applySettings();
+    
     // Initialize dependencies (including Supabase, get_it setup)
     await initDependencies();
     debugPrint('✅ Dependencies initialized successfully.');

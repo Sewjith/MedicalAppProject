@@ -1,0 +1,2 @@
+/Users/anusara/My Drive/Flutter/Medical App 250326/MedicalAppProject/android/app/.cxx/Debug/1z3624q3/x86/CMakeFiles/edit_cache.dir
+/Users/anusara/My Drive/Flutter/Medical App 250326/MedicalAppProject/android/app/.cxx/Debug/1z3624q3/x86/CMakeFiles/rebuild_cache.dir

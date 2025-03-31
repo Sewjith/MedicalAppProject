@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart'; // Import GoRouter
 import 'package:medical_app/core/themes/color_palette.dart'; // Import theme
 
 class ChatScreen extends StatefulWidget {
+  const ChatScreen({super.key});
+
   @override
   _ChatScreenState createState() => _ChatScreenState();
 }

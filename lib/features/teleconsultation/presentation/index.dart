@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'consultation_page.dart'; // Import the video call page
 
 class IndexPage extends StatefulWidget {
-  const IndexPage({Key? key}) : super(key: key);
+  const IndexPage({super.key});
 
   @override
   State<IndexPage> createState() => _IndexPageState();
