@@ -1,35 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
-
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: EarningsPage(),
-    );
-  }
-}
+import 'earnings_db.dart';
 
 class EarningsPage extends StatefulWidget {
+  const EarningsPage({Key? key}) : super(key: key);
+
   @override
-  _EarningsPageState createState() => _EarningsPageState();
+  State<EarningsPage> createState() => _EarningsPageState();
 }
 
 class _EarningsPageState extends State<EarningsPage> {
   int _selectedIndex = 0;
+  final EarningsDB _db = EarningsDB();
+  List<double> _weeklyRevenue = [];
+  bool _isLoading = true;
+  int _pendingPaymentsCount = 0;
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final dynamic revenueData = await _db.getWeeklyRevenue();
+      final dynamic paymentsData = await _db.getPendingPaymentsCount();
+
+      // Convert dynamic list to List<double>
+      _weeklyRevenue = (revenueData as List).map((e) {
+        if (e is double) return e;
+        if (e is int) return e.toDouble();
+        return 0.0;
+      }).toList();
+
+      // Convert dynamic to int
+      _pendingPaymentsCount = paymentsData is int
+          ? paymentsData
+          : int.tryParse(paymentsData.toString()) ?? 1;
+
+      setState(() => _isLoading = false);
+    } catch (e) {
+      setState(() {
+        _weeklyRevenue = List.filled(7, 0.0);
+        _pendingPaymentsCount = 1;
+        _isLoading = false;
+      });
+      debugPrint("Error loading data: $e");
+    }
   }
 
   @override
@@ -52,28 +73,48 @@ class _EarningsPageState extends State<EarningsPage> {
             Icons.arrow_back_ios,
             color: AppPallete.primaryColor,
           ),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
-      ),
-      backgroundColor: AppPallete.whiteColor,
-      body: Column(
-        children: [
-          const SizedBox(height: 20),
-          _earningsChart(),
-          const SizedBox(height: 20),
-          _pendingPaymentsCard(),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh, color: AppPallete.primaryColor),
+            onPressed: _loadData,
+          ),
         ],
       ),
-      bottomNavigationBar: BottomNavBar(
-        selectedIndex: _selectedIndex,
-        onItemTapped: _onItemTapped,
+      backgroundColor: AppPallete.whiteColor,
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator(color: AppPallete.primaryColor))
+          : Column(
+        children: [
+          const SizedBox(height: 20),
+          _buildRevenueChart(),
+          const SizedBox(height: 20),
+          _buildPendingPaymentsCard(),
+        ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) => setState(() => _selectedIndex = index),
+        selectedItemColor: AppPallete.primaryColor,
+        unselectedItemColor: AppPallete.greyColor,
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: ""),
+          BottomNavigationBarItem(icon: Icon(Icons.chat), label: ""),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: ""),
+          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: ""),
+        ],
       ),
     );
   }
 
-  Widget _earningsChart() {
+  Widget _buildRevenueChart() {
+    final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final maxY = _weeklyRevenue.isNotEmpty
+        ? _weeklyRevenue.reduce((a, b) => a > b ? a : b) * 1.2
+        : 100.0;
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Card(
@@ -88,7 +129,7 @@ class _EarningsPageState extends State<EarningsPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "Earning Statistics",
+                    "Weekly Earnings",
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -96,8 +137,11 @@ class _EarningsPageState extends State<EarningsPage> {
                     ),
                   ),
                   Text(
-                    "2022-2023",
-                    style: TextStyle(fontSize: 14, color: AppPallete.greyColor),
+                    "This Week",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppPallete.greyColor,
+                    ),
                   ),
                 ],
               ),
@@ -109,24 +153,39 @@ class _EarningsPageState extends State<EarningsPage> {
                     gridData: FlGridData(show: false),
                     titlesData: FlTitlesData(
                       leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true)),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          getTitlesWidget: (value, meta) {
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Text(
+                                days[value.toInt()],
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                     ),
                     borderData: FlBorderData(show: false),
+                    minX: 0,
+                    maxX: 6,
+                    minY: 0,
+                    maxY: maxY,
                     lineBarsData: [
                       LineChartBarData(
-                        spots: [
-                          FlSpot(0, 1),
-                          FlSpot(1, 2),
-                          FlSpot(2, 1.5),
-                          FlSpot(3, 3),
-                          FlSpot(4, 2.5),
-                          FlSpot(5, 4),
-                          FlSpot(6, 3.5),
-                        ],
+                        spots: _weeklyRevenue.asMap().entries.map(
+                              (e) => FlSpot(e.key.toDouble(), e.value),
+                        ).toList(),
                         isCurved: true,
-                        color: Colors.green,
+                        color: AppPallete.primaryColor,
                         barWidth: 3,
-                        belowBarData: BarAreaData(show: true, color: Colors.green.withOpacity(0.3)),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          color: AppPallete.primaryColor.withOpacity(0.1),
+                        ),
+                        dotData: FlDotData(show: true),
                       ),
                     ],
                   ),
@@ -136,7 +195,7 @@ class _EarningsPageState extends State<EarningsPage> {
               Align(
                 alignment: Alignment.centerRight,
                 child: Text(
-                  "\$5,020",
+                  "\$${_weeklyRevenue.fold<double>(0, (sum, e) => sum + e).toStringAsFixed(2)}",
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -151,7 +210,7 @@ class _EarningsPageState extends State<EarningsPage> {
     );
   }
 
-  Widget _pendingPaymentsCard() {
+  Widget _buildPendingPaymentsCard() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Card(
@@ -161,57 +220,50 @@ class _EarningsPageState extends State<EarningsPage> {
           padding: const EdgeInsets.all(16.0),
           child: Row(
             children: [
-              Icon(Icons.payment, color: AppPallete.primaryColor, size: 28),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("Pending Payments", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppPallete.textColor)),
-                  const SizedBox(height: 5),
-                  Text("25+", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppPallete.textColor)),
-                  Text("36% increase", style: TextStyle(fontSize: 14, color: Colors.green)),
-                ],
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppPallete.primaryColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.payment,
+                    color: AppPallete.primaryColor, size: 24),
               ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Pending Payments",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppPallete.textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _pendingPaymentsCount > 0
+                          ? "$_pendingPaymentsCount pending"
+                          : "No pending payments",
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: _pendingPaymentsCount > 0
+                            ? AppPallete.primaryColor
+                            : Colors.green,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right,
+                  color: AppPallete.greyColor),
             ],
           ),
         ),
       ),
-    );
-  }
-}
-
-class BottomNavBar extends StatelessWidget {
-  final int selectedIndex;
-  final Function(int) onItemTapped;
-
-  BottomNavBar({required this.selectedIndex, required this.onItemTapped});
-
-  @override
-  Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: selectedIndex,
-      onTap: onItemTapped,
-      selectedItemColor: AppPallete.primaryColor,
-      unselectedItemColor: AppPallete.greyColor,
-      type: BottomNavigationBarType.fixed,
-      items: [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: "", // Empty label (icon only)
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.chat),
-          label: "", // Empty label (icon only)
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: "", // Empty label (icon only)
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today),
-          label: "", // Empty label (icon only)
-        ),
-      ],
     );
   }
 }
