@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
-import 'package:medical_app/features/doctor_profile/profile.dart';
 
 void main(){
   runApp(TermsPage());
@@ -10,26 +9,14 @@ class TermsPage extends StatelessWidget{
 
   @override
   Widget build(BuildContext context){
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: termsPage(),
-    );
-  }
-}
-class termsPage extends StatelessWidget{
-  @override
-  Widget build(BuildContext context){
     return Scaffold(
       backgroundColor: AppPallete.whiteColor,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: AppPallete.whiteColor,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_sharp, color: AppPallete.primaryColor),
-          onPressed: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const Profile()),
-            );
-          },
+          icon: Icon(Icons.arrow_back_ios_new, color: AppPallete.primaryColor),
+          onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
           'Terms & Conditions',
