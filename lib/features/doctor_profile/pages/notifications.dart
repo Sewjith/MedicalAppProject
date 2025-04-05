@@ -1,27 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
-import 'package:medical_app/features/doctor_profile/pages/settings.dart';
 
-void main(){
-  runApp(const notification());
-}
-class notification extends StatelessWidget {
-  const notification({super.key});
+class NotificationsPage extends StatefulWidget {
+  const NotificationsPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: notifications(),
-    );
-  }
-}
-class notifications extends StatefulWidget {
-  @override
-  notificationsState createState() => notificationsState();
+  NotificationsPageState createState() => NotificationsPageState();
 }
 
-class notificationsState extends State<notifications> {
+class NotificationsPageState extends State<NotificationsPage> {
   bool generalNotification = true;
   bool sound = true;
   bool soundCall = true;
@@ -32,22 +19,25 @@ class notificationsState extends State<notifications> {
   bool cashback = true;
 
   @override
-  Widget build(BuildContext context){
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppPallete.whiteColor,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: AppPallete.whiteColor,
-        leading: IconButton(icon: Icon(Icons.arrow_back_ios_new_sharp, color: AppPallete.primaryColor),
-          onPressed: (){
-            Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => setting()));
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_sharp, color: AppPallete.primaryColor),
+          onPressed: () {
+            Navigator.pop(context);
           },
         ),
         title: Text(
           'Notification Settings',
-          style: TextStyle(fontSize: 29, color: AppPallete.headings, fontWeight: FontWeight.bold),
+          style: TextStyle(
+              fontSize: 35,
+              color: AppPallete.headings,
+              fontWeight: FontWeight.bold
+          ),
         ),
         centerTitle: true,
       ),
@@ -56,42 +46,42 @@ class notificationsState extends State<notifications> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            buildSwitchTile("General Notification", generalNotification, (value) {
+            _buildSwitchTile("General Notification", generalNotification, (value) {
               setState(() {
                 generalNotification = value;
               });
             }),
-            buildSwitchTile("Sound", sound, (value) {
+            _buildSwitchTile("Sound", sound, (value) {
               setState(() {
                 sound = value;
               });
             }),
-            buildSwitchTile("Sound Call", soundCall, (value) {
+            _buildSwitchTile("Sound Call", soundCall, (value) {
               setState(() {
                 soundCall = value;
               });
             }),
-            buildSwitchTile("Vibrate", vibrate, (value) {
+            _buildSwitchTile("Vibrate", vibrate, (value) {
               setState(() {
                 vibrate = value;
               });
             }),
-            buildSwitchTile("Special Offers", specialOffers, (value) {
+            _buildSwitchTile("Special Offers", specialOffers, (value) {
               setState(() {
                 specialOffers = value;
               });
             }),
-            buildSwitchTile("Payments", payments, (value) {
+            _buildSwitchTile("Payments", payments, (value) {
               setState(() {
                 payments = value;
               });
             }),
-            buildSwitchTile("Promo And Discount", promoAndDiscount, (value) {
+            _buildSwitchTile("Promo And Discount", promoAndDiscount, (value) {
               setState(() {
                 promoAndDiscount = value;
               });
             }),
-            buildSwitchTile("Cashback", cashback, (value) {
+            _buildSwitchTile("Cashback", cashback, (value) {
               setState(() {
                 cashback = value;
               });
@@ -101,7 +91,8 @@ class notificationsState extends State<notifications> {
       ),
     );
   }
-  Widget buildSwitchTile(String title, bool value, Function(bool) onChanged) {
+
+  Widget _buildSwitchTile(String title, bool value, Function(bool) onChanged) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
