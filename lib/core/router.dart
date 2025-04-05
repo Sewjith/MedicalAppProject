@@ -4,12 +4,13 @@ import 'package:medical_app/features/auth/presentation/screens/login_page.dart';
 import 'package:medical_app/features/auth/presentation/screens/register_page.dart';
 import 'package:medical_app/features/auth/presentation/screens/reset_password_page.dart';
 import 'package:medical_app/features/main/presentation/screens/home_page.dart';
+import 'package:medical_app/features/doctor_dahboard/firstpage.dart';
 
 final GoRouter appRouter =
-    GoRouter(initialLocation: '/home', routes: <RouteBase>[
+    GoRouter(initialLocation: '/dashboard', routes: <RouteBase>[
   GoRoute(
-    path: '/home',
-    builder: (context, state) => const MainLayout(child: HomePage()),
+    path: '/dashboard',
+    builder: (context, state) => const MainLayout(child: DoctorDashboard()),
   ),
   GoRoute(
     path: '/login',
