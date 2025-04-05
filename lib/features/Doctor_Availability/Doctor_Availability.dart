@@ -72,8 +72,40 @@ class _DoctorAvailabilityPageState extends State<DoctorAvailabilityPage> {
   }
 
   Future<void> _deleteTimeSlot(String availabilityId) async {
-    bool success = await Backend.deleteAvailability(availabilityId);
-    if (success) _fetchAvailability();
+    bool confirmDelete = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Delete'),
+          content:
+              const Text('Are you sure you want to delete this time slot?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmDelete == true) {
+      bool success = await Backend.deleteAvailability(availabilityId);
+      if (success) {
+        _fetchAvailability();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Time slot deleted successfully')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to delete time slot')),
+        );
+      }
+    }
   }
 
   @override
