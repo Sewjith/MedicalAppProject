@@ -3,23 +3,13 @@ import 'package:medical_app/core/themes/color_palette.dart';
 import 'package:medical_app/features/doctor_profile/pages/notifications.dart';
 import 'package:medical_app/features/doctor_profile/pages/change_passwords.dart';
 import 'package:medical_app/features/doctor_profile/pages/delete_account.dart';
-import 'package:medical_app/features/doctor_profile/profile.dart';
 
 void main(){
-  runApp(const settings());
+  runApp(settings());
 }
 class settings extends StatelessWidget{
   const settings({super.key});
 
-  @override
-  Widget build(BuildContext context){
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: setting(),
-    );
-  }
-}
-class setting extends StatelessWidget{
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -28,12 +18,8 @@ class setting extends StatelessWidget{
         elevation: 0,
         backgroundColor: AppPallete.whiteColor,
         leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios_new_sharp, color: AppPallete.primaryColor),
-            onPressed: () {
-              Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => Profile()));
-            }
+          icon: Icon(Icons.arrow_back_ios_new, color: AppPallete.primaryColor),
+          onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
           'Settings',
@@ -68,16 +54,15 @@ class setting extends StatelessWidget{
       trailing: Icon(Icons.chevron_right_outlined, color: AppPallete.greyColor, size: 30),
       onTap: (){
         if (text == "Notification Settings") {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const notification()));
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsPage()));
         }
         if (text == "Password Manager") {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const password()));
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const ChangePasswordScreen()));
         }
         if (text == "Delete Account") {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const deleteAccount()));
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const DeleteAccountScreen()));
         }
       },
     );
   }
 }
-
