@@ -20,7 +20,7 @@ class _MainLayoutState extends State<MainLayout> {
 
     switch (index) {
       case 0:
-        context.go('/home'); // Navigate to Home
+        context.go('/dashboard'); // Navigate to Home
         break;
       case 1:
         context.go('/login'); // Navigate to Chat
