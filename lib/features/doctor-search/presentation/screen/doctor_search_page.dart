@@ -14,7 +14,7 @@ class DoctorProfilesPage extends StatefulWidget {
 
 class _DoctorProfilesPageState extends State<DoctorProfilesPage> {
   late TextEditingController _controller;
-  late List<DoctorProfiles> profiles;
+  late List<DoctorProfiles> profiles = [];
   List<DoctorProfiles> _searchedDoctor = [];
   String searchText = "";
   final DoctorListRemoteSource doctorListRemoteSource =
@@ -32,11 +32,9 @@ class _DoctorProfilesPageState extends State<DoctorProfilesPage> {
       final fetchedProfiles = await doctorListRemoteSource.getAllDoctors();
       setState(() {
         profiles = fetchedProfiles;
-        _searchedDoctor =
-            profiles; // Initialize search list with fetched profiles
+        _searchedDoctor = profiles;
       });
     } catch (e) {
-      // Handle error (e.g., show error message)
       print("Error fetching doctor profiles: $e");
     }
   }
@@ -65,20 +63,21 @@ class _DoctorProfilesPageState extends State<DoctorProfilesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: Column(
-      children: [
-        SearchbarWidget(controller: _controller, onChanged: _onChanged),
-        Expanded(
-          child: ListView.builder(
-            itemCount: _searchedDoctor.length,
-            itemBuilder: (context, index) {
-              return ProfileWidget(
-                  profile: _searchedDoctor[
-                      index]); // currently working with dummy data needs to be chnaged for backend implementation for data fetching
-            },
-          ),
+        appBar: AppBar(
+          title: Text('Doctor Profiles'),
         ),
-      ],
-    ));
+        body: Column(
+          children: [
+            SearchbarWidget(controller: _controller, onChanged: _onChanged),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _searchedDoctor.length,
+                itemBuilder: (context, index) {
+                  return ProfileWidget(profile: _searchedDoctor[index]);
+                },
+              ),
+            ),
+          ],
+        ));
   }
 }
