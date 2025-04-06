@@ -56,6 +56,10 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const MainLayout(child: PaymentHomePage()),
     ),
     GoRoute(
+      path: '/search',
+      builder: (context, state) => const MainLayout(child: DoctorProfilesPage()),
+    ),
+    GoRoute(
       path: '/video-call',
       builder: (context, state) {
         final Map<String, String> params = state.extra as Map<String, String>;
