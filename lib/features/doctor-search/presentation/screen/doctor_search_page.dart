@@ -6,7 +6,7 @@ import 'package:medical_app/features/doctor-search/presentation/widgets/searchba
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DoctorProfilesPage extends StatefulWidget {
-  const DoctorProfilesPage({super.key});
+  const DoctorProfilesPage({Key? key}) : super(key: key);
 
   @override
   State<DoctorProfilesPage> createState() => _DoctorProfilesPageState();

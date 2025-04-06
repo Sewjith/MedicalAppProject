@@ -5,16 +5,15 @@ import 'package:medical_app/features/analytics/earnings.dart';
 import 'package:medical_app/features/auth/presentation/screens/email_verify.dart';
 import 'package:medical_app/features/auth/presentation/screens/login_page.dart';
 import 'package:medical_app/features/auth/presentation/screens/register_page.dart';
+import 'package:medical_app/features/auth/presentation/screens/reset_password_email_link.dart';
 import 'package:medical_app/features/auth/presentation/screens/reset_password_page.dart';
 import 'package:medical_app/features/doctor-search/data/model/doctor_list_model.dart';
 import 'package:medical_app/features/doctor-search/domain/entities/doctor_profiles.dart';
 import 'package:medical_app/features/doctor-search/presentation/screen/doctor_profile_page.dart';
 import 'package:medical_app/features/doctor-search/presentation/screen/doctor_search_page.dart';
 import 'package:medical_app/features/main/presentation/screens/home_page.dart';
-import 'package:medical_app/features/p_appointment_schedule/p_appointment_schedule.dart';
 import 'package:medical_app/features/teleconsultation/presentation/consultation_page.dart';
 import 'package:medical_app/features/teleconsultation/presentation/index.dart';
-import 'package:medical_app/features/in-app-payments/payment_home.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/home',
@@ -41,20 +40,17 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/doctor-profiles',
-      builder: (context, state) => const MainLayout(child: DoctorProfilesPage()),
-    ),
-    GoRoute(
-      path: '/doctor-availability',
       builder: (context, state) =>
-          const MainLayout(child: DoctorAvailabilityPage()),
+          const MainLayout(child: DoctorProfilesPage()),
     ),
     GoRoute(
       path: '/consults',
       builder: (context, state) => const MainLayout(child: IndexPage()),
     ),
     GoRoute(
-      path: '/in-app-payment',
-      builder: (context, state) => const MainLayout(child: PaymentHomePage()),
+      path: '/doctor-availability',
+      builder: (context, state) =>
+          const MainLayout(child: DoctorAvailabilityPage()),
     ),
     GoRoute(
       path: '/search',
@@ -74,22 +70,18 @@ final GoRouter appRouter = GoRouter(
       },
     ),
     GoRoute(
+      path: '/otp',
+      builder: (context, state) {
+        final email = state.extra as String; // Retrieve email
+        return OtpInputScreen(email: email);
+      },
+    ),
+    GoRoute(
       path: '/doctor-profile',
       builder: (context, state) {
         final profile = state.extra as DoctorListModel;
         return MainLayout(child: DoctorProfile(profile: profile));
       },
-    ),
-    GoRoute(
-      path: '/otp',
-      builder: (context, state) {
-        final email = state.extra as String; // Retrieve email
-        return OtpInputScreen(email: email);
-        },
-    ),
-    GoRoute(
-      path: '/p_appointment_schedule',
-      builder: (context, state) => const MainLayout(child: AppointmentSchedulePage()),
     ),
   ],
 );
