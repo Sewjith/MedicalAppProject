@@ -1,0 +1,107 @@
+PODS:
+  - agora_rtc_engine (0.0.1):
+    - AgoraIrisRTC_macOS (= 4.5.1-build.1)
+    - AgoraRtcEngine_macOS (= 4.5.1)
+    - FlutterMacOS
+  - AgoraInfra_macOS (1.2.13)
+  - AgoraIrisRTC_macOS (4.5.1-build.1)
+  - AgoraRtcEngine_macOS (4.5.1):
+    - AgoraRtcEngine_macOS/AIAEC (= 4.5.1)
+    - AgoraRtcEngine_macOS/AIAECLL (= 4.5.1)
+    - AgoraRtcEngine_macOS/AINS (= 4.5.1)
+    - AgoraRtcEngine_macOS/AINSLL (= 4.5.1)
+    - AgoraRtcEngine_macOS/AudioBeauty (= 4.5.1)
+    - AgoraRtcEngine_macOS/ClearVision (= 4.5.1)
+    - AgoraRtcEngine_macOS/ContentInspect (= 4.5.1)
+    - AgoraRtcEngine_macOS/FaceCapture (= 4.5.1)
+    - AgoraRtcEngine_macOS/FaceDetection (= 4.5.1)
+    - AgoraRtcEngine_macOS/LipSync (= 4.5.1)
+    - AgoraRtcEngine_macOS/RtcBasic (= 4.5.1)
+    - AgoraRtcEngine_macOS/ScreenCapture (= 4.5.1)
+    - AgoraRtcEngine_macOS/SpatialAudio (= 4.5.1)
+    - AgoraRtcEngine_macOS/VideoAv1CodecDec (= 4.5.1)
+    - AgoraRtcEngine_macOS/VideoAv1CodecEnc (= 4.5.1)
+    - AgoraRtcEngine_macOS/VideoCodecDec (= 4.5.1)
+    - AgoraRtcEngine_macOS/VideoCodecEnc (= 4.5.1)
+    - AgoraRtcEngine_macOS/VirtualBackground (= 4.5.1)
+    - AgoraRtcEngine_macOS/VQA (= 4.5.1)
+  - AgoraRtcEngine_macOS/AIAEC (4.5.1)
+  - AgoraRtcEngine_macOS/AIAECLL (4.5.1)
+  - AgoraRtcEngine_macOS/AINS (4.5.1)
+  - AgoraRtcEngine_macOS/AINSLL (4.5.1)
+  - AgoraRtcEngine_macOS/AudioBeauty (4.5.1)
+  - AgoraRtcEngine_macOS/ClearVision (4.5.1)
+  - AgoraRtcEngine_macOS/ContentInspect (4.5.1)
+  - AgoraRtcEngine_macOS/FaceCapture (4.5.1)
+  - AgoraRtcEngine_macOS/FaceDetection (4.5.1)
+  - AgoraRtcEngine_macOS/LipSync (4.5.1)
+  - AgoraRtcEngine_macOS/RtcBasic (4.5.1):
+    - AgoraInfra_macOS (= 1.2.13)
+  - AgoraRtcEngine_macOS/ScreenCapture (4.5.1)
+  - AgoraRtcEngine_macOS/SpatialAudio (4.5.1)
+  - AgoraRtcEngine_macOS/VideoAv1CodecDec (4.5.1)
+  - AgoraRtcEngine_macOS/VideoAv1CodecEnc (4.5.1)
+  - AgoraRtcEngine_macOS/VideoCodecDec (4.5.1)
+  - AgoraRtcEngine_macOS/VideoCodecEnc (4.5.1)
+  - AgoraRtcEngine_macOS/VirtualBackground (4.5.1)
+  - AgoraRtcEngine_macOS/VQA (4.5.1)
+  - app_links (1.0.0):
+    - FlutterMacOS
+  - FlutterMacOS (1.0.0)
+  - iris_method_channel (0.0.1):
+    - FlutterMacOS
+  - path_provider_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
+  - shared_preferences_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
+  - url_launcher_macos (0.0.1):
+    - FlutterMacOS
+
+DEPENDENCIES:
+  - agora_rtc_engine (from `Flutter/ephemeral/.symlinks/plugins/agora_rtc_engine/macos`)
+  - app_links (from `Flutter/ephemeral/.symlinks/plugins/app_links/macos`)
+  - FlutterMacOS (from `Flutter/ephemeral`)
+  - iris_method_channel (from `Flutter/ephemeral/.symlinks/plugins/iris_method_channel/macos`)
+  - path_provider_foundation (from `Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/darwin`)
+  - shared_preferences_foundation (from `Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/darwin`)
+  - url_launcher_macos (from `Flutter/ephemeral/.symlinks/plugins/url_launcher_macos/macos`)
+
+SPEC REPOS:
+  trunk:
+    - AgoraInfra_macOS
+    - AgoraIrisRTC_macOS
+    - AgoraRtcEngine_macOS
+
+EXTERNAL SOURCES:
+  agora_rtc_engine:
+    :path: Flutter/ephemeral/.symlinks/plugins/agora_rtc_engine/macos
+  app_links:
+    :path: Flutter/ephemeral/.symlinks/plugins/app_links/macos
+  FlutterMacOS:
+    :path: Flutter/ephemeral
+  iris_method_channel:
+    :path: Flutter/ephemeral/.symlinks/plugins/iris_method_channel/macos
+  path_provider_foundation:
+    :path: Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/darwin
+  shared_preferences_foundation:
+    :path: Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/darwin
+  url_launcher_macos:
+    :path: Flutter/ephemeral/.symlinks/plugins/url_launcher_macos/macos
+
+SPEC CHECKSUMS:
+  agora_rtc_engine: 1685e7c88448e67c99cc3036c7575fc3184c7d62
+  AgoraInfra_macOS: 65ed0889c332d398679ec5268d272b365af092f7
+  AgoraIrisRTC_macOS: a17a6c3354ebf7523b2a2e28b67043a7282877b6
+  AgoraRtcEngine_macOS: 5dee3007e2c9b1d04b8fe2c6e7516bdde8c25ade
+  app_links: afe860c55c7ef176cea7fb630a2b7d7736de591d
+  FlutterMacOS: 8f6f14fa908a6fb3fba0cd85dbd81ec4b251fb24
+  iris_method_channel: 2d6fa907b586c973a1cf06f0e6c7df1ef8375ffa
+  path_provider_foundation: 080d55be775b7414fd5a5ef3ac137b97b097e564
+  shared_preferences_foundation: 9e1978ff2562383bd5676f64ec4e9aa8fa06a6f7
+  url_launcher_macos: 0fba8ddabfc33ce0a9afe7c5fef5aab3d8d2d673
+
+PODFILE CHECKSUM: 236401fc2c932af29a9fcf0e97baeeb2d750d367
+
+COCOAPODS: 1.16.2

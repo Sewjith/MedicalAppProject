@@ -5,7 +5,7 @@ import 'package:medical_app/features/doctor-search/domain/entities/doctor_profil
 
 class ProfileWidget extends StatelessWidget {
   final DoctorProfiles profile;
-  const ProfileWidget({Key? key, required this.profile}) : super(key: key);
+  const ProfileWidget({super.key, required this.profile});
 
   @override
   Widget build(BuildContext context) {

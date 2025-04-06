@@ -1,6 +1,8 @@
 import 'package:go_router/go_router.dart';
 import 'package:medical_app/core/main_layout.dart';
+import 'package:medical_app/features/Doctor_Availability/Doctor_Availability.dart';
 import 'package:medical_app/features/analytics/earnings.dart';
+import 'package:medical_app/features/auth/presentation/screens/email_verify.dart';
 import 'package:medical_app/features/auth/presentation/screens/login_page.dart';
 import 'package:medical_app/features/auth/presentation/screens/register_page.dart';
 import 'package:medical_app/features/auth/presentation/screens/reset_password_page.dart';
@@ -8,38 +10,81 @@ import 'package:medical_app/features/doctor-search/domain/entities/doctor_profil
 import 'package:medical_app/features/doctor-search/presentation/screen/doctor_profile_page.dart';
 import 'package:medical_app/features/doctor-search/presentation/screen/doctor_search_page.dart';
 import 'package:medical_app/features/main/presentation/screens/home_page.dart';
+import 'package:medical_app/features/p_appointment_schedule/p_appointment_schedule.dart';
+import 'package:medical_app/features/teleconsultation/presentation/consultation_page.dart';
+import 'package:medical_app/features/teleconsultation/presentation/index.dart';
+import 'package:medical_app/features/in-app-payments/payment_home.dart';
 
-final GoRouter appRouter =
-    GoRouter(initialLocation: '/home', routes: <RouteBase>[
-  GoRoute(
-    path: '/home',
-    builder: (context, state) => const MainLayout(child: HomePage()),
-  ),
-  GoRoute(
-    path: '/login',
-    builder: (context, state) => const MainLayout(child: Login()),
-  ),
-  GoRoute(
-    path: '/register',
-    builder: (context, state) => const MainLayout(child: Register()),
-  ),
-  GoRoute(
-    path: '/reset-password',
-    builder: (context, state) => const MainLayout(child: ForgotPassword()),
-  ),
-  GoRoute(
-    path: '/earnings',
-    builder: (context, state) => const MainLayout(child: Earnings()),
-  ),
-  GoRoute(
-    path: '/doctor-profiles',
-    builder: (context, state) => const MainLayout(child: DoctorProfilesPage()),
-  ),
-  GoRoute(
-  path: '/doctor-profile',
-  builder: (context, state) {
-    final profile = state.extra as DoctorProfiles; // Cast to your entity
-    return MainLayout(child: DoctorProfile(profile: profile)); // Pass the profile to the DoctorProfile widget
-  },
-)
-]);
+final GoRouter appRouter = GoRouter(
+  initialLocation: '/home',
+  routes: <RouteBase>[
+    GoRoute(
+      path: '/home',
+      builder: (context, state) => const MainLayout(child: HomePage()),
+    ),
+    GoRoute(
+      path: '/login',
+      builder: (context, state) => const MainLayout(child: Login()),
+    ),
+    GoRoute(
+      path: '/register',
+      builder: (context, state) => const MainLayout(child: Register()),
+    ),
+    GoRoute(
+      path: '/reset-password',
+      builder: (context, state) => const MainLayout(child: ForgotPassword()),
+    ),
+    GoRoute(
+      path: '/earnings',
+      builder: (context, state) => const MainLayout(child: Earnings()),
+    ),
+    GoRoute(
+      path: '/doctor-profiles',
+      builder: (context, state) => const MainLayout(child: DoctorProfilesPage()),
+    ),
+    GoRoute(
+      path: '/doctor-availability',
+      builder: (context, state) =>
+          const MainLayout(child: DoctorAvailabilityPage()),
+    ),
+    GoRoute(
+      path: '/consults',
+      builder: (context, state) => const MainLayout(child: IndexPage()),
+    ),
+    GoRoute(
+      path: '/in-app-payment',
+      builder: (context, state) => const MainLayout(child: PaymentHomePage()),
+    ),
+    GoRoute(
+      path: '/video-call',
+      builder: (context, state) {
+        final Map<String, String> params = state.extra as Map<String, String>;
+        return MainLayout(
+          child: DoctorConsultation(
+            appId: params['appId']!,
+            token: params['token']!,
+            channelName: params['channelName']!,
+          ),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/doctor-profile',
+      builder: (context, state) {
+        final profile = state.extra as DoctorProfiles;
+        return MainLayout(child: DoctorProfile(profile: profile));
+      },
+    ),
+    GoRoute(
+      path: '/otp',
+      builder: (context, state) {
+        final email = state.extra as String; // Retrieve email
+        return OtpInputScreen(email: email);
+        },
+    ),
+    GoRoute(
+      path: '/p_appointment_schedule',
+      builder: (context, state) => const MainLayout(child: AppointmentSchedulePage()),
+    ),
+  ],
+);

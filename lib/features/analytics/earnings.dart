@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:medical_app/core/themes/color_palette.dart';
-import 'package:medical_app/features/auth/presentation/widgets/auth_form.dart';
-import 'package:go_router/go_router.dart';
 import 'category_card.dart';
 import 'doctor_card.dart';
 
@@ -65,7 +62,7 @@ class _EarningsState extends State<Earnings> {
             ),
             child: Row(children: [
               //animation
-              Container(
+              SizedBox(
                 height: 100,
                 width: 100,
                 //child: Lottie.network('https://assets2.lottiefiles.com/packages/lf20_9zjzjz.json')
@@ -129,7 +126,7 @@ class _EarningsState extends State<Earnings> {
         SizedBox(height: 25),
 
         //horizontal view - categories
-        Container(
+        SizedBox(
           height: 80,
           child: ListView(
             scrollDirection: Axis.horizontal,
