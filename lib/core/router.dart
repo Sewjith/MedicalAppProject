@@ -1,8 +1,11 @@
 import 'package:go_router/go_router.dart';
 import 'package:medical_app/core/main_layout.dart';
+import 'package:medical_app/features/Doctor_Availability/Doctor_Availability.dart';
 import 'package:medical_app/features/analytics/earnings.dart';
+import 'package:medical_app/features/auth/presentation/screens/email_verify.dart';
 import 'package:medical_app/features/auth/presentation/screens/login_page.dart';
 import 'package:medical_app/features/auth/presentation/screens/register_page.dart';
+import 'package:medical_app/features/auth/presentation/screens/reset_password_email_link.dart';
 import 'package:medical_app/features/auth/presentation/screens/reset_password_page.dart';
 import 'package:medical_app/features/doctor-search/domain/entities/doctor_profiles.dart';
 import 'package:medical_app/features/doctor-search/presentation/screen/doctor_profile_page.dart';
@@ -10,7 +13,6 @@ import 'package:medical_app/features/doctor-search/presentation/screen/doctor_se
 import 'package:medical_app/features/main/presentation/screens/home_page.dart';
 import 'package:medical_app/features/teleconsultation/presentation/consultation_page.dart';
 import 'package:medical_app/features/teleconsultation/presentation/index.dart';
-
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/home',
@@ -37,11 +39,17 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/doctor-profiles',
-      builder: (context, state) => const MainLayout(child: DoctorProfilesPage()),
+      builder: (context, state) =>
+          const MainLayout(child: DoctorProfilesPage()),
     ),
     GoRoute(
       path: '/consults',
       builder: (context, state) => const MainLayout(child: IndexPage()),
+    ),
+    GoRoute(
+      path: '/doctor-availability',
+      builder: (context, state) =>
+          const MainLayout(child: DoctorAvailabilityPage()),
     ),
     GoRoute(
       path: '/video-call',
@@ -54,6 +62,13 @@ final GoRouter appRouter = GoRouter(
             channelName: params['channelName']!,
           ),
         );
+      },
+    ),
+    GoRoute(
+      path: '/otp',
+      builder: (context, state) {
+        final email = state.extra as String; // Retrieve email
+        return OtpInputScreen(email: email);
       },
     ),
     GoRoute(
