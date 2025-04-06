@@ -1,10 +1,10 @@
 import 'package:medical_app/core/errors/common/expection.dart';
-import 'package:medical_app/features/doctor-search/domain/entities/doctor_profiles.dart';
+import 'package:medical_app/features/doctor-search/data/model/doctor_list_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 abstract interface class DoctorListRemoteSource {
 
-  Future<List<DoctorProfiles>> getAllDoctors();
+  Future<List<DoctorListModel>> getAllDoctors();
 
 }
 
@@ -14,7 +14,7 @@ class DoctorListRemoteSourceImp implements DoctorListRemoteSource {
   DoctorListRemoteSourceImp(this.supabaseClient);
   
   @override
-  Future<List<DoctorProfiles>> getAllDoctors() async {
+  Future<List<DoctorListModel>> getAllDoctors() async {
     try {
       final res = await supabaseClient.from('doctors').select();
 
@@ -22,9 +22,9 @@ class DoctorListRemoteSourceImp implements DoctorListRemoteSource {
         throw const ServerException("No Docotrs Available");
       }
 
-      return (res as List).map((json) => DoctorProfiles.fromJson(json)).toList();
+      return (res as List).map((json) => DoctorListModel.fromJson(json)).toList();
     } catch (e) {
-      throw ServerException("No Available Docotrs");
+      throw ServerException("Failed to fetch doctors list");
     }
   }
 

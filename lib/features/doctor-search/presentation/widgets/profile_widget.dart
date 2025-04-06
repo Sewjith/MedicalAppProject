@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
-import 'package:medical_app/features/doctor-search/domain/entities/doctor_profiles.dart';
+import 'package:medical_app/features/doctor-search/data/model/doctor_list_model.dart';
 
 class ProfileWidget extends StatelessWidget {
-  final DoctorProfiles profile;
+  final DoctorListModel profile;
+
   const ProfileWidget({super.key, required this.profile});
 
   @override
@@ -20,10 +21,7 @@ class ProfileWidget extends StatelessWidget {
             // Profile Image with Default Fallback
             CircleAvatar(
               radius: 40,
-              backgroundImage: profile.pictueURl.isNotEmpty
-                  ? NetworkImage(profile.pictueURl)
-                  : const AssetImage("assets/images/defaultProfile.webp")
-                      as ImageProvider,
+              backgroundImage: const AssetImage("assets/images/defaultProfile.webp"), // Default Image
             ),
             const SizedBox(width: 16), // Add space between image and text
 
@@ -57,9 +55,9 @@ class ProfileWidget extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 2),
-                  Text(profile.location.toString() , style: const TextStyle(fontSize: 16, color: AppPallete.textColor)),
+                  Text(profile.specialty),
                   Text(profile.email, style: const TextStyle(fontSize: 14, color: AppPallete.textColor)),
-                  Text(profile.contact, style: const TextStyle(fontSize: 16, color: AppPallete.textColor)),
+                  Text(profile.number, style: const TextStyle(fontSize: 16, color: AppPallete.textColor)),
                 ],
               ),
             ),
