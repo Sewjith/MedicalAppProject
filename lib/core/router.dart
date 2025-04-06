@@ -9,6 +9,7 @@ import 'package:medical_app/features/auth/presentation/screens/reset_password_pa
 import 'package:medical_app/features/doctor-search/domain/entities/doctor_profiles.dart';
 import 'package:medical_app/features/doctor-search/presentation/screen/doctor_profile_page.dart';
 import 'package:medical_app/features/doctor-search/presentation/screen/doctor_search_page.dart';
+import 'package:medical_app/features/in-app-payments/payment_home.dart';
 import 'package:medical_app/features/main/presentation/screens/home_page.dart';
 import 'package:medical_app/features/p_appointment_schedule/p_appointment_schedule.dart';
 import 'package:medical_app/features/teleconsultation/presentation/consultation_page.dart';
