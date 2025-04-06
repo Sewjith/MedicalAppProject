@@ -9,11 +9,11 @@ class DoctorConsultation extends StatefulWidget {
   final String channelName;
 
   const DoctorConsultation({
-    Key? key,
+    super.key,
     required this.appId,
     required this.token,
     required this.channelName,
-  }) : super(key: key);
+  });
 
   @override
   State<DoctorConsultation> createState() => _DoctorConsultationState();
@@ -190,8 +190,8 @@ class _DoctorConsultationState extends State<DoctorConsultation> {
               children: [
                 FloatingActionButton(
                   onPressed: _hasJoined ? _leaveChannel : _joinChannel,
-                  child: Icon(_hasJoined ? Icons.call_end : Icons.call),
                   backgroundColor: _hasJoined ? Colors.red : Colors.green,
+                  child: Icon(_hasJoined ? Icons.call_end : Icons.call),
                 ),
                 FloatingActionButton(
                   onPressed: _toggleCamera,

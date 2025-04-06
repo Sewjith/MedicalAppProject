@@ -6,7 +6,7 @@ import 'package:medical_app/features/doctor-search/presentation/widgets/profile_
 import 'package:medical_app/features/doctor-search/presentation/widgets/searchbar_widget.dart';
 
 class DoctorProfilesPage extends StatefulWidget {
-  const DoctorProfilesPage({Key? key}) : super(key: key);
+  const DoctorProfilesPage({super.key});
 
   @override
   State<DoctorProfilesPage> createState() => _DoctorProfilesPageState();

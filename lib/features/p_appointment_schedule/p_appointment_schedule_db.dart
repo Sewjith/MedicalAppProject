@@ -14,13 +14,13 @@ class DatabaseService {
   }) async {
     try {
       final response = await supabase.from('appointments').insert({
-        'name': name,
-        'age': age,
-        'gender': gender,
-        'problemDesc': problemDesc,
-        'date': date.toIso8601String(),
-        'time': time,
-        'doctor':doctor,
+        'patient_name': name,
+        'patient_age': age,
+        'patient_gender': gender,
+        'notes': problemDesc,
+        'appointment_datetime': date.toIso8601String(),
+        'appointment_time': time,
+        'doctor_name':doctor,
       });
 
       print("Supabase Response: $response");
