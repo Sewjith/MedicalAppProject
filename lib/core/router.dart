@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:medical_app/core/main_layout.dart';
+import 'package:medical_app/features/Doctor_Availability/Doctor_Availability.dart';
 import 'package:medical_app/features/analytics/earnings.dart';
 import 'package:medical_app/features/auth/presentation/screens/email_verify.dart';
 import 'package:medical_app/features/auth/presentation/screens/login_page.dart';
@@ -12,7 +13,6 @@ import 'package:medical_app/features/main/presentation/screens/home_page.dart';
 import 'package:medical_app/features/p_appointment_schedule/p_appointment_schedule.dart';
 import 'package:medical_app/features/teleconsultation/presentation/consultation_page.dart';
 import 'package:medical_app/features/teleconsultation/presentation/index.dart';
-import 'package:medical_app/features/in-app-payments/payment_home.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/home',
@@ -39,11 +39,15 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/doctor-profiles',
-      builder: (context, state) => const MainLayout(child: DoctorProfilesPage()),
     ),
     GoRoute(
       path: '/consults',
       builder: (context, state) => const MainLayout(child: IndexPage()),
+    ),
+    GoRoute(
+      path: '/doctor-availability',
+      builder: (context, state) =>
+          const MainLayout(child: DoctorAvailabilityPage()),
     ),
     GoRoute(
       path: '/in-app-payment',
@@ -60,6 +64,13 @@ final GoRouter appRouter = GoRouter(
             channelName: params['channelName']!,
           ),
         );
+      },
+    ),
+    GoRoute(
+      path: '/otp',
+      builder: (context, state) {
+        final email = state.extra as String; // Retrieve email
+        return OtpInputScreen(email: email);
       },
     ),
     GoRoute(
