@@ -5,7 +5,7 @@ class CategoryCard extends StatelessWidget {
   final String categoryName;
 
 
-  const CategoryCard({super.key, 
+  CategoryCard({
     required this.iconImagePath, 
     required this.categoryName
     });

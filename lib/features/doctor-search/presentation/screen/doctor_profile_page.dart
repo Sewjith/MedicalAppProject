@@ -6,7 +6,7 @@ import 'package:medical_app/features/doctor-search/domain/entities/doctor_profil
 class DoctorProfile extends StatefulWidget {
   final DoctorProfiles profile;
 
-  const DoctorProfile({super.key, required this.profile});
+  const DoctorProfile({Key? key, required this.profile}) : super(key: key);
 
   @override
   State<DoctorProfile> createState() => _DoctorProfileState();
