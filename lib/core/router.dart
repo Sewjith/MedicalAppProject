@@ -6,6 +6,7 @@ import 'package:medical_app/features/auth/presentation/screens/email_verify.dart
 import 'package:medical_app/features/auth/presentation/screens/login_page.dart';
 import 'package:medical_app/features/auth/presentation/screens/register_page.dart';
 import 'package:medical_app/features/auth/presentation/screens/reset_password_page.dart';
+import 'package:medical_app/features/doctor-search/data/model/doctor_list_model.dart';
 import 'package:medical_app/features/doctor-search/domain/entities/doctor_profiles.dart';
 import 'package:medical_app/features/doctor-search/presentation/screen/doctor_profile_page.dart';
 import 'package:medical_app/features/doctor-search/presentation/screen/doctor_search_page.dart';
@@ -75,7 +76,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/doctor-profile',
       builder: (context, state) {
-        final profile = state.extra as DoctorProfiles;
+        final profile = state.extra as DoctorListModel;
         return MainLayout(child: DoctorProfile(profile: profile));
       },
     ),
