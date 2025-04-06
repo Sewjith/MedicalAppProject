@@ -26,10 +26,10 @@ class _MainLayoutState extends State<MainLayout> {
         context.go('/login'); // Navigate to Chat
         break;
       case 2:
-        context.go('/in-app-payment'); // Navigate to Profile
+        context.go('/doctor-profiles'); // Navigate to Profile
         break;
       case 3:
-        context.go('/p_appointment_schedule'); // Navigate to Calendar
+        context.go('/doctor-availability'); // Navigate to Calendar
         break;
     }
   }
