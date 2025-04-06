@@ -93,14 +93,4 @@ class AuthReposImpl implements AuthRepos {
       return left(Failure(e.exception));
     }
   }
-  
-  @override
-  Future<Either<Failure, void>> passwordResetOtp(String email) async {
-    try {
-      await remoteAuthData.requestEmailOtp(email);
-      return right(unit); // Use `unit` to represent a successful void result
-    } on ServerException catch (e) {
-      return left(Failure(e.exception));
-    }
-  }
 }
