@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:medical_app/features/doctor-search/data/repos/dummy_doctor_profiles.dart';
+import 'package:medical_app/features/doctor-search/data/source/supabase_remote_doctors.dart';
 import 'package:medical_app/features/doctor-search/domain/entities/doctor_profiles.dart';
-import 'package:medical_app/features/doctor-search/domain/usecases/get_doctors_usecase.dart';
 import 'package:medical_app/features/doctor-search/presentation/widgets/profile_widget.dart';
 import 'package:medical_app/features/doctor-search/presentation/widgets/searchbar_widget.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DoctorProfilesPage extends StatefulWidget {
   const DoctorProfilesPage({super.key});
@@ -17,15 +17,28 @@ class _DoctorProfilesPageState extends State<DoctorProfilesPage> {
   late List<DoctorProfiles> profiles;
   List<DoctorProfiles> _searchedDoctor = [];
   String searchText = "";
+  final DoctorListRemoteSource doctorListRemoteSource =
+      DoctorListRemoteSourceImp(Supabase.instance.client);
 
   @override
   void initState() {
-    final doctors = DoctorsList();
-    final doctorDetails = GetDoctorsUsecase(doctors);
     _controller = TextEditingController();
-    profiles = doctorDetails.call();
-    _searchedDoctor = profiles;
+    _fetchDoctorData();
     super.initState();
+  }
+
+  void _fetchDoctorData() async {
+    try {
+      final fetchedProfiles = await doctorListRemoteSource.getAllDoctors();
+      setState(() {
+        profiles = fetchedProfiles;
+        _searchedDoctor =
+            profiles; // Initialize search list with fetched profiles
+      });
+    } catch (e) {
+      // Handle error (e.g., show error message)
+      print("Error fetching doctor profiles: $e");
+    }
   }
 
   void _onChanged(String value) {
