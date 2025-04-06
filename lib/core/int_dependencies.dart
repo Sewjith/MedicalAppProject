@@ -5,6 +5,7 @@ import 'package:medical_app/features/auth/data/datasource/supabase_remote.dart';
 import 'package:medical_app/features/auth/data/repos/auth_repo_implementation.dart';
 import 'package:medical_app/features/auth/domain/repos/auth_repos.dart';
 import 'package:medical_app/features/auth/domain/usecases/active_user.dart';
+import 'package:medical_app/features/auth/domain/usecases/reset_password_email.dart';
 import 'package:medical_app/features/auth/domain/usecases/user_login.dart';
 import 'package:medical_app/features/auth/domain/usecases/user_register.dart';
 import 'package:medical_app/features/auth/domain/usecases/user_sign_out.dart';
@@ -77,6 +78,12 @@ void _initAuth() {
     ),
   );
 
+initializedServices.registerFactory(
+    () => PasswordReset(
+      initializedServices(),
+    ),
+  );
+
   initializedServices.registerLazySingleton(
     () => AuthBloc(
       userRegister: initializedServices(),
@@ -86,6 +93,7 @@ void _initAuth() {
       requestOtp: initializedServices(), // Inject RequestOtp
       verifyOtp: initializedServices(),  // Inject VerifyOtp
       userCubit: initializedServices(),
+      passwordReset: initializedServices(),
     ),
   );
 }

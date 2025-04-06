@@ -13,6 +13,8 @@ abstract interface class AuthRemoteSource {
   });
 
   Future<void> requestEmailOtp(String email);
+  Future<void> passwordResetOtp(String email);
+
 
   Future<UserModel> verifyEmailOtp(String email, String otp);
 
@@ -148,6 +150,17 @@ class AuthRemoteSourceImp implements AuthRemoteSource {
       await supabaseClient.auth.signOut();
     } catch (e) {
       throw ServerException("Failed to sign out: ${e.toString()}");
+    }
+  }
+  
+  @override
+  Future<void> passwordResetOtp(String email)async {
+     try {
+      await supabaseClient.auth.signInWithOtp(
+        email: email,
+      );
+    } catch (e) {
+      throw ServerException('Error sending OTP: $e');
     }
   }
 }

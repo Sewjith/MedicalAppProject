@@ -64,3 +64,11 @@ final class AuthVerifyOtp extends AuthEvent {
     debugPrint('📣 AuthVerifyOtp Event: email=$email, otp=$otp');
   }
 }
+
+final class AuthPasswordReset extends AuthEvent {
+  final String email;
+
+  AuthPasswordReset({
+    required this.email
+  });
+}
