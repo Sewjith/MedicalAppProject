@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
-import 'dart:async';
+import 'D_Availability_Backend.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -27,219 +28,84 @@ class DoctorAvailabilityPage extends StatefulWidget {
 }
 
 class _DoctorAvailabilityPageState extends State<DoctorAvailabilityPage> {
-  late final ValueNotifier<List<String>> _selectedTimeSlots;
+  late final ValueNotifier<List<Map<String, dynamic>>> _selectedTimeSlots;
   DateTime _selectedDate = DateTime.now();
-  late Timer _timer;
-  String _currentTime = '';
-
-  final Map<String, List<String>> availableTimes = {};
 
   @override
   void initState() {
     super.initState();
-    _selectedTimeSlots = ValueNotifier<List<String>>([]);
-    _updateTime();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      _updateTime();
-    });
+    _selectedTimeSlots = ValueNotifier<List<Map<String, dynamic>>>([]);
+    _fetchAvailability();
   }
 
-  void _updateTime() {
-    setState(() {
-      _currentTime = DateFormat('yyyy/MM/dd HH:mm:ss').format(DateTime.now());
-    });
+  Future<void> _fetchAvailability() async {
+    final times = await Backend.getAvailability(_selectedDate);
+    _selectedTimeSlots.value = times;
   }
 
-  @override
-  void dispose() {
-    _timer.cancel();
-    super.dispose();
-  }
+  Future<void> _addTimeSlot() async {
+    TimeOfDay? startTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (startTime == null) return;
 
-  void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
-    setState(() {
-      _selectedDate = selectedDay;
-      _selectedTimeSlots.value = availableTimes[selectedDay.toString()] ?? [];
-    });
-  }
+    TimeOfDay? endTime = await showTimePicker(
+      context: context,
+      initialTime: startTime,
+    );
+    if (endTime == null) return;
 
-  Future<void> _selectTimeRange() async {
-    bool isConfirmed = false;
-    TimeOfDay? startPicked;
-    TimeOfDay? endPicked;
+    bool success = await Backend.addAvailability(
+      _selectedDate,
+      startTime,
+      endTime,
+    );
 
-    while (!isConfirmed) {
-      // Ask for Start Time first
-      startPicked = await _selectStartTime();
-      if (startPicked == null) return;
-
-      endPicked = await _selectEndTime(startPicked);
-      if (endPicked == null) return;
-
-      final timeRange =
-          '${startPicked.format(context)} to ${endPicked.format(context)}';
-      final dateString = _selectedDate.toString();
-
-      setState(() {
-        if (availableTimes[dateString] == null) {
-          availableTimes[dateString] = [];
-        }
-        availableTimes[dateString]!.add(timeRange);
-        _selectedTimeSlots.value = availableTimes[dateString]!;
-      });
-      isConfirmed = true;
+    if (success) {
+      _fetchAvailability();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to add availability')),
+      );
     }
   }
 
-  Future<TimeOfDay?> _selectStartTime() async {
-    TimeOfDay? startPicked;
-    await showDialog(
+  Future<void> _deleteTimeSlot(String availabilityId) async {
+    bool confirmDelete = await showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Select Start Time'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Please select the start time:'),
-              const SizedBox(height: 10),
-              TextButton(
-                onPressed: () async {
-                  startPicked = await showTimePicker(
-                    context: context,
-                    initialTime: TimeOfDay.fromDateTime(DateTime.now()),
-                  );
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Select Start Time'),
-              ),
-            ],
-          ),
+          title: const Text('Confirm Delete'),
+          content:
+              const Text('Are you sure you want to delete this time slot?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            ),
+          ],
         );
       },
     );
-    return startPicked;
-  }
 
-  Future<TimeOfDay?> _selectEndTime(TimeOfDay startTime) async {
-    TimeOfDay? endPicked;
-    await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Select End Time'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Please select the end time:'),
-              const SizedBox(height: 10),
-              TextButton(
-                onPressed: () async {
-                  endPicked = await showTimePicker(
-                    context: context,
-                    initialTime: startTime,
-                  );
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Select End Time'),
-              ),
-            ],
-          ),
+    if (confirmDelete == true) {
+      bool success = await Backend.deleteAvailability(availabilityId);
+      if (success) {
+        _fetchAvailability();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Time slot deleted successfully')),
         );
-      },
-    );
-    return endPicked;
-  }
-
-  void _removeTimeSlot(String time) {
-    final dateString = _selectedDate.toString();
-    setState(() {
-      availableTimes[dateString]!.remove(time);
-      if (availableTimes[dateString]!.isEmpty) {
-        availableTimes.remove(dateString);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to delete time slot')),
+        );
       }
-      _selectedTimeSlots.value = availableTimes[dateString] ?? [];
-    });
-  }
-
-  Future<void> _confirmDeleteTimeSlot(String time) async {
-    final confirmation = await showDialog<bool>(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('Delete Time Slot'),
-              content:
-                  const Text('Are you sure you want to delete this time slot?'),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(false);
-                  },
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(true);
-                  },
-                  child: const Text('Confirm'),
-                ),
-              ],
-            );
-          },
-        ) ??
-        false;
-
-    if (confirmation) {
-      _removeTimeSlot(time);
     }
-  }
-
-  Future<void> _editTimeSlot(String oldTime) async {
-    final times = oldTime.split(' to ');
-    final startTime =
-        TimeOfDay.fromDateTime(DateFormat('hh:mm a').parse(times[0]));
-    final endTime =
-        TimeOfDay.fromDateTime(DateFormat('hh:mm a').parse(times[1]));
-
-    TimeOfDay? startPicked;
-    TimeOfDay? endPicked;
-
-    startPicked = await _selectStartTime();
-    if (startPicked == null) {
-      return;
-    }
-
-    endPicked = await _selectEndTime(startPicked);
-    if (endPicked == null) {
-      return;
-    }
-
-    final timeRange =
-        '${startPicked.format(context)} to ${endPicked.format(context)}';
-    final dateString = _selectedDate.toString();
-
-    setState(() {
-      final index = availableTimes[dateString]!.indexOf(oldTime);
-      availableTimes[dateString]![index] = timeRange;
-      _selectedTimeSlots.value = availableTimes[dateString]!;
-    });
-  }
-
-  String _getDuration(String timeSlot) {
-    final times = timeSlot.split(' to ');
-    final startTime =
-        TimeOfDay.fromDateTime(DateFormat('hh:mm a').parse(times[0]));
-    final endTime =
-        TimeOfDay.fromDateTime(DateFormat('hh:mm a').parse(times[1]));
-
-    final start = DateTime(0, 0, 0, startTime.hour, startTime.minute);
-    final end = DateTime(0, 0, 0, endTime.hour, endTime.minute);
-    final duration = end.difference(start);
-
-    final hours = duration.inHours.toString().padLeft(2, '0');
-    final minutes = (duration.inMinutes % 60).toString().padLeft(2, '0');
-
-    return '$hours:$minutes';
   }
 
   @override
@@ -249,108 +115,87 @@ class _DoctorAvailabilityPageState extends State<DoctorAvailabilityPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Doctor Availability Management'),
-        actions: [
+      ),
+      body: Column(
+        children: [
+          TableCalendar(
+            firstDay: DateTime.utc(2023, 1, 1),
+            lastDay: DateTime.utc(2025, 12, 31),
+            focusedDay: _selectedDate,
+            selectedDayPredicate: (day) => isSameDay(day, _selectedDate),
+            onDaySelected: (selectedDay, _) {
+              setState(() {
+                _selectedDate = selectedDay;
+              });
+              _fetchAvailability();
+            },
+          ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Center(
-              child: Text(
-                _currentTime,
-                style: const TextStyle(fontSize: 16),
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Text(
+              'Selected Date: $formattedDate',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
-        ],
-        backgroundColor: const Color(0xFF2260FF),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TableCalendar(
-              focusedDay: _selectedDate,
-              firstDay: DateTime.utc(2023, 1, 1),
-              lastDay: DateTime.utc(2025, 12, 31),
-              selectedDayPredicate: (day) {
-                return isSameDay(day, _selectedDate);
-              },
-              onDaySelected: _onDaySelected,
-              availableCalendarFormats: const {
-                CalendarFormat.month: 'Month',
-              },
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Selected Date: $formattedDate',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-            ),
-            const SizedBox(height: 20),
-            ValueListenableBuilder<List<String>>(
+          Expanded(
+            child: ValueListenableBuilder<List<Map<String, dynamic>>>(
               valueListenable: _selectedTimeSlots,
-              builder: (context, timeSlots, _) {
-                return Expanded(
-                  child: ListView.builder(
-                    itemCount: timeSlots.length,
-                    itemBuilder: (context, index) {
-                      final time = timeSlots[index];
-                      final duration = _getDuration(time);
-                      final times = time.split(' to ');
-                      return Card(
-                        color: const Color(0xFFCAD6FF),
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 3,
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.all(16),
-                          leading: Icon(
-                            Icons.access_time,
-                            color: Colors.blue,
-                            size: 36, // Increased icon size
+              builder: (context, slots, _) {
+                return ListView.builder(
+                  itemCount: slots.length,
+                  itemBuilder: (context, index) {
+                    var slot = slots[index];
+                    return Container(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.lightBlue.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.3),
+                            spreadRadius: 2,
+                            blurRadius: 5,
+                            offset: const Offset(0, 3),
                           ),
-                          title: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Start Time: ${times[0]}'),
-                              Text('End Time: ${times[1]}'),
-                              Text('Duration: $duration'),
-                            ],
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon:
-                                    const Icon(Icons.edit, color: Colors.blue),
-                                onPressed: () => _editTimeSlot(time),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '${slot['start_time']} - ${slot['end_time']} (Status: ${slot['status']})',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black87,
                               ),
-                              IconButton(
-                                icon:
-                                    const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => _confirmDeleteTimeSlot(time),
-                              ),
-                            ],
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () =>
+                                _deleteTimeSlot(slot['availability_id']),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 );
               },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _selectTimeRange,
-        backgroundColor: Colors.blue,
-        child: const Icon(
-          Icons.add,
-          color: Colors.black,
-        ),
+        onPressed: _addTimeSlot,
+        backgroundColor: Colors.blueAccent,
+        child: const Icon(Icons.add),
       ),
     );
   }
