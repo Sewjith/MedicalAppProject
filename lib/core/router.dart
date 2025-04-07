@@ -38,11 +38,11 @@ final GoRouter appRouter = GoRouter(
       path: '/earnings',
       builder: (context, state) => const MainLayout(child: Earnings()),
     ),
-    GoRoute(
-      path: '/doctor-profiles',
-      builder: (context, state) =>
-          const MainLayout(child: DoctorProfilesPage()),
-    ),
+    // GoRoute(
+    //   path: '/doctor-profiles',
+    //   builder: (context, state) =>
+    //       const MainLayout(child: DoctorProfilesPage()),
+    // ),
     GoRoute(
       path: '/consults',
       builder: (context, state) => const MainLayout(child: IndexPage()),
@@ -56,19 +56,19 @@ final GoRouter appRouter = GoRouter(
       path: '/search',
       builder: (context, state) => const MainLayout(child: DoctorProfilesPage()),
     ),
-    GoRoute(
-      path: '/video-call',
-      builder: (context, state) {
-        final Map<String, String> params = state.extra as Map<String, String>;
-        return MainLayout(
-          child: DoctorConsultation(
-            appId: params['appId']!,
-            token: params['token']!,
-            channelName: params['channelName']!,
-          ),
-        );
-      },
-    ),
+    // GoRoute(
+    //   path: '/video-call',
+    //   builder: (context, state) {
+    //     final Map<String, String> params = state.extra as Map<String, String>;
+    //     return MainLayout(
+    //       child: DoctorConsultation(
+    //         appId: params['appId']!,
+    //         token: params['token']!,
+    //         channelName: params['channelName']!,
+    //       ),
+    //     );
+    //   },
+    // ),
     GoRoute(
       path: '/otp',
       builder: (context, state) {

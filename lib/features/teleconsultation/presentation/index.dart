@@ -14,7 +14,7 @@ class _IndexPageState extends State<IndexPage> {
   // Securely retrieve and store credentials
   final String appId = "bc06bf6bab7645abbc9b9d56db3f2868";
   final String token =
-      "007eJxTYDiSuueBzsz0RzcFk6wcJrInxwScEZe9fGjO5IWVq26v6DmswJCUbGCWlGaWlJhkbmZimpiUlGyZZJliapaSZJxmZGFmMWXVvfSGQEaGfw9eMjIyQCCIz8pQklpcYsjAAAASCyNK";
+      "007eJxTYLgu/Ml0wk7G1sN19z2fRExfkXtjafXS3uUWjfuvcn83s9uswJCUbGCWlGaWlJhkbmZimpiUlGyZZJliapaSZJxmZGFmMSP3c3pDICOD6of1LIwMEAjiszCUpBaXMDAAACVIItI=";
 
   @override
   Widget build(BuildContext context) {
