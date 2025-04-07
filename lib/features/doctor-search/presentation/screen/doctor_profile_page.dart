@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
-import 'package:medical_app/features/doctor-search/domain/entities/doctor_profiles.dart';
+import 'package:medical_app/features/doctor-search/data/model/doctor_list_model.dart';
 
 class DoctorProfile extends StatefulWidget {
-  final DoctorProfiles profile;
+  final DoctorListModel profile;
 
   const DoctorProfile({Key? key, required this.profile}) : super(key: key);
 
@@ -13,8 +13,14 @@ class DoctorProfile extends StatefulWidget {
 }
 
 class _DoctorProfileState extends State<DoctorProfile> {
+  static const String defaultImageUrl = "assets/images/defaultProfile.webp";
+  static const String defaultExperience = "2"; 
+
   @override
   Widget build(BuildContext context) {
+    final String profileImage = defaultImageUrl;
+    final String experience =  defaultExperience;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Doctor Info', style: TextStyle(color: AppPallete.headings)),
@@ -31,7 +37,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
         child: SingleChildScrollView(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start, // Ensure text is left-aligned
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Card(
                 margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -44,28 +50,22 @@ class _DoctorProfileState extends State<DoctorProfile> {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          // Profile Image with Default Fallback
                           CircleAvatar(
                             radius: 80,
-                            backgroundImage: widget.profile.pictueURl.isNotEmpty
-                                ? NetworkImage(widget.profile.pictueURl)
-                                : const AssetImage("assets/images/defaultProfile.webp") as ImageProvider,
+                            backgroundImage: AssetImage(profileImage),
                           ),
                           const SizedBox(width: 16),
-
-                          // Profile Details
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Container for Experience
                               Container(
                                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                                 decoration: BoxDecoration(
-                                  color: AppPallete.primaryColor, // Use your theme color
+                                  color: AppPallete.primaryColor,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
-                                  "${widget.profile.experience} years \nExperience",
+                                  "$experience years \nExperience",
                                   style: const TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.bold,
@@ -74,15 +74,14 @@ class _DoctorProfileState extends State<DoctorProfile> {
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              // Container for Focus
                               Container(
                                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                                 decoration: BoxDecoration(
-                                  color: AppPallete.headings, // Use your theme color
+                                  color: AppPallete.headings,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: const Text(
-                                  "Focus: \n  random", // Replace with actual data
+                                  "Focus: \n  random",
                                   style: TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.bold,
@@ -117,63 +116,63 @@ class _DoctorProfileState extends State<DoctorProfile> {
               ),
               const SizedBox(height: 20),
               const Text(
-                "Profile", // Replace with actual data
+                "Profile",
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: AppPallete.primaryColor,
                 ),
-                textAlign: TextAlign.left, // Ensure text is left-aligned
+                textAlign: TextAlign.left,
               ),
               const SizedBox(height: 10),
               const Text(
-                "RandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandom", // Replace with actual data
+                "RandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandom",
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.normal,
                   color: AppPallete.textColor,
                 ),
-                textAlign: TextAlign.left, // Ensure text is left-aligned
+                textAlign: TextAlign.left,
               ),
               const SizedBox(height: 20),
               const Text(
-                "Career Paths", // Replace with actual data
+                "Career Paths",
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: AppPallete.primaryColor,
                 ),
-                textAlign: TextAlign.left, // Ensure text is left-aligned
+                textAlign: TextAlign.left,
               ),
               const SizedBox(height: 10),
               const Text(
-                "RandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandom", // Replace with actual data
+                "RandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandom",
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.normal,
                   color: AppPallete.textColor,
                 ),
-                textAlign: TextAlign.left, // Ensure text is left-aligned
+                textAlign: TextAlign.left,
               ),
               const SizedBox(height: 20),
               const Text(
-                "Highlights", // Replace with actual data
+                "Highlights",
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: AppPallete.primaryColor,
                 ),
-                textAlign: TextAlign.left, // Ensure text is left-aligned
+                textAlign: TextAlign.left,
               ),
               const SizedBox(height: 10),
               const Text(
-                "RandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandom", // Replace with actual data
+                "RandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandomRandom",
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.normal,
                   color: AppPallete.textColor,
                 ),
-                textAlign: TextAlign.left, // Ensure text is left-aligned
+                textAlign: TextAlign.left,
               ),
             ],
           ),
