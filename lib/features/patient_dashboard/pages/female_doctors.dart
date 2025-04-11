@@ -1,107 +1,91 @@
 import 'package:flutter/material.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
-import 'package:medical_app/core/bottom_nav_bar.dart';
-import 'package:medical_app/features/patient_dashboard/dashboard.dart';
 import 'package:medical_app/features/patient_dashboard/pages/a-z.dart';
 import 'package:medical_app/features/patient_dashboard/pages/favorite.dart';
+import 'package:medical_app/features/patient_dashboard/pages/female_db.dart';
 import 'package:medical_app/features/patient_dashboard/pages/male_doctors.dart';
 
-void main() {
-  runApp(FemaleDoctor());
-}
-
-class FemaleDoctor extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: FemaleDoctorScreen(),
-      debugShowCheckedModeBanner: false,
-    );
-  }
-}
-
 class FemaleDoctorScreen extends StatefulWidget {
+  final String patientId;
+
+  const FemaleDoctorScreen({super.key, required this.patientId});
+
   @override
   _FemaleDoctorScreenState createState() => _FemaleDoctorScreenState();
 }
 
-class _FemaleDoctorScreenState extends State<FemaleDoctorScreen> with SingleTickerProviderStateMixin {
-  int _selectedIndex = 0;
-
-  void _onItemTapped(int index){
-    setState(() {
-      _selectedIndex = index;
-    });
-
-    switch(index){
-      case 0:
-        Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => Dashboard()),
-        );
-        break;
-      case 1:
-        Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => Placeholder()),
-        );
-        break;
-      case 2:
-        Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => Placeholder()),
-        );
-        break;
-      case 3:
-        Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => Placeholder()),
-        );
-        break;
-
-    }
-  }
-
-  TabController? _tabController;
+class _FemaleDoctorScreenState extends State<FemaleDoctorScreen> {
+  final DoctorDB _doctorDB = DoctorDB();
+  final FavoriteDB _favoriteDB = FavoriteDB();
+  List<Map<String, dynamic>> _doctors = [];
+  List<Map<String, dynamic>> _filteredDoctors = [];
+  bool _isLoading = true;
   String _activeSort = 'Female';
-  List<Map<String, String>> _doctors = [
-    {'name': 'Dr. Olivia Turner, M.D.', 'specialty': 'Dermato-Endocrinology', 'image': 'assets/images/female doctor.jpg'},
-    {'name': 'Dr. Alexander Bennett, Ph.D.', 'specialty': 'Dermato-Genetics', 'image': 'assets/images/female doctor.jpg'},
-    {'name': 'Dr. Sophia Martinez, Ph.D.', 'specialty': 'Cosmetic Bioengineering', 'image': 'assets/images/female doctor.jpg'},
-    {'name': 'Dr. Michael Davidson, M.D.', 'specialty': 'Solar Dermatology', 'image': 'assets/images/female doctor.jpg'},
-  ];
-  List<Map<String, String>> _filteredDoctors = [];
-  TextEditingController _searchController = TextEditingController();
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _filteredDoctors = _doctors;
+    _loadFemaleDoctors();
   }
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
+  Future<void> _loadFemaleDoctors() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+
+      final doctors = await _doctorDB.getFemaleDoctors();
+      setState(() {
+        _doctors = doctors;
+        _filteredDoctors = doctors;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to load doctors: ${e.toString()}';
+        _isLoading = false;
+      });
+    }
   }
 
-  void _handleSortSelection(String selectedSort) {
-    setState(() {
-      _activeSort = selectedSort;
-    });
+  Future<void> _toggleFavorite(String doctorId) async {
+    try {
+      final isFavorited = await _favoriteDB.isDoctorFavorited(widget.patientId, doctorId);
+      if (isFavorited) {
+        await _favoriteDB.removeFavorite(widget.patientId, doctorId);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Removed from favorites')),
+        );
+      } else {
+        await _favoriteDB.addFavorite(widget.patientId, doctorId);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Added to favorites')),
+        );
+      }
+
+      setState(() {});
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update favorite: ${e.toString()}')),
+      );
+    }
   }
+
   void _filterDoctors(String query) {
-    List<Map<String, String>> filteredList = _doctors.where((doctor) {
-      final nameLower = doctor['name']!.toLowerCase();
-      final specialtyLower = doctor['specialty']!.toLowerCase();
-      final queryLower = query.toLowerCase();
-
-      return nameLower.contains(queryLower) || specialtyLower.contains(queryLower);
-    }).toList();
-
     setState(() {
-      _filteredDoctors = filteredList;
+      _filteredDoctors = _doctors.where((doctor) {
+        final name = '${doctor['title']} ${doctor['firstName']} ${doctor['lastName']}'.toLowerCase();
+        final specialty = doctor['specialty'].toLowerCase();
+        return name.contains(query.toLowerCase()) || specialty.contains(query.toLowerCase());
+      }).toList();
     });
   }
 
-  Widget _buildDoctorCard(String name, String specialty, String imagePath) {
+  Widget _buildDoctorCard(Map<String, dynamic> doctor) {
+    final fullName = '${doctor['title']} ${doctor['firstName']} ${doctor['lastName']}';
+
     return Padding(
       padding: const EdgeInsets.all(10.0),
       child: Container(
@@ -109,28 +93,35 @@ class _FemaleDoctorScreenState extends State<FemaleDoctorScreen> with SingleTick
           color: Colors.blue[50],
           borderRadius: BorderRadius.circular(20),
         ),
-        padding: EdgeInsets.all(12),
+        padding: const EdgeInsets.all(12),
         child: Row(
           children: [
-            CircleAvatar(
+            const CircleAvatar(
               radius: 38,
-              backgroundImage: AssetImage(imagePath),
+              backgroundImage: AssetImage('assets/images/female doctor.jpg'),
             ),
-            SizedBox(width: 15),
+            const SizedBox(width: 15),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    name,
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue.shade900),
+                    fullName,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue.shade900,
+                    ),
                   ),
-                  SizedBox(height: 5),
+                  const SizedBox(height: 5),
                   Text(
-                    specialty,
-                    style: TextStyle(fontSize: 16, color: AppPallete.primaryColor),
+                    doctor['specialty'],
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: AppPallete.primaryColor,
+                    ),
                   ),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 10),
                   Row(
                     children: [
                       ElevatedButton(
@@ -139,35 +130,48 @@ class _FemaleDoctorScreenState extends State<FemaleDoctorScreen> with SingleTick
                           backgroundColor: AppPallete.primaryColor,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                         ),
-                        child: Text('Info', style: TextStyle(color: AppPallete.secondaryColor, fontSize: 17)),
+                        child: const Text(
+                          'Info',
+                          style: TextStyle(color: AppPallete.secondaryColor, fontSize: 17),
+                        ),
                       ),
-                      SizedBox(width: 95),
+                      const SizedBox(width: 95),
                       Container(
                         width: 40,
                         height: 40,
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           color: AppPallete.whiteColor,
                           shape: BoxShape.circle,
                         ),
                         child: IconButton(
-                          onPressed: () {
-                          },
-                          icon: Icon(Icons.calendar_month_rounded, color: AppPallete.primaryColor),
+                          onPressed: () {},
+                          icon: const Icon(
+                            Icons.calendar_month_rounded,
+                            color: AppPallete.primaryColor,
+                          ),
                         ),
                       ),
-                      SizedBox(width: 5),
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: AppPallete.whiteColor,
-                          shape: BoxShape.circle,
-                        ),
-                        child: IconButton(
-                          onPressed: () {
-                          },
-                          icon: Icon(Icons.favorite_border, color: AppPallete.primaryColor),
-                        ),
+                      const SizedBox(width: 5),
+                      FutureBuilder<bool>(
+                        future: _favoriteDB.isDoctorFavorited(widget.patientId, doctor['id']),
+                        builder: (context, snapshot) {
+                          final isFavorited = snapshot.data ?? false;
+                          return Container(
+                            width: 40,
+                            height: 40,
+                            decoration: const BoxDecoration(
+                              color: AppPallete.whiteColor,
+                              shape: BoxShape.circle,
+                            ),
+                            child: IconButton(
+                              onPressed: () => _toggleFavorite(doctor['id']),
+                              icon: Icon(
+                                isFavorited ? Icons.favorite : Icons.favorite_border,
+                                color: isFavorited ? Colors.blue : AppPallete.primaryColor,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -180,31 +184,6 @@ class _FemaleDoctorScreenState extends State<FemaleDoctorScreen> with SingleTick
     );
   }
 
-  Widget _buildSortButton(String label, IconData icon, bool isActive) {
-    return GestureDetector(
-      onTap: () {
-        _handleSortSelection(label);
-      },
-      child: Column(
-        children: [
-          Icon(
-            icon,
-            color: isActive ? AppPallete.primaryColor : AppPallete.greyColor,
-            size: 26,
-          ),
-          SizedBox(height: 5),
-          Text(
-            label,
-            style: TextStyle(
-              color: isActive ? AppPallete.primaryColor : AppPallete.greyColor,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -213,112 +192,159 @@ class _FemaleDoctorScreenState extends State<FemaleDoctorScreen> with SingleTick
         elevation: 0,
         backgroundColor: AppPallete.transparentColor,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_sharp, color: AppPallete.primaryColor),
-          onPressed: () {
-            Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (context) => Dashboard()));
-          },
+          icon: Icon(Icons.arrow_back_ios_new, color: AppPallete.primaryColor),
+          onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text(
-          'Female',
-          style: TextStyle(fontSize: 35, color: AppPallete.headings, fontWeight: FontWeight.bold),
+        title: const Text(
+          'Female Doctors',
+          style: TextStyle(
+            fontSize: 35,
+            color: AppPallete.headings,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
         actions: [
-          IconButton(icon: Icon(Icons.search, color: AppPallete.primaryColor), onPressed: () {
-            showSearch(context: context, delegate: DoctorSearch(_doctors));
-          }),
+          IconButton(
+            icon: const Icon(Icons.search, color: AppPallete.primaryColor),
+            onPressed: () async {
+              final selectedDoctor = await showSearch<Map<String, dynamic>?>(
+                context: context,
+                delegate: DoctorSearch(_doctors.map((d) => {
+                  'name': '${d['title']} ${d['firstName']} ${d['lastName']}',
+                  'specialty': d['specialty'],
+                  'image': 'assets/images/female doctor.jpg',
+                  'id': d['id']
+                }).toList()),
+              );
+              if (selectedDoctor != null) {
+                // Handle selected doctor
+              }
+            },
+          ),
         ],
       ),
-      body: Column(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage != null
+          ? Center(child: Text(_errorMessage!))
+          : _doctors.isEmpty
+          ? const Center(child: Text('No female doctors found'))
+          : Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                SizedBox(width: 5,),
-                Text('Sort By:',
-                  style: TextStyle(fontSize: 20, color: Colors.black45),),
-                SizedBox(width: 4,),
+                const SizedBox(width: 5),
+                const Text(
+                  'Sort By:',
+                  style: TextStyle(fontSize: 20, color: Colors.black45),
+                ),
+                const SizedBox(width: 4),
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => Sort()));
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AZScreen(patientId: widget.patientId),
+                      ),
+                    );
                   },
-                  style: ElevatedButton.styleFrom(backgroundColor: _activeSort == 'A-Z' ? AppPallete.primaryColor : Colors.blue.shade100),
-                  child: Text('A-Z', style: TextStyle(color: AppPallete.whiteColor)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _activeSort == 'A-Z'
+                        ? AppPallete.primaryColor
+                        : Colors.blue.shade100,
+                  ),
+                  child: const Text(
+                    'A-Z',
+                    style: TextStyle(color: AppPallete.whiteColor),
+                  ),
                 ),
-                SizedBox(width: 4,),
+                const SizedBox(width: 4),
                 Container(
                   decoration: BoxDecoration(
-                    color: _activeSort == 'Favorites' ? AppPallete.primaryColor : Colors.blue.shade100,
+                    color: _activeSort == 'Favorites'
+                        ? AppPallete.primaryColor
+                        : Colors.blue.shade100,
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
                     onPressed: () {
-                      Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => Favorite()));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FavoriteScreen(patientId: widget.patientId),
+                        ),
+                      );
                     },
-                    icon: Icon(Icons.favorite_border_outlined, color: AppPallete.whiteColor),
+                    icon: const Icon(
+                      Icons.favorite_border_outlined,
+                      color: AppPallete.whiteColor,
+                    ),
                   ),
                 ),
-                SizedBox(width: 4,),
+                const SizedBox(width: 4),
                 Container(
                   decoration: BoxDecoration(
-                    color: _activeSort == 'Male' ? AppPallete.primaryColor : Colors.blue.shade100,
+                    color: _activeSort == 'Male'
+                        ? AppPallete.primaryColor
+                        : Colors.blue.shade100,
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
                     onPressed: () {
-                      Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => MaleDoctor()));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => MaleDoctorScreen(patientId: widget.patientId),
+                        ),
+                      );
                     },
-                    icon: Icon(Icons.male_outlined, color: AppPallete.whiteColor),
+                    icon: const Icon(
+                      Icons.male_outlined,
+                      color: AppPallete.whiteColor,
+                    ),
                   ),
                 ),
-                SizedBox(width: 4,),
+                const SizedBox(width: 4),
                 Container(
                   decoration: BoxDecoration(
-                    color: _activeSort == 'Female' ? AppPallete.primaryColor : Colors.blue.shade100,
+                    color: _activeSort == 'Female'
+                        ? AppPallete.primaryColor
+                        : Colors.blue.shade100,
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
                     onPressed: () {},
-                    icon: Icon(Icons.female_outlined, color: AppPallete.whiteColor),
+                    icon: const Icon(
+                      Icons.female_outlined,
+                      color: AppPallete.whiteColor,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                ListView.builder(
-                  itemCount: _filteredDoctors.length,
-                  itemBuilder: (context, index) {
-                    final doctor = _filteredDoctors[index];
-                    return _buildDoctorCard(doctor['name']!, doctor['specialty']!, doctor['image']!);
-                  },
-                ),
-              ],
+            child: RefreshIndicator(
+              onRefresh: _loadFemaleDoctors,
+              child: ListView.builder(
+                itemCount: _filteredDoctors.length,
+                itemBuilder: (context, index) {
+                  return _buildDoctorCard(_filteredDoctors[index]);
+                },
+              ),
             ),
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavBar(
-        selectedIndex: _selectedIndex,
-        onItemTapped: _onItemTapped,
-      ),
     );
   }
 }
-class DoctorSearch extends SearchDelegate {
-  final List<Map<String, String>> doctors;
+
+class DoctorSearch extends SearchDelegate<Map<String, dynamic>?> {
+  final List<Map<String, dynamic>> doctors;
 
   DoctorSearch(this.doctors);
 
@@ -326,10 +352,8 @@ class DoctorSearch extends SearchDelegate {
   List<Widget>? buildActions(BuildContext context) {
     return [
       IconButton(
-        icon: Icon(Icons.clear, color: AppPallete.primaryColor,),
-        onPressed: () {
-          query = '';
-        },
+        icon: const Icon(Icons.clear, color: AppPallete.primaryColor),
+        onPressed: () => query = '',
       ),
     ];
   }
@@ -337,53 +361,37 @@ class DoctorSearch extends SearchDelegate {
   @override
   Widget? buildLeading(BuildContext context) {
     return IconButton(
-      icon: Icon(Icons.arrow_back_ios_new_sharp, color: AppPallete.primaryColor,),
-      onPressed: () {
-        close(context, null);
-      },
+      icon: const Icon(Icons.arrow_back_ios_new, color: AppPallete.primaryColor),
+      onPressed: () => close(context, null),
     );
   }
 
   @override
-  Widget buildResults(BuildContext context) {
-    List<Map<String, String>> searchResults = doctors.where((doctor) {
-      return doctor['name']!.toLowerCase().contains(query.toLowerCase()) ||
-          doctor['specialty']!.toLowerCase().contains(query.toLowerCase());
-    }).toList();
-
-    return ListView.builder(
-      itemCount: searchResults.length,
-      itemBuilder: (context, index) {
-        return ListTile(
-          title: Text(searchResults[index]['name']!),
-          subtitle: Text(searchResults[index]['specialty']!),
-          leading: CircleAvatar(
-            backgroundImage: AssetImage(searchResults[index]['image']!),
-          ),
-        );
-      },
-    );
-  }
+  Widget buildResults(BuildContext context) => _buildSearchResults();
 
   @override
-  Widget buildSuggestions(BuildContext context) {
-    List<Map<String, String>> searchResults = doctors.where((doctor) {
-      return doctor['name']!.toLowerCase().contains(query.toLowerCase()) ||
-          doctor['specialty']!.toLowerCase().contains(query.toLowerCase());
+  Widget buildSuggestions(BuildContext context) => _buildSearchResults();
+
+  Widget _buildSearchResults() {
+    final results = doctors.where((doctor) {
+      final name = doctor['name'].toLowerCase();
+      final specialty = doctor['specialty'].toString().toLowerCase();
+      return name.contains(query.toLowerCase()) || specialty.contains(query.toLowerCase());
     }).toList();
 
     return ListView.builder(
-      itemCount: searchResults.length,
+      itemCount: results.length,
       itemBuilder: (context, index) {
+        final doctor = results[index];
         return ListTile(
-          title: Text(searchResults[index]['name']!),
-          subtitle: Text(searchResults[index]['specialty']!),
-          leading: CircleAvatar(
-            backgroundImage: AssetImage(searchResults[index]['image']!),
+          leading: const CircleAvatar(
+            backgroundImage: AssetImage('assets/images/female doctor.jpg'),
           ),
+          title: Text(doctor['name']),
+          subtitle: Text(doctor['specialty'].toString()),
+          onTap: () => close(context, doctor),
         );
       },
     );
   }
 }
-
