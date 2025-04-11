@@ -1,199 +1,208 @@
 import 'package:flutter/material.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
-import 'package:medical_app/core/bottom_nav_bar.dart';
-import 'package:medical_app/features/patient_dashboard/dashboard.dart';
 import 'package:medical_app/features/patient_dashboard/pages/male_doctors.dart';
 import 'package:medical_app/features/patient_dashboard/pages/favorite.dart';
 import 'package:medical_app/features/patient_dashboard/pages/female_doctors.dart';
+import 'package:medical_app/features/patient_dashboard/pages/a-z_db.dart';
 
-void main() {
-  runApp(Sort());
-}
+class AZScreen extends StatefulWidget {
+  final String patientId;
 
-class Sort extends StatelessWidget {
+  const AZScreen({super.key, required this.patientId});
+
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: SortScreen(),
-      debugShowCheckedModeBanner: false,
-    );
-  }
+  State<AZScreen> createState() => _AZScreenState();
 }
 
-class SortScreen extends StatefulWidget {
-  @override
-  _SortScreenState createState() => _SortScreenState();
-}
-
-class _SortScreenState extends State<SortScreen> with SingleTickerProviderStateMixin {
+class _AZScreenState extends State<AZScreen> with SingleTickerProviderStateMixin {
+  final AZDB _azdb = AZDB();
   int _selectedIndex = 0;
-
-  void _onItemTapped(int index){
-    setState(() {
-      _selectedIndex = index;
-    });
-
-    switch(index){
-      case 0:
-        Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => Dashboard()),
-        );
-        break;
-      case 1:
-        Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => Placeholder()),
-        );
-        break;
-      case 2:
-        Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => Placeholder()),
-        );
-        break;
-      case 3:
-        Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => Placeholder()),
-        );
-        break;
-
-    }
-  }
-
   TabController? _tabController;
   String _activeSort = 'A-Z';
-
-  List<Map<String, String>> doctors = [
-    {'name': 'Dr. Alexander Bennett, Ph.D.', 'specialty': 'Dermato-Genetics', 'imagePath': 'assets/images/doctor.jpg'},
-    {'name': 'Dr. Olivia Turner, M.D.', 'specialty': 'Solar Dermatology', 'imagePath': 'assets/images/doctor.jpg'},
-    {'name': 'Dr. Michael Davidson, M.D.', 'specialty': 'Dermato-Endocrinology', 'imagePath': 'assets/images/doctor.jpg'},
-    {'name': 'Dr. Sophia Martinez, Ph.D.', 'specialty': 'Cosmetic Bioengineering', 'imagePath': 'assets/images/female doctor.jpg'},
-  ];
-  List<Map<String, String>> _filteredDoctors = [];
+  List<Map<String, dynamic>> _doctors = [];
+  List<Map<String, dynamic>> _filteredDoctors = [];
+  bool _isLoading = true;
   TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _filteredDoctors = doctors;
-    _sortDoctors();
+    _loadDoctors();
   }
 
-  void _sortDoctors() {
-    setState(() {
-      doctors.sort((a, b) => a['specialty']!.compareTo(b['specialty']!));
-    });
+  Future<void> _loadDoctors() async {
+    try {
+      final doctors = await _azdb.getAllDoctors();
+      setState(() {
+        _doctors = doctors;
+        _filteredDoctors = doctors;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading doctors: $e')),
+      );
+    }
   }
 
-  void addDoctor(String name, String specialty, String imagePath) {
-    setState(() {
-      doctors.add({'name': name, 'specialty': specialty, 'imagePath': imagePath});
-      _sortDoctors();
-    });
-  }
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
+  Future<void> _toggleFavorite(String doctorId, bool isCurrentlyFavorited) async {
+    try {
+      if (isCurrentlyFavorited) {
+        await _azdb.removeFavorite(widget.patientId, doctorId);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Removed from favorites')),
+        );
+      } else {
+        await _azdb.addFavorite(widget.patientId, doctorId);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Added to favorites')),
+        );
+      }
+      await _loadDoctors();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error updating favorite: $e')),
+      );
+    }
   }
 
   void _handleSortSelection(String selectedSort) {
     setState(() {
       _activeSort = selectedSort;
+      switch (selectedSort) {
+        case 'A-Z':
+          _filteredDoctors.sort((a, b) =>
+              '${a['firstName']} ${a['lastName']}'
+                  .compareTo('${b['firstName']} ${b['lastName']}'));
+          break;
+        case 'Favorites':
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => Favorite(patientId: widget.patientId)),
+          );
+          break;
+      }
     });
   }
+
   void _filterDoctors(String query) {
-    List<Map<String, String>> filteredList = doctors.where((doctor) {
-      final nameLower = doctor['name']!.toLowerCase();
-      final specialtyLower = doctor['specialty']!.toLowerCase();
-      final queryLower = query.toLowerCase();
-
-      return nameLower.contains(queryLower) || specialtyLower.contains(queryLower);
-    }).toList();
-
     setState(() {
-      _filteredDoctors = filteredList;
+      _filteredDoctors = _doctors.where((doctor) {
+        final name = '${doctor['title']} ${doctor['firstName']} ${doctor['lastName']}'.toLowerCase();
+        final specialty = doctor['specialty'].toLowerCase();
+        return name.contains(query.toLowerCase()) || specialty.contains(query.toLowerCase());
+      }).toList();
     });
   }
 
-  Widget _buildDoctorCard(String name, String specialty, String imagePath) {
+  Widget _buildDoctorCard(Map<String, dynamic> doctor) {
+    final fullName = '${doctor['title']} ${doctor['firstName']} ${doctor['lastName']}';
+
     return Padding(
       padding: const EdgeInsets.all(10.0),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.blue[50],
-          borderRadius: BorderRadius.circular(20),
-        ),
-        padding: EdgeInsets.all(12),
-        child: Row(
-          children: [
-            CircleAvatar(radius: 38, backgroundImage: AssetImage(imagePath)),
-            SizedBox(width: 15),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(name, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue.shade900)),
-                  SizedBox(height: 5),
-                  Text(specialty, style: TextStyle(fontSize: 16, color: AppPallete.primaryColor)),
-                  SizedBox(height: 10),
-                  Row(
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppPallete.primaryColor,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                        ),
-                        child: Text('Info', style: TextStyle(color: AppPallete.secondaryColor, fontSize: 17)),
-                      ),
-                      SizedBox(width: 95),
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: AppPallete.whiteColor,
-                          shape: BoxShape.circle,
-                        ),
-                        child: IconButton(
-                          onPressed: () {
-                          },
-                          icon: Icon(Icons.calendar_month_rounded, color: AppPallete.primaryColor),
-                        ),
-                      ),
-                      SizedBox(width: 5,),
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: AppPallete.whiteColor,
-                          shape: BoxShape.circle,
-                        ),
-                        child: IconButton(
-                          onPressed: () {
-                          },
-                          icon: Icon(Icons.favorite_border, color: AppPallete.primaryColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+      child: InkWell(
+        onTap: () {
+          print('Selected doctor: $fullName');
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(20),
+          ),
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              const CircleAvatar(
+                radius: 38,
+                backgroundImage: AssetImage('assets/images/doctor.jpg'),
               ),
-            ),
-          ],
+              const SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      fullName,
+                      style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue.shade900),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      doctor['specialty'],
+                      style: TextStyle(
+                          fontSize: 16,
+                          color: AppPallete.primaryColor),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            print('Info for: $fullName');
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppPallete.primaryColor,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30)),
+                          ),
+                          child: Text(
+                            'Info',
+                            style: TextStyle(
+                                color: AppPallete.secondaryColor,
+                                fontSize: 17),
+                          ),
+                        ),
+                        const SizedBox(width: 95),
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: const BoxDecoration(
+                            color: AppPallete.whiteColor,
+                            shape: BoxShape.circle,
+                          ),
+                          child: IconButton(
+                            onPressed: () {
+                              print('Schedule for: $fullName');
+                            },
+                            icon: Icon(Icons.calendar_month_rounded, color: AppPallete.primaryColor),
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        FutureBuilder<bool>(
+                          future: _azdb.isDoctorFavorited(widget.patientId, doctor['id']),
+                          builder: (context, snapshot) {
+                            final isFavorited = snapshot.data ?? false;
+                            return Container(
+                              width: 40,
+                              height: 40,
+                              decoration: const BoxDecoration(
+                                color: AppPallete.whiteColor,
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                onPressed: () => _toggleFavorite(doctor['id'], isFavorited),
+                                icon: Icon(
+                                  isFavorited ? Icons.favorite : Icons.favorite_border,
+                                  color: isFavorited ? Colors.blue : AppPallete.primaryColor,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildSortButton(String label, IconData icon, bool isActive) {
-    return GestureDetector(
-      onTap: () => setState(() => _activeSort = label),
-      child: Column(
-        children: [
-          Icon(icon, color: isActive ? AppPallete.primaryColor : AppPallete.greyColor, size: 26),
-          SizedBox(height: 5),
-          Text(label, style: TextStyle(color: isActive ? AppPallete.primaryColor: AppPallete.greyColor, fontWeight: FontWeight.bold)),
-        ],
       ),
     );
   }
@@ -205,74 +214,115 @@ class _SortScreenState extends State<SortScreen> with SingleTickerProviderStateM
       appBar: AppBar(
         elevation: 0,
         backgroundColor: AppPallete.transparentColor,
-        leading: IconButton(icon: Icon(Icons.arrow_back_ios_new_sharp, color: AppPallete.primaryColor), onPressed: () {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Dashboard()));
-        }),
-        title: Text('A-Z', style: TextStyle(fontSize: 35, color: AppPallete.headings, fontWeight: FontWeight.bold)),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, color: AppPallete.primaryColor),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'A-Z',
+          style: TextStyle(
+              fontSize: 35,
+              color: AppPallete.headings,
+              fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
         actions: [
-          IconButton(icon: Icon(Icons.search, color: AppPallete.primaryColor), onPressed: () {
-            showSearch(context: context, delegate: DoctorSearch(doctors));
-          }),
+          IconButton(
+            icon: const Icon(Icons.search, color: AppPallete.primaryColor),
+            onPressed: () async {
+              final selectedDoctor = await showSearch<Map<String, dynamic>>(
+                context: context,
+                delegate: DoctorSearch(_doctors),
+              );
+              if (selectedDoctor != null) {
+                final fullName = '${selectedDoctor['title']} ${selectedDoctor['firstName']} ${selectedDoctor['lastName']}';
+                print('Selected doctor from search: $fullName');
+              }
+            },
+          ),
         ],
       ),
-      body: Column(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                Text('Sort By:', style: TextStyle(fontSize: 20, color: Colors.black45)),
-                SizedBox(width: 4),
+                const SizedBox(width: 5),
+                const Text(
+                  'Sort By:',
+                  style: TextStyle(fontSize: 20, color: Colors.black45),
+                ),
+                const SizedBox(width: 4),
                 ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(backgroundColor: _activeSort == 'A-Z' ? AppPallete.primaryColor : Colors.blue.shade100),
-                  child: Text('A-Z', style: TextStyle(color: AppPallete.whiteColor)),
+                  onPressed: () => _handleSortSelection('A-Z'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _activeSort == 'A-Z'
+                        ? AppPallete.primaryColor
+                        : Colors.blue.shade100,
+                  ),
+                  child: Text(
+                    'A-Z',
+                    style: TextStyle(color: AppPallete.whiteColor),
+                  ),
                 ),
-                SizedBox(width: 4,),
+                const SizedBox(width: 4),
                 Container(
                   decoration: BoxDecoration(
-                    color: _activeSort == 'Favorites' ? AppPallete.primaryColor : Colors.blue.shade100,
+                    color: _activeSort == 'Favorites'
+                        ? AppPallete.primaryColor
+                        : Colors.blue.shade100,
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
                     onPressed: () {
                       Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => Favorite()));
+                        context,
+                        MaterialPageRoute(builder: (context) => Favorite(patientId: widget.patientId)),
+                      );
                     },
-                    icon: Icon(Icons.favorite_border_outlined, color: AppPallete.whiteColor),
+                    icon: const Icon(Icons.favorite_border_outlined,
+                        color: AppPallete.whiteColor),
                   ),
                 ),
-                SizedBox(width: 4,),
+                const SizedBox(width: 4),
                 Container(
                   decoration: BoxDecoration(
-                    color: _activeSort == 'Male' ? AppPallete.primaryColor : Colors.blue.shade100,
+                    color: _activeSort == 'Male'
+                        ? AppPallete.primaryColor
+                        : Colors.blue.shade100,
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
                     onPressed: () {
                       Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => MaleDoctor()));
+                        context,
+                        MaterialPageRoute(builder: (context) => MaleDoctorScreen(patientId: widget.patientId),
+                        ),);
                     },
-                    icon: Icon(Icons.male_outlined, color: AppPallete.whiteColor),
+                    icon: const Icon(Icons.male_outlined,
+                        color: AppPallete.whiteColor),
                   ),
                 ),
-                SizedBox(width: 4,),
+                const SizedBox(width: 4),
                 Container(
                   decoration: BoxDecoration(
-                    color: _activeSort == 'Female' ? AppPallete.primaryColor : Colors.blue.shade100,
+                    color: _activeSort == 'Female'
+                        ? AppPallete.primaryColor
+                        : Colors.blue.shade100,
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
                     onPressed: () {
                       Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => FemaleDoctor()));
+                        context,
+                        MaterialPageRoute(builder: (context) => FemaleDoctorScreen(patientId: widget.patientId)),
+                      );
                     },
-                    icon: Icon(Icons.female_outlined, color: AppPallete.whiteColor),
+                    icon: const Icon(Icons.female_outlined,
+                        color: AppPallete.whiteColor),
                   ),
                 ),
               ],
@@ -280,38 +330,21 @@ class _SortScreenState extends State<SortScreen> with SingleTickerProviderStateM
           ),
           Expanded(
             child: ListView.builder(
-              itemCount: doctors.length,
+              padding: const EdgeInsets.all(8),
+              itemCount: _filteredDoctors.length,
               itemBuilder: (context, index) {
-                return _buildDoctorCard(
-                  doctors[index]['name']!,
-                  doctors[index]['specialty']!,
-                  doctors[index]['imagePath']!,
-                );
+                return _buildDoctorCard(_filteredDoctors[index]);
               },
             ),
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavBar(
-        selectedIndex: _selectedIndex,
-        onItemTapped: _onItemTapped,
-      ),
-    );
-  }
-
-  Widget _buildCategoryButton(IconData icon, Widget? page, String sortType) {
-    return Container(
-      decoration: BoxDecoration(color: _activeSort == sortType ? AppPallete.primaryColor : Colors.blue.shade100, shape: BoxShape.circle),
-      child: IconButton(
-        onPressed: page != null ? () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => page)) : () {},
-        icon: Icon(icon, color: AppPallete.whiteColor),
-      ),
     );
   }
 }
 
-class DoctorSearch extends SearchDelegate {
-  final List<Map<String, String>> doctors;
+class DoctorSearch extends SearchDelegate<Map<String, dynamic>> {
+  final List<Map<String, dynamic>> doctors;
 
   DoctorSearch(this.doctors);
 
@@ -319,10 +352,8 @@ class DoctorSearch extends SearchDelegate {
   List<Widget>? buildActions(BuildContext context) {
     return [
       IconButton(
-        icon: Icon(Icons.clear, color: AppPallete.primaryColor),
-        onPressed: () {
-          query = '';
-        },
+        icon: const Icon(Icons.clear, color: AppPallete.primaryColor),
+        onPressed: () => query = '',
       ),
     ];
   }
@@ -330,52 +361,37 @@ class DoctorSearch extends SearchDelegate {
   @override
   Widget? buildLeading(BuildContext context) {
     return IconButton(
-      icon: Icon(Icons.arrow_back_ios_new_sharp, color: AppPallete.primaryColor),
-      onPressed: () {
-        close(context, null);
-      },
+      icon: const Icon(Icons.arrow_back_ios_new_sharp, color: AppPallete.primaryColor),
+      onPressed: () => close(context, {}),
     );
   }
 
   @override
-  Widget buildResults(BuildContext context) {
-    List<Map<String, String>> searchResults = doctors.where((doctor) {
-      return doctor['name']!.toLowerCase().contains(query.toLowerCase()) ||
-          doctor['specialty']!.toLowerCase().contains(query.toLowerCase());
-    }).toList();
-
-    return ListView.builder(
-      itemCount: searchResults.length,
-      itemBuilder: (context, index) {
-        return ListTile(
-          title: Text(searchResults[index]['name']!),
-          subtitle: Text(searchResults[index]['specialty']!),
-          leading: CircleAvatar(
-            backgroundImage: AssetImage(searchResults[index]['imagePath']!),
-          ),
-        );
-      },
-    );
-  }
+  Widget buildResults(BuildContext context) => _buildSearchResults();
 
   @override
-  Widget buildSuggestions(BuildContext context) {
-    List<Map<String, String>> searchResults = doctors.where((doctor) {
-      return doctor['name']!.toLowerCase().contains(query.toLowerCase()) ||
-          doctor['specialty']!.toLowerCase().contains(query.toLowerCase());
+  Widget buildSuggestions(BuildContext context) => _buildSearchResults();
+
+  Widget _buildSearchResults() {
+    final results = doctors.where((doctor) {
+      final name = '${doctor['title']} ${doctor['firstName']} ${doctor['lastName']}'.toLowerCase();
+      final specialty = '${doctor['specialty']}'.toLowerCase();
+      return name.contains(query.toLowerCase()) || specialty.contains(query.toLowerCase());
     }).toList();
 
     return ListView.builder(
-      itemCount: searchResults.length,
+      itemCount: results.length,
       itemBuilder: (context, index) {
+        final doctor = results[index];
+        final fullName = '${doctor['title']} ${doctor['firstName']} ${doctor['lastName']}';
         return ListTile(
-          title: Text(searchResults[index]['name']!),
-          subtitle: Text(searchResults[index]['specialty']!),
-          leading: CircleAvatar(
-            backgroundImage: AssetImage(searchResults[index]['imagePath']!),
-          ),
+          title: Text(fullName),
+          subtitle: Text(doctor['specialty']),
+          onTap: () => close(context, doctor),
         );
       },
     );
   }
 }
+
+
