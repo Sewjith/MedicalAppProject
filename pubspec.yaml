@@ -40,6 +40,10 @@ dependencies:
   flutter_bloc: ^9.1.0
   get_it: ^8.0.3
   supabase_flutter: ^2.8.4
+  url_launcher: ^6.2.5
+  file_picker: ^6.1.1
+  flutter_sound: ^9.2.13+1
+
   
   agora_rtc_engine: ^6.5.0
   permission_handler: ^11.4.0
