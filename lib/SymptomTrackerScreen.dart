@@ -1,3 +1,5 @@
+// main.dart
+
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
@@ -30,7 +32,7 @@ class SymptomTrackerScreen extends StatefulWidget {
 
 class _SymptomTrackerScreenState extends State<SymptomTrackerScreen> {
   final List<String> _presetSymptoms = [
-    'Headache', 'Fever', 'Cough', 'Fatigue', 'Anxiety', 'Migrane', 'Constipation' , 'Diarrhea'
+    'Headache', 'Fever', 'Cough', 'Fatigue', 'Anxiety', 'Migrane', 'Constipation', 'Diarrhea'
   ];
   final List<SymptomEntry> _savedSymptoms = [];
   final Map<String, List<SymptomData>> _symptomDataMap = {};
@@ -41,7 +43,6 @@ class _SymptomTrackerScreenState extends State<SymptomTrackerScreen> {
   final Color primaryColor = const Color(0xFF4A90E2);
   final Color backgroundColor = const Color(0xFFF5F7FA);
   final Color textColor = const Color(0xFF333333);
-  final Color accentColor = const Color(0xFF50E3C2);
   final Color saveButtonColor = Colors.redAccent;
 
   void _saveSymptom() {
@@ -143,15 +144,8 @@ class _SymptomTrackerScreenState extends State<SymptomTrackerScreen> {
             ),
             const SizedBox(height: 12),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: accentColor),
-                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Symptom entry added (severity & date not saved yet)')),
-                  ),
-                  child: const Text('Add Symptom Entry'),
-                ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: saveButtonColor),
                   onPressed: _saveSymptom,

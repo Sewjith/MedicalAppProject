@@ -1,27 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:medical_app/SymptomTrackerScreen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-void main() {
+  await Supabase.initialize(
+    url: 'https://ipoouxwecvbxvsfomfaf.supabase.co',
+    anonKey: 'your-anon-key',
+  );
+
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  MyApp({super.key});
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        body: Center(
-          child: Container(
-            height: 200,
-            color: const Color.fromARGB(255, 118, 218, 232),
-            child: Center(child: Text("Demo!"),),
-          ),
-        ),
-      ),
+      home: SymptomTrackerScreen(),
     );
-    
   }
 }
