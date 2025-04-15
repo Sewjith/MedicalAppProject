@@ -72,6 +72,9 @@ class _SymptomTrackerScreenState extends State<SymptomTrackerScreen> {
   }
 
   Future<void> _deleteSymptom(String id) async {
+    final confirm = await _confirmDialog('Delete Symptom', 'Are you sure you want to delete this symptom?');
+    if (!confirm) return;
+
     try {
       await supabase.from('symptoms').delete().eq('id', id);
       await _loadSymptoms();
@@ -123,12 +126,80 @@ class _SymptomTrackerScreenState extends State<SymptomTrackerScreen> {
   }
 
   Future<void> _deleteEntry(String entryId) async {
+    final confirm = await _confirmDialog('Delete Entry', 'Are you sure you want to delete this entry?');
+    if (!confirm) return;
+
     try {
       await supabase.from('symptom_data').delete().eq('id', entryId);
       await _loadSymptomEntries();
     } catch (e) {
       _showError('Failed to delete entry.\n$e');
     }
+  }
+
+  Future<void> _editEntry(Map<String, dynamic> entry) async {
+    DateTime editedDate = DateTime.parse(entry['date']);
+    double editedSeverity = entry['severity'].toDouble();
+
+    await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Edit Entry'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ElevatedButton(
+              onPressed: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: editedDate,
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime.now(),
+                );
+                if (picked != null) {
+                  setState(() {
+                    editedDate = picked;
+                  });
+                }
+              },
+              child: Text('Pick Date: ${editedDate.toLocal().toString().split(' ')[0]}'),
+            ),
+            const SizedBox(height: 8),
+            Slider(
+              value: editedSeverity,
+              min: 1,
+              max: 10,
+              divisions: 90,
+              label: editedSeverity.toStringAsFixed(1),
+              onChanged: (value) {
+                setState(() {
+                  editedSeverity = value;
+                });
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await supabase.from('symptom_data').update({
+                  'date': editedDate.toIso8601String().split('T')[0],
+                  'severity': editedSeverity,
+                }).eq('id', entry['id']);
+
+                await _loadSymptomEntries();
+              } catch (e) {
+                _showError('Failed to update entry.\n$e');
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
   }
 
   List<FlSpot> _getChartSpots() {
@@ -158,6 +229,21 @@ class _SymptomTrackerScreenState extends State<SymptomTrackerScreen> {
         ],
       ),
     );
+  }
+
+  Future<bool> _confirmDialog(String title, String message) async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Confirm')),
+        ],
+      ),
+    ) ??
+        false;
   }
 
   @override
@@ -241,6 +327,7 @@ class _SymptomTrackerScreenState extends State<SymptomTrackerScreen> {
                     onTap: () => _openSymptomDetail(entry),
                     leading: Icon(Icons.favorite_border, color: primaryColor),
                     title: Text(entry['name'], style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
+                    subtitle: const Text('Tap to view history'),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
                       onPressed: () => _deleteSymptom(entry['id']),
@@ -354,9 +441,18 @@ class _SymptomTrackerScreenState extends State<SymptomTrackerScreen> {
                 return Card(
                   child: ListTile(
                     title: Text('${date.toLocal().toString().split(' ')[0]} - Severity: ${severity.toStringAsFixed(1)}'),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => _deleteEntry(entry['id']),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () => _editEntry(entry),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => _deleteEntry(entry['id']),
+                        ),
+                      ],
                     ),
                   ),
                 );
