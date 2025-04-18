@@ -1,78 +1,124 @@
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
+import '../models/notification_item.dart';
 import '../models/notification_model.dart';
 import '../widgets/notification_title.dart';
-import '../models/notification_item.dart';
 
 class NotificationsScreen extends StatefulWidget {
-  const NotificationsScreen({super.key});
+  final String receiverId;
+  final String receiverType;
+
+  const NotificationsScreen({
+    Key? key,
+    required this.receiverId,
+    required this.receiverType,
+  }) : super(key: key);
 
   @override
-  _NotificationsScreenState createState() => _NotificationsScreenState();
+  State<NotificationsScreen> createState() => _NotificationsScreenState();
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  List<NotificationItem> notifications = [
-    NotificationItem(title: "Scheduled Appointment", description: "Your appointment is confirmed.", timeAgo: "2M", dateGroup: "Today", icon: Icons.calendar_today),
-    NotificationItem(title: "Scheduled Change", description: "Appointment rescheduled.", timeAgo: "2H", dateGroup: "Today", icon: Icons.calendar_today),
-    NotificationItem(title: "Medical Notes", description: "New medical notes have been added.", timeAgo: "3H", dateGroup: "Today", icon: Icons.note),
-    NotificationItem(title: "Prescription Ready", description: "Your prescription is ready.", timeAgo: "4H", dateGroup: "Today", icon: Icons.medical_services, isRead: true),
-    NotificationItem(title: "Test Result Available", description: "Test results are now available.", timeAgo: "5H", dateGroup: "Today", icon: Icons.file_copy),
-    NotificationItem(title: "Doctor Message", description: "You received a message from Dr. Smith.", timeAgo: "6H", dateGroup: "Today", icon: Icons.message, isRead: true),
-    NotificationItem(title: "Diet Plan Sent", description: "New diet plan has been shared.", timeAgo: "7H", dateGroup: "Today", icon: Icons.fastfood),
-    NotificationItem(title: "Reminder: Water Intake", description: "Stay hydrated!", timeAgo: "8H", dateGroup: "Today", icon: Icons.local_drink, isRead: true),
-    NotificationItem(title: "Blood Pressure Log", description: "Time to log your BP.", timeAgo: "9H", dateGroup: "Yesterday", icon: Icons.favorite),
-    NotificationItem(title: "Follow-up Reminder", description: "Reminder for follow-up checkup.", timeAgo: "10H", dateGroup: "Yesterday", icon: Icons.notifications),
-    NotificationItem(title: "Vaccination Alert", description: "Scheduled vaccination tomorrow.", timeAgo: "11H", dateGroup: "Yesterday", icon: Icons.vaccines),
-    NotificationItem(title: "Health Tips", description: "Daily health tips inside.", timeAgo: "12H", dateGroup: "Yesterday", icon: Icons.health_and_safety),
-    NotificationItem(title: "New Report", description: "Your health report is uploaded.", timeAgo: "13H", dateGroup: "Yesterday", icon: Icons.insert_drive_file, isRead: true),
-    NotificationItem(title: "Fitness Goal Achieved", description: "You’ve reached your weekly goal!", timeAgo: "14H", dateGroup: "Yesterday", icon: Icons.emoji_events),
-    NotificationItem(title: "New Chat Message", description: "Support replied to your question.", timeAgo: "15H", dateGroup: "2 Days Ago", icon: Icons.chat),
-    NotificationItem(title: "Payment Received", description: "Your payment has been processed.", timeAgo: "16H", dateGroup: "2 Days Ago", icon: Icons.payment, isRead: true),
-    NotificationItem(title: "Appointment Feedback", description: "Leave feedback for your doctor.", timeAgo: "17H", dateGroup: "2 Days Ago", icon: Icons.feedback),
-    NotificationItem(title: "Insurance Updated", description: "Your insurance info is updated.", timeAgo: "18H", dateGroup: "2 Days Ago", icon: Icons.security),
-    NotificationItem(title: "App Update Available", description: "New version of the app is live.", timeAgo: "19H", dateGroup: "2 Days Ago", icon: Icons.system_update),
-    NotificationItem(title: "Session Reminder", description: "Don’t forget your session today.", timeAgo: "20H", dateGroup: "2 Days Ago", icon: Icons.access_time),
-  ];
-
+  final NotificationService _service = NotificationService();
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  List<NotificationItem> notifications = [];
   List<NotificationItem> _backupNotifications = [];
 
-  Map<String, List<NotificationItem>> groupByDate(List<NotificationItem> items) {
-    Map<String, List<NotificationItem>> grouped = {};
-    for (var item in items) {
-      grouped.putIfAbsent(item.dateGroup, () => []);
-      grouped[item.dateGroup]!.add(item);
-    }
-    return grouped;
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifications();
+
+    _service.listenToNotifications(
+      receiverId: widget.receiverId,
+      receiverType: widget.receiverType,
+      onNewNotification: (item) {
+        setState(() {
+          notifications.insert(0, item);
+        });
+        _playNotificationSound();
+      },
+    );
   }
 
-  void _deleteAllNotifications() async {
+  Future<void> _playNotificationSound() async {
+    await _audioPlayer.play(AssetSource('audio/ding.mp3'));
+  }
+
+  Future<void> _loadNotifications() async {
+    final data = await _service.fetchNotifications(
+      receiverId: widget.receiverId,
+      receiverType: widget.receiverType,
+    );
+    setState(() => notifications = data);
+  }
+
+  Future<void> _markAsRead(NotificationItem item) async {
+    await _service.markAsRead(item.id);
+    setState(() {
+      item.isRead = true;
+    });
+  }
+
+  Future<void> _markAsUnread(NotificationItem item) async {
+    await _service.markAsUnread(item.id);
+    setState(() {
+      item.isRead = false;
+    });
+  }
+
+  Future<void> _deleteNotification(NotificationItem item) async {
+    setState(() {
+      notifications.remove(item);
+    });
+
+    await _service.deleteNotification(item.id);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text("Notification deleted"),
+        action: SnackBarAction(
+          label: "Undo",
+          onPressed: () async {
+            await _service.restoreNotification(item);
+            setState(() => notifications.insert(0, item));
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deleteAllNotifications() async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Delete All Notifications"),
-        content: Text("Are you sure you want to delete all notifications?"),
+      builder: (_) => AlertDialog(
+        title: const Text("Delete All Notifications"),
+        content: const Text("Are you sure you want to delete all notifications?"),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text("Cancel")),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: Text("Delete", style: TextStyle(color: Colors.red))),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Delete", style: TextStyle(color: Colors.red))),
         ],
       ),
     );
 
     if (confirm == true) {
-      setState(() {
-        _backupNotifications = List.from(notifications);
-        notifications.clear();
-      });
+      _backupNotifications = List.from(notifications);
+
+      await _service.deleteAllNotifications(widget.receiverType, widget.receiverId);
+      setState(() => notifications.clear());
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Notifications deleted"),
+          content: const Text("All notifications deleted"),
           action: SnackBarAction(
             label: "Undo",
-            onPressed: () {
-              setState(() {
-                notifications = List.from(_backupNotifications);
-              });
+            onPressed: () async {
+              for (var item in _backupNotifications) {
+                await _service.restoreNotification(item);
+              }
+              _loadNotifications();
             },
           ),
         ),
@@ -80,135 +126,81 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  void _markAllAsRead() async {
+  Future<void> _markAllAsRead() async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Mark All as Read"),
-        content: Text("Are you sure you want to mark all notifications as read?"),
+      builder: (_) => AlertDialog(
+        title: const Text("Mark All as Read"),
+        content: const Text("Are you sure you want to mark all notifications as read?"),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text("Cancel")),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: Text("Yes")),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Yes")),
         ],
       ),
     );
 
     if (confirm == true) {
+      await _service.markAllAsRead(widget.receiverType, widget.receiverId);
       setState(() {
-        for (var notification in notifications) {
-          notification.isRead = true;
+        for (var item in notifications) {
+          item.isRead = true;
         }
       });
     }
   }
 
-  void _openNotificationDetails(NotificationItem item) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
-          appBar: AppBar(
-            iconTheme: IconThemeData(color: Colors.blue),
-            backgroundColor: Colors.white,
-            elevation: 0,
-            title: Text(
-              item.title,
-              style: TextStyle(color: Colors.blue, fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-          ),
-          body: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(item.title, style: TextStyle(color: Colors.blue, fontSize: 22, fontWeight: FontWeight.bold)),
-                SizedBox(height: 12),
-                Text(item.description),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final groupedNotifications = groupByDate(notifications);
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text("Notifications", style: TextStyle(color: Colors.blue, fontSize: 22, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.blue),
+        iconTheme: const IconThemeData(color: Colors.blue),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          "Notifications",
+          style: TextStyle(color: Colors.blue, fontSize: 22, fontWeight: FontWeight.bold),
+        ),
         actions: [
           IconButton(
-            icon: Icon(Icons.delete, color: Colors.red),
+            icon: const Icon(Icons.delete, color: Colors.red),
             tooltip: 'Delete all notifications',
             onPressed: _deleteAllNotifications,
           ),
           TextButton(
             onPressed: _markAllAsRead,
-            child: Text("Mark all", style: TextStyle(color: Colors.blue, fontSize: 16)),
+            child: const Text("Mark all", style: TextStyle(color: Colors.blue, fontSize: 16)),
           ),
         ],
       ),
       body: notifications.isEmpty
-          ? Center(child: Text("No notifications", style: TextStyle(fontSize: 16, color: Colors.grey)))
-          : ListView(
-        padding: EdgeInsets.all(16),
-        children: groupedNotifications.entries.map((entry) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(entry.key, style: TextStyle(color: Colors.blue, fontSize: 18, fontWeight: FontWeight.bold)),
-              SizedBox(height: 8),
-              ...entry.value.map((item) => Dismissible(
-                key: ValueKey(item.title + item.timeAgo),
-                background: Container(
-                  padding: EdgeInsets.only(left: 20),
-                  alignment: Alignment.centerLeft,
-                  color: Colors.red,
-                  child: Icon(Icons.delete, color: Colors.white),
-                ),
-                direction: DismissDirection.startToEnd,
-                onDismissed: (direction) {
-                  setState(() {
-                    notifications.remove(item);
-                  });
-                },
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      item.isRead = true;
-                    });
-                    _openNotificationDetails(item);
-                  },
-                  child: Card(
-                    color: item.isRead ? Colors.blue[50] : Colors.grey[200],
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    elevation: 2,
-                    margin: EdgeInsets.symmetric(vertical: 4),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: Colors.blue.withOpacity(0.1),
-                        radius: 22,
-                        child: Icon(item.icon, color: Colors.blue, size: 20),
-                      ),
-                      title: Text(item.title, style: TextStyle(fontWeight: FontWeight.w600)),
-                      subtitle: Text(item.timeAgo),
-                      trailing: item.isRead ? null : Icon(Icons.fiber_manual_record, size: 10, color: Colors.red),
-                    ),
-
-                  ),
-                ),
-              )),
-              SizedBox(height: 16),
-            ],
+          ? const Center(child: Text("No notifications yet"))
+          : ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: notifications.length,
+        itemBuilder: (context, index) {
+          final item = notifications[index];
+          return Dismissible(
+            key: Key(item.id),
+            background: Container(
+              color: Colors.red,
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: const Icon(Icons.delete, color: Colors.white),
+            ),
+            direction: DismissDirection.startToEnd,
+            onDismissed: (_) => _deleteNotification(item),
+            child: GestureDetector(
+              onTap: () => _markAsRead(item),
+              onLongPress: () => _markAsUnread(item),
+              child: NotificationTile(item: item, onTap: () {}),
+            ),
           );
-        }).toList(),
+        },
       ),
     );
   }

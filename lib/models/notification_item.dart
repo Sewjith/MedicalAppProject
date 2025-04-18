@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 class NotificationItem {
+  final String id;
   final String title;
   final String description;
   final String timeAgo;
@@ -9,6 +10,7 @@ class NotificationItem {
   bool isRead;
 
   NotificationItem({
+    required this.id,
     required this.title,
     required this.description,
     required this.timeAgo,
