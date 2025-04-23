@@ -2,47 +2,158 @@ import 'package:flutter/material.dart';
 import 'package:medical_app/features/appoinment_history/upcoming.dart';
 import 'package:medical_app/features/appoinment_history/cancelled.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:medical_app/features/appoinment_history/review.dart';
 void main() {
-  runApp(Appointment());
+  runApp(const Appointment());
 }
 
 class Appointment extends StatelessWidget {
+  const Appointment({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Appointment History',
       theme: ThemeData(
-        primaryColor: AppPallete .primaryColor,
+        primaryColor: AppPallete.primaryColor,
         fontFamily: 'Arial',
         primarySwatch: Colors.blue,
       ),
-      home: CompletedAppointmentsPage(),
+      home: const CompletedAppointmentsPage(),
     );
   }
 }
 
-class CompletedAppointmentsPage extends StatelessWidget {
+class AppointmentDB {
+  final SupabaseClient _supabase = Supabase.instance.client;
+
+  Future<List<Map<String, dynamic>>> getCompletedAppointments() async {
+    try {
+      final appointments = await _supabase
+          .from('appointments')
+          .select('id, doctor_name, doctor_id, appointment_date, appointment_status')
+          .eq('appointment_status', 'complete')
+          .order('appointment_date', ascending: false);
+
+      if (appointments.isEmpty) return [];
+
+      return await _processAppointments(appointments);
+    } catch (e) {
+      debugPrint('Error loading appointments: $e');
+      throw Exception('Failed to load appointments. Please try again later.');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _processAppointments(List<dynamic> appointments) async {
+    final validAppointments = appointments.where((a) => a['doctor_id'] != null).toList();
+    final noDoctorAppointments = appointments.where((a) => a['doctor_id'] == null).toList();
+
+    final doctorIds = validAppointments.map((a) => a['doctor_id'] as String).toList();
+    List<Map<String, dynamic>> doctors = [];
+
+    if (doctorIds.isNotEmpty) {
+      doctors = await _supabase
+          .from('doctors')
+          .select('id, specialty, avatar_path')
+          .inFilter('id', doctorIds);
+    }
+
+    final processedAppointments = <Map<String, dynamic>>[];
+
+    for (final appointment in validAppointments) {
+      final doctor = doctors.firstWhere(
+            (d) => d['id'] == appointment['doctor_id'],
+        orElse: () => {
+          'specialty': 'Unknown Specialty',
+          'avatar_path': null,
+        },
+      );
+      processedAppointments.add(_createAppointmentMap(appointment, doctor));
+    }
+
+    for (final appointment in noDoctorAppointments) {
+      processedAppointments.add(_createAppointmentMap(appointment, {
+        'specialty': 'No Specialty',
+        'avatar_path': null,
+      }));
+    }
+
+    return processedAppointments;
+  }
+
+  Map<String, dynamic> _createAppointmentMap(
+      dynamic appointment,
+      Map<String, dynamic> doctor
+      ) {
+    final avatarPath = doctor['avatar_path'];
+    final imageUrl = avatarPath != null
+        ? '${_supabase.storage.from('avatars').getPublicUrl(avatarPath)}'
+        : 'assets/images/default_doctor.png';
+
+    return {
+      ...appointment,
+      'specialty': doctor['specialty'],
+      'image_url': imageUrl,
+    };
+  }
+}
+
+class CompletedAppointmentsPage extends StatefulWidget {
+  const CompletedAppointmentsPage({Key? key}) : super(key: key);
+
+  @override
+  _CompletedAppointmentsPageState createState() => _CompletedAppointmentsPageState();
+}
+
+class _CompletedAppointmentsPageState extends State<CompletedAppointmentsPage> {
+  final AppointmentDB _db = AppointmentDB();
+  List<Map<String, dynamic>> _appointments = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAppointments();
+  }
+
+  Future<void> _loadAppointments() async {
+    try {
+      final appointments = await _db.getCompletedAppointments();
+      setState(() {
+        _appointments = appointments;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading appointments: ${e.toString()}'),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'All Appointment',
           style: TextStyle(
-            color: AppPallete .primaryColor,
+            color: AppPallete.primaryColor,
             fontWeight: FontWeight.bold,
           ),
         ),
         centerTitle: true,
-        backgroundColor: AppPallete .whiteColor,
+        backgroundColor: AppPallete.whiteColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_outlined, color: AppPallete .primaryColor),
-          onPressed: () {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Appointment()),);
-          },
+          icon: const Icon(Icons.arrow_back_ios_new_outlined,
+              color: AppPallete.primaryColor),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Column(
@@ -52,11 +163,12 @@ class CompletedAppointmentsPage extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                ElevatedButton(onPressed: (){},
+                ElevatedButton(
+                  onPressed: () {},
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    backgroundColor: AppPallete .primaryColor,
-                    foregroundColor:  AppPallete .whiteColor,
+                    backgroundColor: AppPallete.primaryColor,
+                    foregroundColor: AppPallete.whiteColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -66,109 +178,86 @@ class CompletedAppointmentsPage extends StatelessWidget {
                     style: TextStyle(fontSize: 18),
                   ),
                 ),
-                SizedBox(width: 10),
-                ElevatedButton(onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => Upcoming()),);
-                },
+                const SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => const Upcoming()),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor:  AppPallete .lightBackground,
-                    foregroundColor:  AppPallete .primaryColor,
+                    backgroundColor: AppPallete.lightBackground,
+                    foregroundColor: AppPallete.primaryColor,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  child: const Text('Upcoming',
-                    style: TextStyle(fontSize: 18),),
+                  child: const Text(
+                    'Upcoming',
+                    style: TextStyle(fontSize: 18),
+                  ),
                 ),
-                SizedBox(width: 10),
-                ElevatedButton(onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => Cancel()),);
-                },
+                const SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => Cancel()),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppPallete .lightBackground,
-                    foregroundColor:  AppPallete .primaryColor,
+                    backgroundColor: AppPallete.lightBackground,
+                    foregroundColor: AppPallete.primaryColor,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  child: const Text('Cancelled',
-                    style: TextStyle(fontSize: 18),),
+                  child: const Text(
+                    'Cancelled',
+                    style: TextStyle(fontSize: 18),
+                  ),
                 ),
               ],
             ),
           ),
           Expanded(
-            child: ListView(
-              children: [
-                AppointmentCard(
-                  doctorName: "Dr. Olivia Turner, M.D.",
-                  specialty: "Dermato-Endocrinology",
-                  rating: 5,
-                  imageUrl: "assets/images/doc2.jpeg",
-                  onRebook: () {},
-                  onAddReview: () {
-                    Navigator.pushReplacement(context,
-                        MaterialPageRoute(builder: (context) => review()));
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _appointments.isEmpty
+                ? const Center(
+              child: Text(
+                'No completed appointments found',
+                style: TextStyle(color: AppPallete.textColor),
+              ),
+            )
+                : RefreshIndicator(
+              onRefresh: _loadAppointments,
+              child: ListView(
+                children: _appointments.map((appointment) => AppointmentCard(
+                  doctorName: appointment['doctor_name'] ?? 'Unknown Doctor',
+                  specialty: appointment['specialty'] ?? 'Unknown Specialty',
+                  imageUrl: appointment['image_url'],
+                  onReviewPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => Review(
+                          doctorId: appointment['doctor_id'],
+                          doctorName: appointment['doctor_name'],
+                          specialty: appointment['specialty'],
+                          imageUrl: appointment['image_url'],
+                        ),
+                      ),
+                    );
                   },
-                ),
-                AppointmentCard(
-                  doctorName: "Dr. Alexander Bennett, Ph.D.",
-                  specialty: "Dermato-Genetics",
-                  rating: 4,
-                  imageUrl: "assets/images/doc1.jpeg",
-                  onRebook: () {},
-                  onAddReview: () {
-                    Navigator.pushReplacement(context,
-                        MaterialPageRoute(builder: (context) => review()));
-                  },
-                ),
-                AppointmentCard(
-                  doctorName: "Dr. Sophia Martinez, Ph.D.",
-                  specialty: "Cosmetic Bioengineering",
-                  rating: 5,
-                  imageUrl: "assets/images/doc3.png",
-                  onRebook: () {},
-                  onAddReview: () {
-                    Navigator.pushReplacement(context,
-                        MaterialPageRoute(builder: (context) => review()));
-                  },
-                ),
-              ],
+                )).toList(),
+              ),
             ),
           ),
         ],
-      ),
-      bottomNavigationBar: BottomNavBar(
-        selectedIndex: 2,
-        onItemTapped: (index) {},
-      ),
-    );
-  }
-}
-
-class FilterButton extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-
-  FilterButton({required this.label, this.isSelected = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 5.0),
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isSelected ?  AppPallete .primaryColor :  AppPallete .greyColor,
-          foregroundColor: isSelected ?  AppPallete .whiteColor :  AppPallete.textColor,
-        ),
-        onPressed: () {},
-        child: Text(label),
       ),
     );
   }
@@ -177,178 +266,68 @@ class FilterButton extends StatelessWidget {
 class AppointmentCard extends StatelessWidget {
   final String doctorName;
   final String specialty;
-  final int rating;
   final String imageUrl;
-  final VoidCallback onRebook;
-  final VoidCallback onAddReview;
+  final VoidCallback onReviewPressed;
 
-  AppointmentCard({
+  const AppointmentCard({
+    Key? key,
     required this.doctorName,
     required this.specialty,
-    required this.rating,
     required this.imageUrl,
-    required this.onRebook,
-    required this.onAddReview,
-  });
+    required this.onReviewPressed,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: EdgeInsets.all(10),
+      margin: const EdgeInsets.all(10),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
       ),
-      color:  Colors.blue.shade50,
+      color: Colors.blue.shade50,
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            //
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Doctor's profile image.
                 CircleAvatar(
-                  backgroundImage: AssetImage(imageUrl),
+                  backgroundImage: imageUrl.startsWith('http')
+                      ? NetworkImage(imageUrl)
+                      : AssetImage(imageUrl) as ImageProvider,
                   radius: 30,
+                  onBackgroundImageError: (_, __) =>
+                  const Icon(Icons.person, size: 30),
                 ),
-                SizedBox(width: 10),
-
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         doctorName,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
-                          color:  AppPallete .primaryColor,
+                          color: AppPallete.primaryColor,
                         ),
                       ),
                       Text(
                         specialty,
-                        style: TextStyle(color:  AppPallete.textColor),
-                      ),
-
-                      Container(
-                        margin: EdgeInsets.only(top: 8),
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color:  AppPallete .whiteColor,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Star icons (blue)
-                            Row(
-                              children: List.generate(
-                                5,
-                                    (index) => Icon(
-                                  index < rating
-                                      ? Icons.star
-                                      : Icons.star_border,
-                                  color:  AppPallete .primaryColor,
-                                  size: 16,
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 8),
-                            // Heart icon (blue)
-                            Icon(
-                              Icons.favorite,
-                              color:  AppPallete .primaryColor,
-                              size: 16,
-                            ),
-                          ],
-                        ),
+                        style: const TextStyle(color: AppPallete.textColor),
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-            SizedBox(height: 10),
-            // Buttons row.
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:  AppPallete .whiteColor,
-                    foregroundColor:  AppPallete .primaryColor,
-                  ),
-                  onPressed: onRebook,
-                  child: Text("Re-Book"),
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:  AppPallete .primaryColor,
-                    foregroundColor: AppPallete .whiteColor,
-                  ),
-                  onPressed: onAddReview,
-                  child: Text("Add Review"),
-                ),
-              ],
-            )
+            const SizedBox(height: 10),
+
           ],
         ),
       ),
-    );
-  }
-}
-
-class ReviewPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Add Review", style: TextStyle(color:  AppPallete .primaryColor)),
-        backgroundColor:  AppPallete .whiteColor,
-        iconTheme: IconThemeData(color:  AppPallete .primaryColor),
-        elevation: 0,
-      ),
-      body: Center(
-        child: Text("Review Page", style: TextStyle(fontSize: 24)),
-      ),
-    );
-  }
-}
-
-class BottomNavBar extends StatelessWidget {
-  final int selectedIndex;
-  final Function(int) onItemTapped;
-
-  BottomNavBar({required this.selectedIndex, required this.onItemTapped});
-
-  @override
-  Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: selectedIndex,
-      onTap: onItemTapped,
-      selectedItemColor:  AppPallete .primaryColor,
-      unselectedItemColor:  AppPallete .greyColor,
-      type: BottomNavigationBarType.fixed,
-      items: [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: "", // Empty label (icon only)
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.chat),
-          label: "", // Empty label (icon only)
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: "", // Empty label (icon only)
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today),
-          label: "", // Empty label (icon only)
-        ),
-      ],
     );
   }
 }
