@@ -1,172 +1,204 @@
 import 'package:flutter/material.dart';
 import 'package:medical_app/features/appoinment_history/upcoming.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
-
-void main() {
-  runApp(form());
-}
-
-class form extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Appointment History',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        fontFamily: 'Arial',
-      ),
-      home: CancelAppointmentPage(),
-    );
-  }
-}
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CancelAppointmentPage extends StatefulWidget {
+  final String appointmentId; // UUID from appointments.id
+
+  const CancelAppointmentPage({Key? key, required this.appointmentId})
+      : super(key: key);
+
   @override
   _CancelAppointmentPageState createState() => _CancelAppointmentPageState();
 }
 
 class _CancelAppointmentPageState extends State<CancelAppointmentPage> {
+  final SupabaseClient _supabase = Supabase.instance.client;
   String selectedReason = 'Weather Conditions';
+  String additionalDetails = '';
   int _selectedIndex = 0;
+  bool _isSubmitting = false;
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+  Future<void> _submitCancellation() async {
+    setState(() => _isSubmitting = true);
+
+    try {
+      // 1. Get the appointment_id (varchar) that corresponds to the UUID
+      final appointment = await _supabase
+          .from('appointments')
+          .select('appointment_id') // SINGULAR form
+          .eq('id', widget.appointmentId)
+          .single();
+
+      final referenceId = appointment['appointment_id'].toString();
+      debugPrint('Using reference ID: $referenceId');
+
+      // 2. Update appointment status (using UUID)
+      await _supabase
+          .from('appointments')
+          .update({'appointment_status': 'cancelled'})
+          .eq('id', widget.appointmentId);
+
+      // 3. Create cancellation record (using varchar appointment_id)
+      await _supabase.from('appointment_cancellations').insert({
+        'appointment_id': referenceId,
+        'reason': selectedReason,
+        'additional_details': additionalDetails.isNotEmpty ? additionalDetails : null,
+      });
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Appointment cancelled successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const Upcoming()),
+      );
+
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString().replaceAll('PostgrestException', '')}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      debugPrint('Cancellation error: ${e.toString()}');
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:  AppPallete.whiteColor,
+      backgroundColor: AppPallete.whiteColor,
       appBar: AppBar(
-        backgroundColor:  AppPallete.whiteColor,
+        backgroundColor: AppPallete.whiteColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color:  AppPallete.primaryColor),
-          onPressed: () {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (context) => Upcoming()));
-          },
+          icon: Icon(Icons.arrow_back_ios, color: AppPallete.primaryColor),
+          onPressed: () => Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const Upcoming()),
+          ),
         ),
         centerTitle: true,
         title: Text(
           'Cancel Appointment',
           style: TextStyle(
-            color:  AppPallete.primaryColor,
+            color: AppPallete.primaryColor,
             fontWeight: FontWeight.bold,
           ),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Please select the reason for cancelling your appointment.',
-              style: TextStyle(fontSize: 14, color:  AppPallete.textColor),
-            ),
-            SizedBox(height: 20),
-            buildRadioButton('Rescheduling'),
-            buildRadioButton('Weather Conditions'),
-            buildRadioButton('Unexpected Work'),
-            buildRadioButton('Others'),
-            SizedBox(height: 20),
-            Text(
-              'Provide additional details if needed.',
-              style: TextStyle(fontSize: 14, color:  AppPallete.primaryColor),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              maxLines: 5,
-              decoration: InputDecoration(
-                hintText: 'Enter Your Reason Here…',
-                filled: true,
-                fillColor: Colors.blue.shade50,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: BorderSide.none,
-                ),
+              'Select cancellation reason:',
+              style: TextStyle(
+                fontSize: 16,
+                color: AppPallete.textColor,
+                fontWeight: FontWeight.w500,
               ),
             ),
-            SizedBox(height: 20),
-            Center(
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:  AppPallete.primaryColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+            SizedBox(height: 16),
+            _buildReasonTile('Rescheduling'),
+            _buildReasonTile('Weather Conditions'),
+            _buildReasonTile('Unexpected Work'),
+            _buildReasonTile('Others'),
+            SizedBox(height: 24),
+            Text(
+              'Additional details (optional):',
+              style: TextStyle(
+                fontSize: 16,
+                color: AppPallete.primaryColor,
+              ),
+            ),
+            SizedBox(height: 8),
+            TextField(
+              maxLines: 4,
+              decoration: InputDecoration(
+                hintText: 'Explain if needed...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text('Cancel Appointment', style: TextStyle(fontSize: 16, color:  AppPallete.whiteColor)),
+                filled: true,
+                fillColor: Colors.grey[100],
+              ),
+              onChanged: (value) => additionalDetails = value,
+            ),
+            SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isSubmitting ? null : _submitCancellation,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppPallete.primaryColor,
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: _isSubmitting
+                    ? SizedBox(
+                  height: 24,
+                  width: 24,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+                    : Text(
+                  'CONFIRM CANCELLATION',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ),
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavBar(
-        selectedIndex: _selectedIndex,
-        onItemTapped: _onItemTapped,
-      ),
     );
   }
 
-  Widget buildRadioButton(String title) {
-    return ListTile(
-      title: Text(title),
-      leading: Radio(
-        value: title,
-        groupValue: selectedReason,
-        activeColor:  AppPallete.primaryColor,
-        onChanged: (value) {
-          setState(() {
-            selectedReason = value.toString();
-          });
-        },
+  Widget _buildReasonTile(String reason) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        contentPadding: EdgeInsets.symmetric(horizontal: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        tileColor: selectedReason == reason
+            ? AppPallete.primaryColor.withOpacity(0.1)
+            : Colors.grey[50],
+        leading: Radio<String>(
+          value: reason,
+          groupValue: selectedReason,
+          onChanged: (value) => setState(() => selectedReason = value!),
+          activeColor: AppPallete.primaryColor,
+        ),
+        title: Text(
+          reason,
+          style: TextStyle(
+            fontSize: 15,
+            color: AppPallete.textColor,
+          ),
+        ),
+        onTap: () => setState(() => selectedReason = reason),
       ),
-      tileColor: selectedReason == title ?  AppPallete.primaryColor.withOpacity(0.2) : null,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      contentPadding: EdgeInsets.symmetric(horizontal: 10),
-    );
-  }
-}
-
-class BottomNavBar extends StatelessWidget {
-  final int selectedIndex;
-  final Function(int) onItemTapped;
-
-  BottomNavBar({required this.selectedIndex, required this.onItemTapped});
-
-  @override
-  Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: selectedIndex,
-      onTap: onItemTapped,
-      selectedItemColor:  AppPallete.primaryColor,
-      unselectedItemColor:  AppPallete.greyColor,
-      type: BottomNavigationBarType.fixed,
-      items: [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: "", // Empty label (icon only)
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.chat),
-          label: "", // Empty label (icon only)
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: "", // Empty label (icon only)
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today),
-          label: "", // Empty label (icon only)
-        ),
-      ],
     );
   }
 }
