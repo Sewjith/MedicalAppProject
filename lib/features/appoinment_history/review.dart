@@ -1,32 +1,29 @@
+// review.dart
 import 'package:flutter/material.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
-import 'package:medical_app/features/appoinment_history/appoinment.dart';
 
-void main() {
-  runApp(review());
-}
+class Review extends StatefulWidget {
+  final String doctorId;
+  final String doctorName;
+  final String? specialty; // Optional if you want to show specialty
+  final String? imageUrl;  // Optional if you want to show doctor image
 
-class review extends StatelessWidget {
+  const Review({
+    Key? key,
+    required this.doctorId,
+    required this.doctorName,
+    this.specialty,
+    this.imageUrl,
+  }) : super(key: key);
+
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Appointment History',
-      theme: ThemeData(
-        fontFamily: 'Arial',
-      ),
-      home: ReviewPage(),
-    );
-  }
+  _ReviewState createState() => _ReviewState();
 }
 
-class ReviewPage extends StatefulWidget {
-  @override
-  _ReviewPageState createState() => _ReviewPageState();
-}
-
-class _ReviewPageState extends State<ReviewPage> {
+class _ReviewState extends State<Review> {
   int _selectedIndex = 0;
+  double _rating = 5.0;
+  final TextEditingController _commentController = TextEditingController();
 
   void _onItemTapped(int index) {
     setState(() {
@@ -39,20 +36,17 @@ class _ReviewPageState extends State<ReviewPage> {
     return Scaffold(
       backgroundColor: AppPallete.whiteColor,
       appBar: AppBar(
-        backgroundColor:  AppPallete.whiteColor,
+        backgroundColor: AppPallete.whiteColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color:  AppPallete.primaryColor),
-          onPressed: () {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (context) => Appointment()));
-          },
+          icon: Icon(Icons.arrow_back_ios, color: AppPallete.primaryColor),
+          onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
         title: Text(
           'Review',
           style: TextStyle(
-            color:  AppPallete.primaryColor,
+            color: AppPallete.primaryColor,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -65,39 +59,32 @@ class _ReviewPageState extends State<ReviewPage> {
             Text(
               "Your feedback helps us improve your healthcare experience. Please share your thoughts about the consultation.",
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color:  AppPallete.textColor),
+              style: TextStyle(fontSize: 14, color: AppPallete.textColor),
             ),
             SizedBox(height: 20),
             CircleAvatar(
               radius: 50,
-              backgroundImage: AssetImage('assets/images/doc2.jpeg'),
+              backgroundImage: widget.imageUrl != null
+                  ? NetworkImage(widget.imageUrl!)
+                  : AssetImage('assets/images/doc2.jpeg') as ImageProvider,
             ),
             SizedBox(height: 10),
             Text(
-              'Dr. Olivia Turner, M.D.',
+              widget.doctorName,
               style: TextStyle(
                 fontSize: 23,
                 fontWeight: FontWeight.bold,
-                color:  AppPallete.primaryColor,
+                color: AppPallete.primaryColor,
               ),
             ),
             Text(
-              'Dermato-Endocrinology',
-              style: TextStyle(fontSize: 14, color:  AppPallete.textColor),
-            ),
-            SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.favorite, color:  AppPallete.primaryColor),
-                SizedBox(width: 5),
-                Row(
-                  children: List.generate(5, (index) => Icon(Icons.star, color:  AppPallete.primaryColor)),
-                ),
-              ],
+              widget.specialty ?? 'Specialty not specified',
+              style: TextStyle(fontSize: 14, color: AppPallete.textColor),
             ),
             SizedBox(height: 20),
+            // Rating widget would go here
             TextField(
+              controller: _commentController,
               maxLines: 5,
               decoration: InputDecoration(
                 hintText: 'Enter Your Comment Here…',
@@ -111,59 +98,51 @@ class _ReviewPageState extends State<ReviewPage> {
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {},
+              onPressed: _submitReview,
               style: ElevatedButton.styleFrom(
-                backgroundColor:  AppPallete.primaryColor,
+                backgroundColor: AppPallete.primaryColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
                 padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
               ),
-              child: Text('Add Review', style: TextStyle(fontSize: 16, color:  AppPallete.whiteColor)),
+              child: Text('Add Review', style: TextStyle(fontSize: 16, color: AppPallete.whiteColor)),
             ),
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavBar(
-        selectedIndex: _selectedIndex,
-        onItemTapped: _onItemTapped,
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        selectedItemColor: AppPallete.primaryColor,
+        unselectedItemColor: AppPallete.greyColor,
+        type: BottomNavigationBarType.fixed,
+        items: [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: ""),
+          BottomNavigationBarItem(icon: Icon(Icons.chat), label: ""),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: ""),
+          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: ""),
+        ],
       ),
     );
   }
-}
 
-class BottomNavBar extends StatelessWidget {
-  final int selectedIndex;
-  final Function(int) onItemTapped;
+  void _submitReview() {
+    // Implement review submission logic here
+    final reviewData = {
+      'doctor_id': widget.doctorId,
+      'rating': _rating,
+      'comment': _commentController.text,
+      'created_at': DateTime.now().toString(),
+    };
 
-  BottomNavBar({required this.selectedIndex, required this.onItemTapped});
+    // Save the review (you would typically call your API here)
+    print('Submitting review: $reviewData');
 
-  @override
-  Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: selectedIndex,
-      onTap: onItemTapped,
-      selectedItemColor: AppPallete.primaryColor,
-      unselectedItemColor:  AppPallete.greyColor,
-      type: BottomNavigationBarType.fixed,
-      items: [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: "",
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.chat),
-          label: "",
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: "",
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today),
-          label: "",
-        ),
-      ],
+    // Show success message and go back
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Review submitted successfully!')),
     );
+    Navigator.pop(context);
   }
 }
