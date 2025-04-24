@@ -7,6 +7,7 @@ import 'package:medical_app/features/auth/presentation/screens/login_page.dart';
 import 'package:medical_app/features/auth/presentation/screens/register_page.dart';
 import 'package:medical_app/features/auth/presentation/screens/reset_password_email_link.dart';
 import 'package:medical_app/features/auth/presentation/screens/reset_password_page.dart';
+import 'package:medical_app/features/d_prescription_tool/prescription_selector_page';
 import 'package:medical_app/features/doctor-search/domain/entities/doctor_profiles.dart';
 import 'package:medical_app/features/doctor-search/presentation/screen/doctor_profile_page.dart';
 import 'package:medical_app/features/doctor-search/presentation/screen/doctor_search_page.dart';
@@ -45,6 +46,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/consults',
       builder: (context, state) => const MainLayout(child: IndexPage()),
+    ),
+    GoRoute(
+      path: '/prescription-tool',
+      builder: (context, state) => const MainLayout(child: PrescriptionSelectorPage()),
     ),
     GoRoute(
       path: '/doctor-availability',
