@@ -73,30 +73,33 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   void _onAuthRegister(AuthRegister event, Emitter<AuthState> emit) async {
-  debugPrint("📤 Registering user: ${event.email}");
-  emit(AuthLoading());
+    debugPrint("📤 Registering user: ${event.email}");
+    emit(AuthLoading());
 
-  final res = await _userRegister(UserRegisterParams(
-    dob: event.dob,
-    phone: event.phone,
-    email: event.email,
-    password: event.password,
-  ));
+    final res = await _userRegister(UserRegisterParams(
+      role: event.role,
+      dob: event.dob,
+      gender: event.gender,
+      phone: event.phone,
+      email: event.email,
+      password: event.password,
+      firstname: event.firstname,
+      lastname: event.lastname,
+    ));
 
-  res.fold(
-    (fail) {
-      debugPrint("❌ Registration failed: ${fail.error}");
-      emit(AuthFailed(fail.error));
-    },
-    (_) {
-      debugPrint("✅ Registration success: ${event.email}");
-      // Skip manual OTP request—Supabase already sends the OTP
-      _userCubit.setPendingOtp(event.email);
-      emit(AuthOtpSent(event.email));
-    },
-  );
-}
-
+    res.fold(
+      (fail) {
+        debugPrint("❌ Registration failed: ${fail.error}");
+        emit(AuthFailed(fail.error));
+      },
+      (_) {
+        debugPrint("✅ Registration success: ${event.email}");
+        // Skip manual OTP request—Supabase already sends the OTP
+        _userCubit.setPendingOtp(event.email);
+        emit(AuthOtpSent(event.email));
+      },
+    );
+  }
 
   void _onAuthRequestOtp(AuthRequestOtp event, Emitter<AuthState> emit) async {
     debugPrint("📤 Requesting OTP for: ${event.email}");
@@ -140,7 +143,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     debugPrint("🔐 Logging in user: ${event.email}");
     emit(AuthLoading());
     final res = await _userLogin(
-      UserLoginParams(email: event.email, password: event.password),
+      UserLoginParams(email: event.email, password: event.password, role: event.role),
     );
 
     res.fold(
@@ -176,6 +179,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   void _emitAuthSuccess(UserType user, Emitter<AuthState> emit) {
     debugPrint("📊 User session updated: ${user.email}");
     _userCubit.updateUser(user);
-    emit(AuthSuccess(user));
+    emit(AuthSuccess(user: user, role: user.role));
+
   }
 }

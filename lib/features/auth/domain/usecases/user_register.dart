@@ -10,23 +10,41 @@ class UserRegister implements UseCase<UserType, UserRegisterParams> {
 
   @override
   Future<Either<Failure, UserType>> call(UserRegisterParams params) async {
+    if (params.role != 'patient') {
+      return left(Failure('Only patients can register.'));
+    }
+
     return await authRepos.signUpWithEmailAndPasword(
-        phone: params.phone,
-        dob: params.dob,
-        email: params.email,
-        password: params.password);
+      role: params.role,
+      phone: params.phone,
+      gender: params.gender,
+      dob: params.dob,
+      email: params.email,
+      password: params.password,
+      firstname: params.firstname,
+      lastname: params.lastname,
+    );
   }
 }
 
 class UserRegisterParams {
   final String phone;
   final String email;
+  final String gender;
   final String password;
   final String dob;
+  final String firstname;
+  final String lastname;
+  final String role;
 
-  UserRegisterParams(
-      {required this.phone,
-      required this.dob,
-      required this.email,
-      required this.password});
+  UserRegisterParams({
+    required this.phone,
+    required this.role,
+    required this.dob,
+    required this.gender,
+    required this.email,
+    required this.password,
+    required this.firstname,
+    required this.lastname,
+  });
 }

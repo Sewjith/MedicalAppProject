@@ -17,6 +17,9 @@ class _RegisterState extends State<Register> {
   final _passwordController = TextEditingController();
   final _phoneController = TextEditingController();
   final _dobController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _genderController = TextEditingController();
 
   @override
   void dispose() {
@@ -32,6 +35,11 @@ class _RegisterState extends State<Register> {
     final password = _passwordController.text.trim();
     final phone = _phoneController.text.trim();
     final dob = _dobController.text.trim();
+    final firstname = _firstNameController.text.trim();
+    final lastname = _lastNameController.text.trim();
+    final gender = _genderController.text.trim();
+    const role = 'patient';
+
 
     if (email.isEmpty || password.isEmpty || phone.isEmpty || dob.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -46,6 +54,10 @@ class _RegisterState extends State<Register> {
             password: password,
             phone: phone,
             dob: dob,
+            firstname: firstname,
+            lastname: lastname,
+            gender: gender,
+            role: role
           ),
         );
   }
@@ -120,6 +132,35 @@ class _RegisterState extends State<Register> {
                           controller: _emailController,
                         ),
                         const SizedBox(height: 20),
+                        const Text(
+                          'Firstname',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppPallete.textColor,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        AuthDetails(
+                          hintText: 'Enter Fist Name',
+                          controller: _firstNameController,
+                          isPassword: true,
+                        ),const SizedBox(height: 20),
+                        const Text(
+                          'Lastname',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppPallete.textColor,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        AuthDetails(
+                          hintText: 'Enter Last Name',
+                          controller: _lastNameController,
+                          isPassword: true,
+                        ),
+                        const SizedBox(height: 20),/////////////
                         const Text(
                           'Password',
                           style: TextStyle(

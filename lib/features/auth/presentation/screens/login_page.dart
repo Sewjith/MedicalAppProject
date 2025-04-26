@@ -16,6 +16,7 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  String _role = 'patient'; // Default to 'patient', could be 'doctor'
 
   @override
   void dispose() {
@@ -36,7 +37,10 @@ class _LoginState extends State<Login> {
       return;
     }
 
-    context.read<AuthBloc>().add(AuthLogin(email: email, password: password));
+    // Pass role along with email and password
+    context
+        .read<AuthBloc>()
+        .add(AuthLogin(email: email, password: password, role: _role));
   }
 
   // Handles guest navigation
@@ -64,7 +68,13 @@ class _LoginState extends State<Login> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Successfully logged in")),
                 );
-                context.go('/home'); // Navigate to home after login
+
+                // Navigate to appropriate dashboard based on role
+                if (_role == 'patient') {
+                  context.go('/patient-dashboard'); // Patient Dashboard
+                } else if (_role == 'doctor') {
+                  context.go('/doctor-dashboard'); // Doctor Dashboard
+                }
               } else if (state is AuthFailed) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text(state.error)),
@@ -161,6 +171,34 @@ class _LoginState extends State<Login> {
                           ),
 
                           const SizedBox(height: 30),
+
+                          // Role Selection (Patient or Doctor)
+                          const Text(
+                            'Select Role',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppPallete.textColor,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          DropdownButton<String>(
+                            value: _role,
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                _role = newValue!;
+                              });
+                            },
+                            items: <String>['patient', 'doctor']
+                                .map<DropdownMenuItem<String>>((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                          ),
+
+                          const SizedBox(height: 20),
 
                           // Login Button
                           FilledButton(

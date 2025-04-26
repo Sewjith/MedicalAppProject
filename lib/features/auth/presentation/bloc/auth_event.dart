@@ -4,16 +4,24 @@ part of 'auth_bloc.dart';
 abstract class AuthEvent {}
 
 final class AuthRegister extends AuthEvent {
+  final String role;
+  final String gender;
   final String email;
   final String password;
   final String phone;
   final String dob;
+  final String firstname;
+  final String lastname;
 
   AuthRegister({
+    required this.role,
+    required this.gender,
     required this.email,
     required this.password,
     required this.phone,
     required this.dob,
+    required this.firstname,
+    required this.lastname,
   }) {
     debugPrint('📣 AuthRegister Event: email=$email, phone=$phone');
   }
@@ -22,10 +30,12 @@ final class AuthRegister extends AuthEvent {
 final class AuthLogin extends AuthEvent {
   final String email;
   final String password;
+  final String role;
 
   AuthLogin({
     required this.email,
     required this.password,
+    required this.role,
   }) {
     debugPrint('📣 AuthLogin Event: email=$email');
   }

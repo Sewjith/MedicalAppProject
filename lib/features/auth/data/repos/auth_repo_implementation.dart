@@ -13,9 +13,10 @@ class AuthReposImpl implements AuthRepos {
   Future<Either<Failure, UserType>> signInWithEmailAndPassword({
     required String email,
     required String password,
+    required String role,
   }) async {
     return _getUserDetails(
-      () async => await remoteAuthData.signInWithEmail(
+      () => remoteAuthData.signInWithEmail(
         email: email,
         password: password,
       ),
@@ -26,15 +27,22 @@ class AuthReposImpl implements AuthRepos {
   Future<Either<Failure, UserType>> signUpWithEmailAndPasword({
     required String phone,
     required String dob,
+    required String gender,
     required String email,
     required String password,
+    required String firstname,
+    required String lastname,
+    required String role,
   }) async {
     return _getUserDetails(
-      () async => await remoteAuthData.signUpWithEmail(
+      () => remoteAuthData.signUpWithEmail(
         phone: phone,
         dob: dob,
+        gender: gender,
         email: email,
         password: password,
+        firstname: firstname,
+        lastname: lastname,
       ),
     );
   }

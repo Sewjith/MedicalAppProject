@@ -9,7 +9,10 @@ abstract interface class AuthRemoteSource {
     required String phone,
     required String email,
     required String password,
+    required String gender,
     required String dob,
+    required String firstname,
+    required String lastname,
   });
 
   Future<void> requestEmailOtp(String email);
@@ -34,9 +37,12 @@ class AuthRemoteSourceImp implements AuthRemoteSource {
   @override
   Future<UserModel> signUpWithEmail({
     required String phone,
+    required String gender,
     required String email,
     required String password,
     required String dob,
+    required String firstname,
+    required String lastname,
   }) async {
     try {
       final res = await supabaseClient.auth.signUp(
@@ -45,6 +51,10 @@ class AuthRemoteSourceImp implements AuthRemoteSource {
         data: {
           'phone': phone,
           'dob': dob,
+          'role': 'patient',
+          'firstname': firstname,
+          'lastname': lastname,
+          'gender': gender,
         },
       );
 
@@ -52,7 +62,6 @@ class AuthRemoteSourceImp implements AuthRemoteSource {
         throw const ServerException("User is not available");
       }
 
-      // No need to request OTP again, Supabase already sends it
       return UserModel.fromJson(res.user!.toJson());
     } catch (e) {
       throw ServerException(e.toString());
@@ -104,12 +113,37 @@ class AuthRemoteSourceImp implements AuthRemoteSource {
         throw const ServerException("Invalid credentials");
       }
 
-      // Ensure the user is verified
       if (res.user!.emailConfirmedAt == null) {
-        throw const ServerException("Please verify your email before logging in.");
+        throw const ServerException(
+          "Please verify your email before logging in.",
+        );
       }
 
-      return UserModel.fromJson(res.user!.toJson());
+      final userId = res.user!.id;
+
+      final patientRes = await supabaseClient
+          .from('patients')
+          .select()
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      if (patientRes != null) {
+        return UserModel.fromJson(res.user!.toJson()).copyWith(role: 'patient');
+      }
+
+      final doctorRes = await supabaseClient
+          .from('doctors')
+          .select()
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      if (doctorRes != null) {
+        return UserModel.fromJson(res.user!.toJson()).copyWith(role: 'doctor');
+      }
+
+      throw const ServerException(
+        "User role not assigned. Please contact support.",
+      );
     } catch (e) {
       throw ServerException(e.toString());
     }

@@ -8,14 +8,19 @@ abstract interface class AuthRepos {
     required String email,
     required String password,
     required String dob,
+    required String firstname,
+    required String lastname,
+    required String role,
+    required String gender,
   });
   Future<Either<Failure, UserType>> signInWithEmailAndPassword({
     required String email,
     required String password,
+    required String role,
   });
   Future<Either<Failure, UserType>> activeUser();
-  Future<Either<Failure, void>> signOutUser();
-  Future<Either<Failure, void>> requestEmailOtp(String email);
+  Future<Either<Failure, Unit>> signOutUser();
+  Future<Either<Failure, Unit>> requestEmailOtp(String email);
   Future<Either<Failure, UserType>> verifyEmailOtp(String email, String otp);
 
 }
