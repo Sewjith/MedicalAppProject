@@ -49,9 +49,9 @@ class PrescriptionSelectorPage extends StatefulWidget {
 class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
   List<SupabaseMedicine> _availableMedicines = [];
   final List<SelectedMedicine> _selectedMedicines = [];
-  bool _isLoadingMedicines = false; // Initialize to false
+  bool _isLoadingMedicines = false;
   bool _isSubmitting = false;
-  bool _isProcessingMedicine = false; // To lock UI during add/edit/delete
+  bool _isProcessingMedicine = false;
 
   final List<String> _dosageOptions = [
     '250 mg',
@@ -103,23 +103,15 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
   }
 
   Future<void> _fetchMedicines() async {
-    if (_isLoadingMedicines || _isProcessingMedicine) {
-      return;
-    }
+    if (_isLoadingMedicines || _isProcessingMedicine) return;
     if (!mounted) return;
-
-    setState(() {
-      _isLoadingMedicines = true;
-    });
-
+    setState(() => _isLoadingMedicines = true);
     try {
       final response = await supabase
           .from('medicines')
           .select('id, name, type')
           .order('name', ascending: true);
-
       if (!mounted) return;
-
       final List<dynamic> data = response as List<dynamic>;
       _availableMedicines =
           data.map((map) => SupabaseMedicine.fromMap(map)).toList();
@@ -133,11 +125,7 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
         _availableMedicines = [];
       }
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoadingMedicines = false;
-        });
-      }
+      if (mounted) setState(() => _isLoadingMedicines = false);
     }
   }
 
@@ -149,24 +137,22 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
         'name': name,
         if (type != null && type.isNotEmpty) 'type': type,
       });
-      if (mounted) {
+      if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Medicine "$name" added.'),
             backgroundColor: Colors.green,
           ),
         );
-      }
     } catch (e) {
       print('Supabase add medicine error: $e');
-      if (mounted) {
+      if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to add: ${e.toString()}'),
             backgroundColor: Colors.redAccent,
           ),
         );
-      }
     } finally {
       if (mounted) {
         setState(() => _isProcessingMedicine = false);
@@ -184,24 +170,22 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
         'name': newName,
         'type': newType,
       }).eq('id', medicine.id);
-      if (mounted) {
+      if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Medicine "${medicine.name}" updated.'),
             backgroundColor: Colors.green,
           ),
         );
-      }
     } catch (e) {
       print('Supabase edit medicine error: $e');
-      if (mounted) {
+      if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to update: ${e.toString()}'),
             backgroundColor: Colors.redAccent,
           ),
         );
-      }
     } finally {
       if (mounted) {
         setState(() => _isProcessingMedicine = false);
@@ -218,24 +202,22 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
     setState(() => _isProcessingMedicine = true);
     try {
       await supabase.from('medicines').delete().eq('id', medicine.id);
-      if (mounted) {
+      if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Medicine "${medicine.name}" deleted.'),
             backgroundColor: Colors.orangeAccent,
           ),
         );
-      }
     } catch (e) {
       print('Supabase delete medicine error: $e');
-      if (mounted) {
+      if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to delete: ${e.toString()}'),
             backgroundColor: Colors.redAccent,
           ),
         );
-      }
     } finally {
       if (mounted) {
         setState(() => _isProcessingMedicine = false);
@@ -246,7 +228,6 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
 
   Future<void> _showAddMedicineDialog() async {
     if (_isProcessingMedicine || _isLoadingMedicines) return;
-
     final TextEditingController nameController = TextEditingController();
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     String? selectedType;
@@ -327,7 +308,6 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
 
   Future<void> _showEditMedicineDialog(SupabaseMedicine medicine) async {
     if (_isProcessingMedicine || _isLoadingMedicines) return;
-
     final TextEditingController nameController =
         TextEditingController(text: medicine.name);
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
@@ -337,7 +317,6 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
         !_commonMedicineTypes.contains(medicine.type)) {
       selectedType = null;
     }
-
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -416,7 +395,6 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
 
   Future<bool?> _showDeleteConfirmationDialog(String medicineName) async {
     if (_isProcessingMedicine || _isLoadingMedicines) return false;
-
     return showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -453,9 +431,37 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
     );
   }
 
+  void _editSelectedMedicine(int index) async {
+    final SelectedMedicine currentItem = _selectedMedicines[index];
+
+    final SelectedMedicine? result =
+        await showModalBottomSheet<SelectedMedicine>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return MedicineOptionsSheet(
+          medicineName: currentItem.medicineName,
+          medicineId: currentItem.medicineId,
+          dosageOptions: _dosageOptions,
+          frequencyOptions: _frequencyOptions,
+          durationOptions: _durationOptions,
+          initialDosage: currentItem.dosage,
+          initialFrequency: currentItem.frequency,
+          initialDuration: currentItem.duration,
+          initialInstructions: currentItem.instructions,
+        );
+      },
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _selectedMedicines[index] = result;
+      });
+    }
+  }
+
   void _selectMedicine(SupabaseMedicine medicine) async {
-    if (_isProcessingMedicine || _isLoadingMedicines)
-      return;
+    if (_isProcessingMedicine || _isLoadingMedicines) return;
     final SelectedMedicine? result =
         await showModalBottomSheet<SelectedMedicine>(
       context: context,
@@ -645,7 +651,7 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
                       child: CircularProgressIndicator(
                           color: Colors.white, strokeWidth: 2))),
             )
-          else 
+          else
             IconButton(
               icon: const Icon(Icons.add_circle_outline),
               tooltip: 'Add New Medicine',
@@ -688,12 +694,30 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
                                 const TextStyle(fontWeight: FontWeight.bold)),
                         subtitle: Text(
                             '${item.dosage}, ${item.frequency}, for ${item.duration} days.\nNotes: ${item.instructions}'),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline,
-                              color: Colors.redAccent),
-                          onPressed: () {
-                            setState(() => _selectedMedicines.removeAt(index));
-                          },
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit_note, size: 22),
+                              color: Colors.blueGrey, tooltip: 'Edit Details',
+                              onPressed: _isSubmitting
+                                  ? null
+                                  : () => _editSelectedMedicine(index),
+                              visualDensity: VisualDensity.compact,
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline, size: 22),
+                              color: Colors.redAccent, tooltip: 'Remove Item',
+                              // Disable if submitting prescription
+                              onPressed: _isSubmitting
+                                  ? null
+                                  : () {
+                                      setState(() =>
+                                          _selectedMedicines.removeAt(index));
+                                    },
+                              visualDensity: VisualDensity.compact,
+                            ),
+                          ],
                         ),
                       );
                     },
@@ -709,9 +733,7 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
                 child: _isLoadingMedicines
-                    ? const Center(
-                        child:
-                            CircularProgressIndicator())
+                    ? const Center(child: CircularProgressIndicator())
                     : _availableMedicines.isEmpty
                         ? Center(
                             child: Column(
@@ -838,6 +860,10 @@ class MedicineOptionsSheet extends StatefulWidget {
   final List<String> dosageOptions;
   final List<String> frequencyOptions;
   final List<int> durationOptions;
+  final String? initialDosage;
+  final String? initialFrequency;
+  final int? initialDuration;
+  final String? initialInstructions;
 
   const MedicineOptionsSheet({
     super.key,
@@ -846,6 +872,10 @@ class MedicineOptionsSheet extends StatefulWidget {
     required this.dosageOptions,
     required this.frequencyOptions,
     required this.durationOptions,
+    this.initialDosage,
+    this.initialFrequency,
+    this.initialDuration,
+    this.initialInstructions,
   });
 
   @override
@@ -861,12 +891,15 @@ class _MedicineOptionsSheetState extends State<MedicineOptionsSheet> {
   @override
   void initState() {
     super.initState();
-    _selectedDosage =
-        widget.dosageOptions.isNotEmpty ? widget.dosageOptions.first : '';
-    _selectedFrequency =
-        widget.frequencyOptions.isNotEmpty ? widget.frequencyOptions.first : '';
-    _selectedDuration =
-        widget.durationOptions.isNotEmpty ? widget.durationOptions.first : 7;
+    _selectedDosage = widget.initialDosage ??
+        (widget.dosageOptions.isNotEmpty ? widget.dosageOptions.first : '');
+    _selectedFrequency = widget.initialFrequency ??
+        (widget.frequencyOptions.isNotEmpty
+            ? widget.frequencyOptions.first
+            : '');
+    _selectedDuration = widget.initialDuration ??
+        (widget.durationOptions.isNotEmpty ? widget.durationOptions.first : 7);
+    _instructionsController.text = widget.initialInstructions ?? '';
   }
 
   @override
@@ -999,8 +1032,11 @@ class _MedicineOptionsSheetState extends State<MedicineOptionsSheet> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10)),
                 ),
-                child: const Text('Add to Prescription',
-                    style: TextStyle(fontSize: 16)),
+                child: Text(
+                    (widget.initialDosage != null)
+                        ? 'Update Prescription Item'
+                        : 'Add to Prescription',
+                    style: const TextStyle(fontSize: 16)),
               ),
             ),
             const SizedBox(height: 20),
