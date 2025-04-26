@@ -49,20 +49,45 @@ class PrescriptionSelectorPage extends StatefulWidget {
 class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
   List<SupabaseMedicine> _availableMedicines = [];
   final List<SelectedMedicine> _selectedMedicines = [];
-  bool _isLoadingMedicines = true;
+  bool _isLoadingMedicines = false; // Initialize to false
   bool _isSubmitting = false;
+  bool _isProcessingMedicine = false; // To lock UI during add/edit/delete
 
   final List<String> _dosageOptions = [
-    '250 mg', '500 mg', '1000 mg', '10 mg', '20 mg', '40 mg', '80 mg',
-    '2.5 mg', '5 mg', '200 mg', '400 mg', '600 mg', '850 mg', '100 mg'
+    '250 mg',
+    '500 mg',
+    '1000 mg',
+    '10 mg',
+    '20 mg',
+    '40 mg',
+    '80 mg',
+    '2.5 mg',
+    '5 mg',
+    '200 mg',
+    '400 mg',
+    '600 mg',
+    '850 mg',
+    '100 mg'
   ];
   final List<String> _frequencyOptions = [
-    'Once a day', 'Twice a day', 'Three times a day', 'As needed'
+    'Once a day',
+    'Twice a day',
+    'Three times a day',
+    'As needed'
   ];
   final List<int> _durationOptions = [1, 3, 5, 7, 10, 14, 21, 28, 30];
 
   final List<String> _commonMedicineTypes = [
-    'Tablet', 'Capsule', 'Pill', 'Syrup', 'Injection', 'Cream', 'Ointment', 'Drops', 'Inhaler', 'Other'
+    'Tablet',
+    'Capsule',
+    'Pill',
+    'Syrup',
+    'Injection',
+    'Cream',
+    'Ointment',
+    'Drops',
+    'Inhaler',
+    'Other'
   ];
 
   final String AppointmentId = 'e99ba947-ec69-4993-a245-ef443a6d4adb';
@@ -78,13 +103,14 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
   }
 
   Future<void> _fetchMedicines() async {
-    if (mounted && !_isLoadingMedicines) {
-      setState(() {
-        _isLoadingMedicines = true;
-      });
-    } else if (!mounted) {
-       return;
+    if (_isLoadingMedicines || _isProcessingMedicine) {
+      return;
     }
+    if (!mounted) return;
+
+    setState(() {
+      _isLoadingMedicines = true;
+    });
 
     try {
       final response = await supabase
@@ -92,29 +118,344 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
           .select('id, name, type')
           .order('name', ascending: true);
 
+      if (!mounted) return;
+
       final List<dynamic> data = response as List<dynamic>;
-      if (mounted) {
-        setState(() {
-          _availableMedicines =
-              data.map((map) => SupabaseMedicine.fromMap(map)).toList();
-          _isLoadingMedicines = false;
-        });
-      }
+      _availableMedicines =
+          data.map((map) => SupabaseMedicine.fromMap(map)).toList();
     } catch (e) {
       print('Supabase fetch medicine error: $e');
       if (mounted) {
-        setState(() {
-          _isLoadingMedicines = false;
-        });
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Error fetching medicines: ${e.toString()}'),
           backgroundColor: Colors.redAccent,
         ));
+        _availableMedicines = [];
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingMedicines = false;
+        });
       }
     }
   }
 
+  Future<void> _addNewMedicine(String name, String? type) async {
+    if (_isProcessingMedicine || _isLoadingMedicines) return;
+    if (mounted) setState(() => _isProcessingMedicine = true);
+    try {
+      await supabase.from('medicines').insert({
+        'name': name,
+        if (type != null && type.isNotEmpty) 'type': type,
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Medicine "$name" added.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Supabase add medicine error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to add: ${e.toString()}'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessingMedicine = false);
+        _fetchMedicines();
+      }
+    }
+  }
+
+  Future<void> _editMedicine(
+      SupabaseMedicine medicine, String newName, String? newType) async {
+    if (_isProcessingMedicine || _isLoadingMedicines) return;
+    if (mounted) setState(() => _isProcessingMedicine = true);
+    try {
+      await supabase.from('medicines').update({
+        'name': newName,
+        'type': newType,
+      }).eq('id', medicine.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Medicine "${medicine.name}" updated.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Supabase edit medicine error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update: ${e.toString()}'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessingMedicine = false);
+        _fetchMedicines();
+      }
+    }
+  }
+
+  Future<void> _deleteMedicine(SupabaseMedicine medicine) async {
+    if (_isProcessingMedicine || _isLoadingMedicines) return;
+    final bool confirmed =
+        await _showDeleteConfirmationDialog(medicine.name) ?? false;
+    if (!confirmed || !mounted) return;
+    setState(() => _isProcessingMedicine = true);
+    try {
+      await supabase.from('medicines').delete().eq('id', medicine.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Medicine "${medicine.name}" deleted.'),
+            backgroundColor: Colors.orangeAccent,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Supabase delete medicine error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete: ${e.toString()}'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessingMedicine = false);
+        _fetchMedicines();
+      }
+    }
+  }
+
+  Future<void> _showAddMedicineDialog() async {
+    if (_isProcessingMedicine || _isLoadingMedicines) return;
+
+    final TextEditingController nameController = TextEditingController();
+    final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+    String? selectedType;
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return StatefulBuilder(builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text('Add New Medicine'),
+            content: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: ListBody(
+                  children: <Widget>[
+                    TextFormField(
+                      controller: nameController,
+                      autofocus: true,
+                      decoration: const InputDecoration(
+                        hintText: 'Enter medicine name',
+                        labelText: 'Medicine Name *',
+                      ),
+                      textCapitalization: TextCapitalization.words,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty)
+                          return 'Please enter a medicine name';
+                        bool exists = _availableMedicines.any((m) =>
+                            m.name.trim().toLowerCase() ==
+                            value.trim().toLowerCase());
+                        if (exists) return 'This medicine name already exists';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: selectedType,
+                      hint: const Text('Select Type (Optional)'),
+                      isExpanded: true,
+                      items: _commonMedicineTypes.map((String type) {
+                        return DropdownMenuItem<String>(
+                            value: type, child: Text(type));
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setDialogState(() => selectedType = newValue);
+                      },
+                      decoration: InputDecoration(
+                        labelText: 'Type',
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('Cancel'),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              ElevatedButton(
+                child: const Text('Add Medicine'),
+                onPressed: () {
+                  if (formKey.currentState!.validate()) {
+                    _addNewMedicine(nameController.text.trim(), selectedType);
+                    Navigator.of(context).pop();
+                  }
+                },
+              ),
+            ],
+          );
+        });
+      },
+    );
+  }
+
+  Future<void> _showEditMedicineDialog(SupabaseMedicine medicine) async {
+    if (_isProcessingMedicine || _isLoadingMedicines) return;
+
+    final TextEditingController nameController =
+        TextEditingController(text: medicine.name);
+    final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+    String? selectedType =
+        _commonMedicineTypes.contains(medicine.type) ? medicine.type : null;
+    if (medicine.type != null &&
+        !_commonMedicineTypes.contains(medicine.type)) {
+      selectedType = null;
+    }
+
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return StatefulBuilder(builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text('Edit Medicine'),
+            content: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: ListBody(
+                  children: <Widget>[
+                    TextFormField(
+                      controller: nameController,
+                      autofocus: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Medicine Name *',
+                      ),
+                      textCapitalization: TextCapitalization.words,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty)
+                          return 'Please enter a medicine name';
+                        bool exists = _availableMedicines.any((m) =>
+                            m.id != medicine.id &&
+                            m.name.trim().toLowerCase() ==
+                                value.trim().toLowerCase());
+                        if (exists) return 'Another medicine has this name';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: selectedType,
+                      hint: const Text('Select Type (Optional)'),
+                      isExpanded: true,
+                      items: _commonMedicineTypes.map((String type) {
+                        return DropdownMenuItem<String>(
+                            value: type, child: Text(type));
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setDialogState(() => selectedType = newValue);
+                      },
+                      decoration: InputDecoration(
+                        labelText: 'Type',
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('Cancel'),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              ElevatedButton(
+                child: const Text('Save Changes'),
+                onPressed: () {
+                  if (formKey.currentState!.validate()) {
+                    _editMedicine(
+                        medicine, nameController.text.trim(), selectedType);
+                    Navigator.of(context).pop();
+                  }
+                },
+              ),
+            ],
+          );
+        });
+      },
+    );
+  }
+
+  Future<bool?> _showDeleteConfirmationDialog(String medicineName) async {
+    if (_isProcessingMedicine || _isLoadingMedicines) return false;
+
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Deletion'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text(
+                    'Are you sure you want to delete the medicine "$medicineName"?'),
+                const Text('This action cannot be undone.',
+                    style: TextStyle(color: Colors.red)),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+            ),
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Delete'),
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _selectMedicine(SupabaseMedicine medicine) async {
+    if (_isProcessingMedicine || _isLoadingMedicines)
+      return;
     final SelectedMedicine? result =
         await showModalBottomSheet<SelectedMedicine>(
       context: context,
@@ -129,7 +470,6 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
         );
       },
     );
-
     if (result != null) {
       setState(() {
         _selectedMedicines.add(result);
@@ -161,12 +501,10 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
   }
 
   Future<void> _submitPrescription() async {
-    if (_selectedMedicines.isEmpty) return;
+    if (_selectedMedicines.isEmpty || _isSubmitting) return;
     final List<SelectedMedicine> submittedMedicines =
         List.from(_selectedMedicines);
-
     setState(() => _isSubmitting = true);
-
     try {
       final String uniquePrescriptionIdentifier =
           'PRES-${DateTime.now().millisecondsSinceEpoch}-${uuid.v4().substring(0, 8)}';
@@ -196,7 +534,6 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
       await supabase
           .from('prescription_medicines')
           .insert(prescriptionMedicinesData);
-
       _showSubmissionDialog(
           success: true, medicinesToPrint: submittedMedicines);
       if (mounted) setState(() => _selectedMedicines.clear());
@@ -240,10 +577,10 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
                   style: const TextStyle(fontSize: 16),
                   textAlign: TextAlign.center,
                 ),
-                 const SizedBox(height: 10),
-                 Text( 
+                const SizedBox(height: 10),
+                Text(
                   success ? "What would you like to do next?" : "",
-                   style: const TextStyle(fontSize: 16),
+                  style: const TextStyle(fontSize: 16),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 20),
@@ -291,130 +628,6 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
     );
   }
 
-  Future<void> _showAddMedicineDialog() async {
-    final TextEditingController nameController = TextEditingController();
-    final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-    String? selectedType; 
-
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return StatefulBuilder( 
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Add New Medicine'),
-              content: SingleChildScrollView(
-                child: Form(
-                  key: formKey,
-                  child: ListBody(
-                    children: <Widget>[
-                      TextFormField(
-                        controller: nameController,
-                        autofocus: true,
-                        decoration: const InputDecoration(
-                          hintText: 'Enter medicine name',
-                          labelText: 'Medicine Name *',
-                        ),
-                        textCapitalization: TextCapitalization.words,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter a medicine name';
-                          }
-                          bool exists = _availableMedicines.any((m) =>
-                              m.name.trim().toLowerCase() ==
-                              value.trim().toLowerCase());
-                          if (exists) {
-                            return 'This medicine name already exists';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-
-                      DropdownButtonFormField<String>(
-                        value: selectedType,
-                        hint: const Text('Select Type (Optional)'),
-                        isExpanded: true,
-                        items: _commonMedicineTypes.map((String type) {
-                          return DropdownMenuItem<String>(
-                            value: type,
-                            child: Text(type),
-                          );
-                        }).toList(),
-                        onChanged: (String? newValue) {
-                          setDialogState(() {
-                            selectedType = newValue;
-                          });
-                        },
-                        decoration: InputDecoration(
-                          labelText: 'Type',
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 10),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              actions: <Widget>[
-                TextButton(
-                  child: const Text('Cancel'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-                ElevatedButton(
-                  child: const Text('Add Medicine'),
-                  onPressed: () {
-                    if (formKey.currentState!.validate()) {
-                      _addNewMedicine(
-                        nameController.text.trim(),
-                        selectedType,
-                      );
-                      Navigator.of(context).pop();
-                    }
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Future<void> _addNewMedicine(String name, String? type) async {
-    try {
-      await supabase.from('medicines').insert({
-        'name': name,
-        if (type != null && type.isNotEmpty) 'type': type,
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Medicine "$name" added successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-      await _fetchMedicines();
-    } catch (e) {
-      print('Supabase add medicine error: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to add medicine: ${e.toString()}'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -422,11 +635,22 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
         title: const Text('Prescription Tool'),
         backgroundColor: Colors.blueAccent,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline),
-            tooltip: 'Add New Medicine',
-            onPressed: _showAddMedicineDialog,
-          ),
+          if (_isProcessingMedicine)
+            const Padding(
+              padding: EdgeInsets.only(right: 12.0),
+              child: Center(
+                  child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2))),
+            )
+          else 
+            IconButton(
+              icon: const Icon(Icons.add_circle_outline),
+              tooltip: 'Add New Medicine',
+              onPressed: _isLoadingMedicines ? null : _showAddMedicineDialog,
+            ),
           const SizedBox(width: 8),
         ],
       ),
@@ -477,6 +701,7 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
                 ),
               ),
             if (_selectedMedicines.isNotEmpty) const SizedBox(height: 16),
+
             Expanded(
               flex: 3,
               child: Card(
@@ -484,49 +709,83 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
                 child: _isLoadingMedicines
-                    ? const Center(child: CircularProgressIndicator())
+                    ? const Center(
+                        child:
+                            CircularProgressIndicator())
                     : _availableMedicines.isEmpty
                         ? Center(
-                           child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                 const Text('No medicines found.'),
-                                 const SizedBox(height: 8),
-                                 TextButton.icon(
-                                    icon: const Icon(Icons.refresh),
-                                    label: const Text('Tap to Retry'),
-                                    onPressed: _fetchMedicines,
-                                 )
-                              ],
-                           )
-                          )
+                            child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text('No medicines found.'),
+                              const SizedBox(height: 8),
+                              TextButton.icon(
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Tap to Retry'),
+                                onPressed: _fetchMedicines,
+                              )
+                            ],
+                          ))
                         : RefreshIndicator(
                             onRefresh: _fetchMedicines,
                             child: ListView.builder(
-                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 8.0),
                               itemCount: _availableMedicines.length,
                               itemBuilder: (context, index) {
                                 final medicine = _availableMedicines[index];
                                 return ListTile(
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0), // Adjust item padding
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16.0, vertical: 0),
                                   title: Text(medicine.name,
                                       style: const TextStyle(
                                           fontWeight: FontWeight.w600)),
-                                  subtitle: (medicine.type != null && medicine.type!.isNotEmpty)
-                                      ? Text('Type: ${medicine.type}', style: TextStyle(color: Colors.grey.shade600, fontSize: 13))
+                                  subtitle: (medicine.type != null &&
+                                          medicine.type!.isNotEmpty)
+                                      ? Text('Type: ${medicine.type}',
+                                          style: TextStyle(
+                                              color: Colors.grey.shade600,
+                                              fontSize: 13))
                                       : null,
-                                  trailing: ElevatedButton.icon(
-                                    icon: const Icon(Icons.add, size: 18),
-                                    label: const Text('Add'),
-                                    style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.green.shade600,
-                                        foregroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8)),
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 8)),
-                                    onPressed: () => _selectMedicine(medicine),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.edit_outlined,
+                                            size: 20),
+                                        color: Colors.blueGrey,
+                                        tooltip: 'Edit ${medicine.name}',
+                                        onPressed: (_isLoadingMedicines ||
+                                                _isProcessingMedicine)
+                                            ? null
+                                            : () => _showEditMedicineDialog(
+                                                medicine),
+                                        visualDensity: VisualDensity.compact,
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_outline,
+                                            size: 20),
+                                        color: Colors.redAccent,
+                                        tooltip: 'Delete ${medicine.name}',
+                                        onPressed: (_isLoadingMedicines ||
+                                                _isProcessingMedicine)
+                                            ? null
+                                            : () => _deleteMedicine(medicine),
+                                        visualDensity: VisualDensity.compact,
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.add_circle,
+                                            size: 20),
+                                        color: Colors.green.shade600,
+                                        tooltip:
+                                            'Add ${medicine.name} to prescription',
+                                        onPressed: (_isLoadingMedicines ||
+                                                _isProcessingMedicine)
+                                            ? null
+                                            : () => _selectMedicine(medicine),
+                                        visualDensity: VisualDensity.compact,
+                                      ),
+                                    ],
                                   ),
                                 );
                               },
@@ -539,7 +798,10 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: (_selectedMedicines.isEmpty || _isSubmitting)
+                onPressed: (_selectedMedicines.isEmpty ||
+                        _isSubmitting ||
+                        _isLoadingMedicines ||
+                        _isProcessingMedicine)
                     ? null
                     : _submitPrescription,
                 style: ElevatedButton.styleFrom(
@@ -569,7 +831,6 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
     );
   }
 }
-
 
 class MedicineOptionsSheet extends StatefulWidget {
   final String medicineName;
