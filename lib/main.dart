@@ -19,9 +19,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       title: 'Digital Health Records',
-      home: DigitalHealthRecordUI(),
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      home: const DigitalHealthRecordUI(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }

@@ -3,6 +3,7 @@ import 'H_Record_backend.dart';
 import 'add_report.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DigitalHealthRecordUI extends StatefulWidget {
   const DigitalHealthRecordUI({super.key});
@@ -264,6 +265,11 @@ class _DigitalHealthRecordUIState extends State<DigitalHealthRecordUI> {
             if (record['record_date'] != null)
               Text('Date: ${_formatDate(record['record_date'])}'),
             if (record['record_id'] != null) Text('ID: ${record['record_id']}'),
+            if (record['doc_link'] != null)
+              const Text(
+                'Has Attachment',
+                style: TextStyle(color: Colors.blue),
+              ),
           ],
         ),
         trailing: Row(
@@ -282,12 +288,18 @@ class _DigitalHealthRecordUIState extends State<DigitalHealthRecordUI> {
                   _confirmDelete(record['id']);
                 } else if (value == 'details') {
                   _viewRecordDetails(record);
+                } else if (value == 'edit') {
+                  _editRecord(record);
                 }
               },
               itemBuilder: (context) => [
                 const PopupMenuItem(
                   value: 'details',
                   child: Text('View Details'),
+                ),
+                const PopupMenuItem(
+                  value: 'edit',
+                  child: Text('Edit Record'),
                 ),
                 const PopupMenuItem(
                   value: 'delete',
@@ -391,6 +403,8 @@ class _DigitalHealthRecordUIState extends State<DigitalHealthRecordUI> {
   }
 
   Future<void> _viewRecordDetails(Map<String, dynamic> record) async {
+    final docLink = record['doc_link'] as String?;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -410,6 +424,13 @@ class _DigitalHealthRecordUIState extends State<DigitalHealthRecordUI> {
               ],
               const SizedBox(height: 8),
               Text('Date: ${_formatDate(record['record_date'] ?? 'Unknown')}'),
+              if (docLink != null) ...[
+                const SizedBox(height: 16),
+                const Text('Attachment:',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                _buildAttachmentItem(docLink),
+              ],
             ],
           ),
         ),
@@ -421,6 +442,56 @@ class _DigitalHealthRecordUIState extends State<DigitalHealthRecordUI> {
         ],
       ),
     );
+  }
+
+  Widget _buildAttachmentItem(String url) {
+    final fileName = Uri.parse(url).pathSegments.last;
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(_getAttachmentIcon(fileName)),
+      title: Text(
+        fileName,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontSize: 14),
+      ),
+      trailing: IconButton(
+        icon: const Icon(Icons.open_in_new, size: 20),
+        onPressed: () => _openAttachment(url),
+      ),
+    );
+  }
+
+  IconData _getAttachmentIcon(String fileName) {
+    final ext = fileName.toLowerCase().split('.').last;
+    if (ext == 'pdf') return Icons.picture_as_pdf;
+    if (ext == 'jpg' || ext == 'jpeg' || ext == 'png') return Icons.image;
+    if (ext == 'doc' || ext == 'docx') return Icons.description;
+    return Icons.insert_drive_file;
+  }
+
+  Future<void> _openAttachment(String url) async {
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url));
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open attachment')),
+        );
+      }
+    }
+  }
+
+  Future<void> _editRecord(Map<String, dynamic> record) async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddReportScreen(existingRecord: record),
+      ),
+    );
+
+    if (result == true && mounted) {
+      _loadRecords();
+    }
   }
 
   Future<void> _navigateToAddReport() async {
