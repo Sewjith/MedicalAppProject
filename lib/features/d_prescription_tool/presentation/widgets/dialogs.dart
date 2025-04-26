@@ -16,7 +16,10 @@ Future<Map<String, dynamic>?> showAddMedicineDialog(
     builder: (BuildContext context) {
       return StatefulBuilder(builder: (context, setDialogState) {
         return AlertDialog(
-          title: const Text('Add New Medicine'),
+          title: const Text(
+            'Add New Medicine',
+            style: TextStyle(color: Colors.black),
+          ),
           content: SingleChildScrollView(
             child: Form(
               key: formKey,
@@ -47,7 +50,11 @@ Future<Map<String, dynamic>?> showAddMedicineDialog(
                     isExpanded: true,
                     items: commonMedicineTypes.map((String type) {
                       return DropdownMenuItem<String>(
-                          value: type, child: Text(type));
+                          value: type,
+                          child: Text(
+                            type,
+                            style: TextStyle(color: Colors.black),
+                          ));
                     }).toList(),
                     onChanged: (String? newValue) {
                       setDialogState(() => selectedType = newValue);
@@ -109,7 +116,10 @@ Future<Map<String, dynamic>?> showEditMedicineDialog(
     builder: (BuildContext context) {
       return StatefulBuilder(builder: (context, setDialogState) {
         return AlertDialog(
-          title: const Text('Edit Medicine'),
+          title: const Text(
+            'Edit Medicine',
+            style: TextStyle(color: Colors.black),
+          ),
           content: SingleChildScrollView(
             child: Form(
               key: formKey,
@@ -140,7 +150,11 @@ Future<Map<String, dynamic>?> showEditMedicineDialog(
                     isExpanded: true,
                     items: commonMedicineTypes.map((String type) {
                       return DropdownMenuItem<String>(
-                          value: type, child: Text(type));
+                          value: type,
+                          child: Text(
+                            type,
+                            style: TextStyle(color: Colors.black),
+                          ));
                     }).toList(),
                     onChanged: (String? newValue) {
                       setDialogState(() => selectedType = newValue);
@@ -188,7 +202,10 @@ Future<bool?> showDeleteConfirmationDialog(
     barrierDismissible: false,
     builder: (BuildContext context) {
       return AlertDialog(
-        title: const Text('Confirm Deletion'),
+        title: const Text(
+          'Confirm Deletion',
+          style: TextStyle(color: Colors.black),
+        ),
         content: SingleChildScrollView(
           child: ListBody(
             children: <Widget>[

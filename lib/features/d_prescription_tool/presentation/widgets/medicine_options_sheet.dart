@@ -80,7 +80,12 @@ class _MedicineOptionsSheetState extends State<MedicineOptionsSheet> {
             DropdownButtonFormField<String>(
               value: _selectedDosage,
               items: widget.dosageOptions
-                  .map((d) => DropdownMenuItem(value: d, child: Text(d)))
+                  .map((d) => DropdownMenuItem(
+                      value: d,
+                      child: Text(
+                        d,
+                        style: TextStyle(color: Colors.black),
+                      )))
                   .toList(),
               onChanged: (value) {
                 if (value != null) {
@@ -102,7 +107,12 @@ class _MedicineOptionsSheetState extends State<MedicineOptionsSheet> {
             DropdownButtonFormField<String>(
               value: _selectedFrequency,
               items: widget.frequencyOptions
-                  .map((f) => DropdownMenuItem(value: f, child: Text(f)))
+                  .map((f) => DropdownMenuItem(
+                      value: f,
+                      child: Text(
+                        f,
+                        style: TextStyle(color: Colors.black),
+                      )))
                   .toList(),
               onChanged: (value) {
                 if (value != null) {
@@ -124,8 +134,12 @@ class _MedicineOptionsSheetState extends State<MedicineOptionsSheet> {
             DropdownButtonFormField<int>(
               value: _selectedDuration,
               items: widget.durationOptions
-                  .map((days) =>
-                      DropdownMenuItem(value: days, child: Text('$days days')))
+                  .map((days) => DropdownMenuItem(
+                      value: days,
+                      child: Text(
+                        '$days days',
+                        style: TextStyle(color: Colors.black),
+                      )))
                   .toList(),
               onChanged: (value) {
                 if (value != null) {
