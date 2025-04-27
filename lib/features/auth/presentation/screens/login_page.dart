@@ -16,7 +16,6 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  String _role = 'patient'; // Default to 'patient', could be 'doctor'
 
   @override
   void dispose() {
@@ -37,10 +36,9 @@ class _LoginState extends State<Login> {
       return;
     }
 
-    // Pass role along with email and password
-    context
-        .read<AuthBloc>()
-        .add(AuthLogin(email: email, password: password, role: _role));
+    context.read<AuthBloc>().add(
+          AuthLogin(email: email, password: password),
+        );
   }
 
   // Handles guest navigation
@@ -54,7 +52,6 @@ class _LoginState extends State<Login> {
     return BlocSelector<AppUserCubit, AppUserState, bool>(
       selector: (state) => state is AppUserLoggedIn,
       builder: (context, isLoggedIn) {
-        // Redirect to home if already logged in
         if (isLoggedIn) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             context.go('/home');
@@ -69,11 +66,19 @@ class _LoginState extends State<Login> {
                   const SnackBar(content: Text("Successfully logged in")),
                 );
 
-                // Navigate to appropriate dashboard based on role
-                if (_role == 'patient') {
-                  context.go('/patient-dashboard'); // Patient Dashboard
-                } else if (_role == 'doctor') {
-                  context.go('/doctor-dashboard'); // Doctor Dashboard
+                final role = state.user.role; // Get role from the logged-in user
+
+                // Navigate based on actual role from server
+                if (role == 'patient') {
+                  context.go('/p_dashboard');
+                } else if (role == 'doctor') {
+                  context.go('/d_dashboard');
+                } else {
+                  // fallback
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('Unknown role. Please contact support.')),
+                  );
                 }
               } else if (state is AuthFailed) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -172,34 +177,6 @@ class _LoginState extends State<Login> {
 
                           const SizedBox(height: 30),
 
-                          // Role Selection (Patient or Doctor)
-                          const Text(
-                            'Select Role',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppPallete.textColor,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          DropdownButton<String>(
-                            value: _role,
-                            onChanged: (String? newValue) {
-                              setState(() {
-                                _role = newValue!;
-                              });
-                            },
-                            items: <String>['patient', 'doctor']
-                                .map<DropdownMenuItem<String>>((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
-                          ),
-
-                          const SizedBox(height: 20),
-
                           // Login Button
                           FilledButton(
                             onPressed: isLoading ? null : _loginUser,
@@ -226,7 +203,7 @@ class _LoginState extends State<Login> {
 
                           const SizedBox(height: 20),
 
-                          // Continue as Guest Button
+                          // Continue as Guest
                           TextButton(
                             onPressed: _continueAsGuest,
                             child: const Text(

@@ -27,6 +27,16 @@ abstract interface class AuthRemoteSource {
   Future<UserModel?> getIsActiveUser();
 
   Future<void> signOut();
+
+  Future<void> insertPatientProfile({
+    required String uid,
+    required String firstname,
+    required String lastname,
+    required String phone,
+    required String dob,
+    required String gender,
+    required String email,
+  });
 }
 
 class AuthRemoteSourceImp implements AuthRemoteSource {
@@ -99,6 +109,7 @@ class AuthRemoteSourceImp implements AuthRemoteSource {
   }
 
   @override
+  @override
   Future<UserModel> signInWithEmail({
     required String email,
     required String password,
@@ -119,12 +130,18 @@ class AuthRemoteSourceImp implements AuthRemoteSource {
         );
       }
 
-      final userId = res.user!.id;
+      // Move email declaration here to avoid the 'potentially unassigned' error
+      final String? userEmail = res.user!.email;
 
+      if (userEmail == null) {
+        throw const ServerException("Email is null");
+      }
+
+      // Proceed with querying the user based on email
       final patientRes = await supabaseClient
           .from('patients')
           .select()
-          .eq('user_id', userId)
+          .eq('email', userEmail)
           .maybeSingle();
 
       if (patientRes != null) {
@@ -134,7 +151,7 @@ class AuthRemoteSourceImp implements AuthRemoteSource {
       final doctorRes = await supabaseClient
           .from('doctors')
           .select()
-          .eq('user_id', userId)
+          .eq('email', userEmail)
           .maybeSingle();
 
       if (doctorRes != null) {
@@ -156,19 +173,35 @@ class AuthRemoteSourceImp implements AuthRemoteSource {
   Future<UserModel?> getIsActiveUser() async {
     try {
       if (isActiveUser != null) {
-        final session = await supabaseClient
-            .from('Users')
+        final sessionp = await supabaseClient
+            .from('patients')
             .select()
             .eq('id', isActiveUser!.user.id)
             .maybeSingle();
 
-        if (session == null) {
-          throw ServerException("User not found in database.");
+        final sessiond = await supabaseClient
+            .from('doctors')
+            .select()
+            .eq('id', isActiveUser!.user.id)
+            .maybeSingle();
+
+        // If the user is found in the patient table, return UserModel from sessionp
+        if (sessionp != null) {
+          return UserModel.fromJson(sessionp).copyWith(
+            email: isActiveUser!.user.email,
+          );
         }
 
-        return UserModel.fromJson(session).copyWith(
-          email: isActiveUser!.user.email,
-        );
+        // If the user is found in the doctor table, return UserModel from sessiond
+        if (sessiond != null) {
+          return UserModel.fromJson(sessiond).copyWith(
+            email: isActiveUser!.user.email,
+          );
+        }
+
+        // If no user is found in either table, throw an error
+        throw const ServerException(
+            "User not found in both patient and doctor databases.");
       }
       return null;
     } catch (e) {
@@ -182,6 +215,57 @@ class AuthRemoteSourceImp implements AuthRemoteSource {
       await supabaseClient.auth.signOut();
     } catch (e) {
       throw ServerException("Failed to sign out: ${e.toString()}");
+    }
+  }
+
+  @override
+  Future<void> insertPatientProfile({
+    required String uid,
+    required String firstname,
+    required String lastname,
+    required String phone,
+    required String dob,
+    required String gender,
+    required String email,
+  }) async {
+    try {
+      String newPatientId = '';
+      bool isUnique = false;
+      int nextNumber = 1;
+
+      while (!isUnique) {
+        newPatientId = 'PAT${nextNumber.toString().padLeft(3, '0')}';
+
+        final response = await supabaseClient
+            .from('patients')
+            .select('patient_id')
+            .eq('patient_id', newPatientId)
+            .maybeSingle();
+
+        if (response == null) {
+          isUnique = true;
+        } else {
+          nextNumber++;
+        }
+      }
+
+      final insertResponse = await supabaseClient.from('patients').insert({
+        'patient_id': newPatientId,
+        'first_name': firstname,
+        'last_name': lastname,
+        'phone_number': phone,
+        'date_of_birth': dob,
+        'gender': gender,
+        'email': email,
+      });
+
+      if (insertResponse.error != null) {
+        throw ServerException(insertResponse.error!.message);
+      }
+
+      print('Patient profile inserted successfully with ID: $newPatientId');
+    } catch (e) {
+      throw ServerException('Failed to insert patient profile: $e');
     }
   }
 }

@@ -16,7 +16,6 @@ abstract interface class AuthRepos {
   Future<Either<Failure, UserType>> signInWithEmailAndPassword({
     required String email,
     required String password,
-    required String role,
   });
   Future<Either<Failure, UserType>> activeUser();
   Future<Either<Failure, Unit>> signOutUser();

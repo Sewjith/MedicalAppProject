@@ -13,7 +13,6 @@ class AuthReposImpl implements AuthRepos {
   Future<Either<Failure, UserType>> signInWithEmailAndPassword({
     required String email,
     required String password,
-    required String role,
   }) async {
     return _getUserDetails(
       () => remoteAuthData.signInWithEmail(

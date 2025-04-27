@@ -143,7 +143,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     debugPrint("🔐 Logging in user: ${event.email}");
     emit(AuthLoading());
     final res = await _userLogin(
-      UserLoginParams(email: event.email, password: event.password, role: event.role),
+      UserLoginParams(email: event.email, password: event.password),
     );
 
     res.fold(

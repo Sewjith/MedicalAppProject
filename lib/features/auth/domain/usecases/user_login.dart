@@ -14,7 +14,6 @@ class UserLogin implements UseCase<UserType, UserLoginParams> {
     return await authRepos.signInWithEmailAndPassword(
       email: params.email, 
       password: params.password, 
-      role: params.role
     );
   }
 }
@@ -22,11 +21,9 @@ class UserLogin implements UseCase<UserType, UserLoginParams> {
 class UserLoginParams {
   final String email;
   final String password;
-  final String role;
 
   UserLoginParams({
     required this.email,
     required this.password,
-    required this.role,
   });
 }

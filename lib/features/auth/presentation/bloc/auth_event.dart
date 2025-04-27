@@ -30,12 +30,10 @@ final class AuthRegister extends AuthEvent {
 final class AuthLogin extends AuthEvent {
   final String email;
   final String password;
-  final String role;
 
   AuthLogin({
     required this.email,
     required this.password,
-    required this.role,
   }) {
     debugPrint('📣 AuthLogin Event: email=$email');
   }
