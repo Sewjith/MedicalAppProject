@@ -5,11 +5,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 abstract interface class AuthRemoteSource {
   Session? get isActiveUser;
 
-  Future<UserModel> signUpWithEmail({
+  Future<UserModel> signUpPatient({
     required String phone,
+    required String gender,
     required String email,
     required String password,
-    required String gender,
     required String dob,
     required String firstname,
     required String lastname,
@@ -45,7 +45,7 @@ class AuthRemoteSourceImp implements AuthRemoteSource {
   AuthRemoteSourceImp(this.supabaseClient);
 
   @override
-  Future<UserModel> signUpWithEmail({
+  Future<UserModel> signUpPatient({
     required String phone,
     required String gender,
     required String email,
@@ -55,7 +55,8 @@ class AuthRemoteSourceImp implements AuthRemoteSource {
     required String lastname,
   }) async {
     try {
-      final res = await supabaseClient.auth.signUp(
+      // Step 1: Sign up the user using Supabase Auth
+      final authResponse = await supabaseClient.auth.signUp(
         password: password,
         email: email,
         data: {
@@ -68,12 +69,48 @@ class AuthRemoteSourceImp implements AuthRemoteSource {
         },
       );
 
-      if (res.user == null) {
-        throw const ServerException("User is not available");
+      if (authResponse.user == null) {
+        throw ServerException("User is not available after signup");
       }
 
-      return UserModel.fromJson(res.user!.toJson());
+      // Step 2: Generate the Patient ID based on existing records
+      final latestPatient = await supabaseClient
+          .from('patients')
+          .select('patient_id')
+          .order('patient_id', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      int nextNumber = 1;
+      if (latestPatient != null && latestPatient['patient_id'] != null) {
+        final latestPatientId = latestPatient['patient_id'] as String;
+        final numericPart = int.tryParse(latestPatientId.replaceAll('PAT', '')) ?? 0;
+        nextNumber = numericPart + 1;
+      }
+
+      final newPatientId = 'PAT${nextNumber.toString().padLeft(3, '0')}';
+
+      // Step 3: Insert the new patient record into the database using email
+      final insertResponse = await supabaseClient.from('patients').insert([
+        {
+          'patient_id': newPatientId,
+          'email': email, // Using email instead of user_id
+          'first_name': firstname,
+          'last_name': lastname,
+          'phone_number': phone,
+          'date_of_birth': dob,
+          'gender': gender,
+        }
+      ]); // execute() provides detailed response
+
+      // Debug: Print the insert response for better debugging
+      print("Insert response: ${insertResponse.data}");
+
+      // Return the UserModel with role 'patient'
+      return UserModel.fromJson(authResponse.user!.toJson()).copyWith(role: 'patient');
     } catch (e) {
+      // Log the error and throw ServerException with error details
+      print('Signup failed: $e');
       throw ServerException(e.toString());
     }
   }
@@ -81,9 +118,7 @@ class AuthRemoteSourceImp implements AuthRemoteSource {
   @override
   Future<void> requestEmailOtp(String email) async {
     try {
-      await supabaseClient.auth.signInWithOtp(
-        email: email,
-      );
+      await supabaseClient.auth.signInWithOtp(email: email);
     } catch (e) {
       throw ServerException('Error sending OTP: $e');
     }
@@ -148,6 +183,7 @@ class AuthRemoteSourceImp implements AuthRemoteSource {
         return UserModel.fromJson(res.user!.toJson()).copyWith(role: 'patient');
       }
 
+      // Find doctor by email (in case of doctor login)
       final doctorRes = await supabaseClient
           .from('doctors')
           .select()

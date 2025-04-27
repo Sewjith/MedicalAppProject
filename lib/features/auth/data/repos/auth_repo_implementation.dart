@@ -33,8 +33,8 @@ class AuthReposImpl implements AuthRepos {
     required String lastname,
     required String role,
   }) async {
-    return _getUserDetails(
-      () => remoteAuthData.signUpWithEmail(
+    try {
+      final user = await remoteAuthData.signUpPatient(
         phone: phone,
         dob: dob,
         gender: gender,
@@ -42,8 +42,12 @@ class AuthReposImpl implements AuthRepos {
         password: password,
         firstname: firstname,
         lastname: lastname,
-      ),
-    );
+      );
+
+      return right(user);
+    } on ServerException catch (e) {
+      return left(Failure(e.exception));
+    }
   }
 
   Future<Either<Failure, UserType>> _getUserDetails(
@@ -74,7 +78,7 @@ class AuthReposImpl implements AuthRepos {
   Future<Either<Failure, Unit>> signOutUser() async {
     try {
       await remoteAuthData.signOut();
-      return right(unit); // Use `unit` to represent a successful void result
+      return right(unit);
     } on ServerException catch (e) {
       return left(Failure(e.exception));
     }
@@ -84,7 +88,7 @@ class AuthReposImpl implements AuthRepos {
   Future<Either<Failure, Unit>> requestEmailOtp(String email) async {
     try {
       await remoteAuthData.requestEmailOtp(email);
-      return right(unit); // Use `unit` to represent a successful void result
+      return right(unit);
     } on ServerException catch (e) {
       return left(Failure(e.exception));
     }
