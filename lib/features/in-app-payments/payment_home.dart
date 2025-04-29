@@ -5,14 +5,18 @@ import 'package:medical_app/features/in-app-payments/payment.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class PaymentHomePage extends StatefulWidget {
-  const PaymentHomePage({super.key,});
+  final String appointmentId;
+
+  const PaymentHomePage({
+    super.key,
+    this.appointmentId = "27a2f9e2-551b-4b48-8018-426d82fd2d76",
+  });
 
   @override
   State<PaymentHomePage> createState() => _PaymentHomePageState();
 }
 
 class _PaymentHomePageState extends State<PaymentHomePage> {
-  final String patientId = "a5073dd2-a726-43e6-9a25-1454ac6dfda5";
 
   bool isPaymentProcessing = false;
   PatientPaymentInfo? _patientInfo;
@@ -25,29 +29,50 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
   @override
   void initState() {
     super.initState();
-    _fetchPatientData();
+    _fetchAppointmentAndPatientData();
   }
 
-  Future<void> _fetchPatientData() async {
+  Future<void> _fetchAppointmentAndPatientData() async {
     setState(() {
       _isLoadingPatientData = true;
       _loadingError = null;
+      _patientInfo = null;
     });
+
     try {
       final supabase = Supabase.instance.client;
-      final response = await supabase
+
+      print("Fetching appointment details for ID: ${widget.appointmentId}");
+      final appointmentResponse = await supabase
+          .from('appointments')
+          .select('patient_id')
+          .eq('id', widget.appointmentId)
+          .maybeSingle();
+
+      if (appointmentResponse == null) {
+        throw Exception("Appointment with ID ${widget.appointmentId} not found.");
+      }
+
+      final String? patientId = appointmentResponse['patient_id'];
+
+      if (patientId == null) {
+        throw Exception("Patient ID not found for the given appointment.");
+      }
+      print("Found Patient ID: $patientId");
+
+      print("Fetching patient details for ID: $patientId");
+      final patientResponse = await supabase
           .from('patients')
           .select('first_name, last_name, address')
           .eq('id', patientId)
           .single();
 
-      final String fullName =
-          "${response['first_name']} ${response['last_name']}";
-      final String address = response['address'] ?? 'Address not provided';
+      final String fullName = "${patientResponse['first_name']} ${patientResponse['last_name']}";
+      final String address = patientResponse['address'] ?? 'Address not provided';
 
       setState(() {
         _patientInfo = PatientPaymentInfo(
-          p_id: patientId,
+          app_id: widget.appointmentId,
           name: fullName,
           addressLine1: address,
           postalCode: '',
@@ -57,14 +82,23 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
         );
         _isLoadingPatientData = false;
       });
+       print("Successfully fetched patient data: Name = $fullName");
+
     } catch (e) {
-      print("Error fetching patient data: $e");
+      print("Error fetching appointment/patient data: $e");
       setState(() {
         _isLoadingPatientData = false;
-        _loadingError = "Failed to load patient details.";
+        if (e is Exception && e.toString().contains("Appointment with ID")) {
+           _loadingError = e.toString();
+        } else if (e is Exception && e.toString().contains("Patient ID not found")) {
+           _loadingError = e.toString();
+        } else {
+          _loadingError = "Failed to load details for payment.";
+        }
       });
     }
   }
+
 
   Future<void> processPayment() async {
     if (_patientInfo == null || _isLoadingPatientData) {
@@ -81,6 +115,7 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
     });
 
     try {
+      // Use the fetched _patientInfo
       final data = await createPaymentIntent(
         patientInfo: _patientInfo!,
         currency: currency,
@@ -102,6 +137,7 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
 
       await Stripe.instance.presentPaymentSheet();
       showPaymentSuccessDialog();
+
     } on Exception catch (e) {
       print("Payment Error: $e");
       if (e is StripeException) {
@@ -215,6 +251,7 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
     );
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -224,6 +261,10 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.blueAccent,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -287,7 +328,7 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
                       children: [
                         CircularProgressIndicator(),
                         SizedBox(width: 10),
-                        Text("Loading patient details..."),
+                        Text("Loading appointment details..."),
                       ],
                     ),
                   )
@@ -295,23 +336,25 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 20.0),
                     child: Text(_loadingError!,
-                        style: const TextStyle(color: Colors.red)),
+                        style: const TextStyle(color: Colors.red),
+                        textAlign: TextAlign.center,
+                        ),
                   )
                 else
-                  // Proceed button
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
                       onPressed: (isPaymentProcessing ||
                               _isLoadingPatientData ||
-                              _loadingError != null)
-                          ? null
+                              _loadingError != null ||
+                              _patientInfo == null)
+                          ? null 
                           : processPayment,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blueAccent,
                         disabledBackgroundColor:
-                            Colors.grey,
+                            Colors.grey, 
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),

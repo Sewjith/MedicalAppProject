@@ -9,7 +9,7 @@ class PatientPaymentInfo {
   final String? city;
   final String? state;
   final String? country;
-  final String? p_id;
+  final String? app_id;
 
   PatientPaymentInfo({
     required this.name,
@@ -18,7 +18,7 @@ class PatientPaymentInfo {
     this.city,
     this.state,
     this.country,
-    this.p_id,
+    this.app_id,
   });
 }
 
@@ -34,7 +34,8 @@ Future<Map<String, dynamic>?> createPaymentIntent({
     'amount': amount,
     'currency': currency.toLowerCase(),
     'automatic_payment_methods[enabled]': 'true',
-    'description': "Medical App Payment for ${patientInfo.name} ${patientInfo.p_id}",
+    'description':
+        "Medical App Payment for Patient ${patientInfo.name} \nAppointment - ${patientInfo.app_id}",
     'shipping[name]': patientInfo.name,
     'shipping[address][line1]': patientInfo.addressLine1,
     'shipping[address][postal_code]': patientInfo.postalCode ?? '00000',
