@@ -1,37 +1,94 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
-import 'payment.dart';
+import 'package:go_router/go_router.dart';
+import 'package:medical_app/features/in-app-payments/payment.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class PaymentHomePage extends StatefulWidget {
-  const PaymentHomePage({super.key});
+  const PaymentHomePage({super.key,});
+
   @override
   State<PaymentHomePage> createState() => _PaymentHomePageState();
 }
 
 class _PaymentHomePageState extends State<PaymentHomePage> {
+  final String patientId = "a5073dd2-a726-43e6-9a25-1454ac6dfda5";
+
   bool isPaymentProcessing = false;
-  // Hardcoded payment details (amount in cents; e.g., 1000 = $10.00)
+  PatientPaymentInfo? _patientInfo;
+  bool _isLoadingPatientData = true;
+  String? _loadingError;
+
   final String amount = "500";
   final String currency = "usd";
 
+  @override
+  void initState() {
+    super.initState();
+    _fetchPatientData();
+  }
+
+  Future<void> _fetchPatientData() async {
+    setState(() {
+      _isLoadingPatientData = true;
+      _loadingError = null;
+    });
+    try {
+      final supabase = Supabase.instance.client;
+      final response = await supabase
+          .from('patients')
+          .select('first_name, last_name, address')
+          .eq('id', patientId)
+          .single();
+
+      final String fullName =
+          "${response['first_name']} ${response['last_name']}";
+      final String address = response['address'] ?? 'Address not provided';
+
+      setState(() {
+        _patientInfo = PatientPaymentInfo(
+          p_id: patientId,
+          name: fullName,
+          addressLine1: address,
+          postalCode: '',
+          city: '',
+          state: '',
+          country: 'LK',
+        );
+        _isLoadingPatientData = false;
+      });
+    } catch (e) {
+      print("Error fetching patient data: $e");
+      setState(() {
+        _isLoadingPatientData = false;
+        _loadingError = "Failed to load patient details.";
+      });
+    }
+  }
+
   Future<void> processPayment() async {
+    if (_patientInfo == null || _isLoadingPatientData) {
+      showPaymentError("Patient details not loaded yet. Please wait.");
+      return;
+    }
+    if (_loadingError != null) {
+      showPaymentError(_loadingError!);
+      return;
+    }
+
     setState(() {
       isPaymentProcessing = true;
     });
+
     try {
       final data = await createPaymentIntent(
-        name: "John Doe",
-        address: "123 Medical St",
-        pin: "12345",
-        city: "Health City",
-        state: "HC",
-        country: "US",
+        patientInfo: _patientInfo!,
         currency: currency,
         amount: amount,
       );
 
       if (data == null || !data.containsKey('client_secret')) {
-        throw Exception("Invalid payment intent response");
+        throw Exception("Invalid payment intent response from server.");
       }
 
       await Stripe.instance.initPaymentSheet(
@@ -39,20 +96,29 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
           customFlow: false,
           merchantDisplayName: 'Medical App',
           paymentIntentClientSecret: data['client_secret'],
-          customerEphemeralKeySecret: data['ephemeralKey'] ?? '',
-          customerId: data['id'] ?? '',
           style: ThemeMode.system,
         ),
       );
 
       await Stripe.instance.presentPaymentSheet();
       showPaymentSuccessDialog();
+    } on Exception catch (e) {
+      print("Payment Error: $e");
+      if (e is StripeException) {
+        showPaymentError(
+            "Payment failed: ${e.error.localizedMessage ?? e.toString()}");
+      } else {
+        showPaymentError("An error occurred during payment: ${e.toString()}");
+      }
     } catch (e) {
-      showPaymentError(e.toString());
+      print("Generic Payment Error: $e");
+      showPaymentError("An unexpected error occurred: ${e.toString()}");
     } finally {
-      setState(() {
-        isPaymentProcessing = false;
-      });
+      if (mounted) {
+        setState(() {
+          isPaymentProcessing = false;
+        });
+      }
     }
   }
 
@@ -84,6 +150,8 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
                 ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).pop();
+                    // After paymet will go to below page
+                    context.go('/home');
                   },
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 45),
@@ -135,6 +203,7 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
+                    backgroundColor: Colors.redAccent,
                   ),
                   child: const Text("Try Again"),
                 )
@@ -170,7 +239,6 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Payment method display using Material & Container for a modern look.
                 Material(
                   elevation: 6,
                   borderRadius: BorderRadius.circular(16),
@@ -182,7 +250,8 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
                     ),
                     child: const Row(
                       children: [
-                        Icon(Icons.credit_card, size: 50, color: Colors.blueAccent),
+                        Icon(Icons.credit_card,
+                            size: 50, color: Colors.blueAccent),
                         SizedBox(width: 20),
                         Expanded(
                           child: Column(
@@ -209,29 +278,56 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
                   ),
                 ),
                 const SizedBox(height: 40),
-                // Proceed to Pay button with improved styling.
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: isPaymentProcessing ? null : processPayment,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+
+                if (_isLoadingPatientData)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 20.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(width: 10),
+                        Text("Loading patient details..."),
+                      ],
                     ),
-                    child: isPaymentProcessing
-                        ? const CircularProgressIndicator(
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
-                          )
-                        : const Text(
-                            "Proceed to Pay",
-                            style: TextStyle(fontSize: 18, color: Colors.white),
-                          ),
+                  )
+                else if (_loadingError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 20.0),
+                    child: Text(_loadingError!,
+                        style: const TextStyle(color: Colors.red)),
+                  )
+                else
+                  // Proceed button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: (isPaymentProcessing ||
+                              _isLoadingPatientData ||
+                              _loadingError != null)
+                          ? null
+                          : processPayment,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueAccent,
+                        disabledBackgroundColor:
+                            Colors.grey,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: isPaymentProcessing
+                          ? const CircularProgressIndicator(
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                            )
+                          : const Text(
+                              "Proceed to Pay",
+                              style:
+                                  TextStyle(fontSize: 18, color: Colors.white),
+                            ),
+                    ),
                   ),
-                ),
               ],
             ),
           ),
