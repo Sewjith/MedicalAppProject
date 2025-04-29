@@ -9,7 +9,7 @@ class PaymentHomePage extends StatefulWidget {
 
   const PaymentHomePage({
     super.key,
-    this.appointmentId = "27a2f9e2-551b-4b48-8018-426d82fd2d76",
+    this.appointmentId = "306b16d6-19ae-482a-8c4d-ccdc064abf0b",
   });
 
   @override
@@ -17,19 +17,60 @@ class PaymentHomePage extends StatefulWidget {
 }
 
 class _PaymentHomePageState extends State<PaymentHomePage> {
-
   bool isPaymentProcessing = false;
   PatientPaymentInfo? _patientInfo;
   bool _isLoadingPatientData = true;
   String? _loadingError;
+  final String _paymentMethod = 'Card Payment';
 
-  final String amount = "500";
+  String? _paymentIntentClientSecret;
+
+  final int amount = 500;
   final String currency = "usd";
 
   @override
   void initState() {
     super.initState();
     _fetchAppointmentAndPatientData();
+  }
+
+  Future<void> _recordPayment({
+    required String status,
+    required bool isPaid,
+    String? transactionId,
+    String? failureReason,
+  }) async {
+    final supabase = Supabase.instance.client;
+    try {
+      print("Recording payment: Status=$status, isPaid=$isPaid, AppointmentID=${widget.appointmentId}, TxID=$transactionId");
+      await supabase.from('payments').insert({
+        'amount': amount,
+        'payment_date': DateTime.now().toIso8601String(),
+        'method': _paymentMethod,
+        'status': status,
+        'transaction_id': transactionId,
+        'service_charge_rate': null, // Set if applicable
+        'is_paid': isPaid,
+        'appointment_id': widget.appointmentId,
+      });
+      print("Payment record inserted successfully.");
+    } catch (e) {
+      print("Error recording payment to Supabase: $e");
+    }
+  }
+
+  Future<void> _updateAppointmentStatus(String paymentStatus) async {
+    final supabase = Supabase.instance.client;
+    try {
+      print("Updating appointment ${widget.appointmentId} payment status to: $paymentStatus");
+      await supabase
+          .from('appointments')
+          .update({'Payment Status': paymentStatus})
+          .eq('id', widget.appointmentId);
+      print("Appointment status updated successfully.");
+    } catch (e) {
+      print("Error updating appointment status in Supabase: $e");
+    }
   }
 
   Future<void> _fetchAppointmentAndPatientData() async {
@@ -99,13 +140,22 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
     }
   }
 
+  String? _extractPaymentIntentId(String? clientSecret) {
+    if (clientSecret == null) return null;
+    final parts = clientSecret.split('_secret_');
+    if (parts.isNotEmpty && parts[0].startsWith('pi_')) {
+      return parts[0];
+    }
+    return null;
+  }
+
 
   Future<void> processPayment() async {
     if (_patientInfo == null || _isLoadingPatientData) {
-      showPaymentError("Patient details not loaded yet. Please wait.");
+      print("Attempted payment process before data loaded.");
       return;
     }
-    if (_loadingError != null) {
+     if (_loadingError != null) {
       showPaymentError(_loadingError!);
       return;
     }
@@ -114,41 +164,74 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
       isPaymentProcessing = true;
     });
 
+    _paymentIntentClientSecret = null;
+    String? transactionId;
+
     try {
-      // Use the fetched _patientInfo
-      final data = await createPaymentIntent(
+      // 1. Create Payment Intent
+      final paymentIntentData = await createPaymentIntent(
         patientInfo: _patientInfo!,
         currency: currency,
-        amount: amount,
+        amount: amount.toString(),
       );
 
-      if (data == null || !data.containsKey('client_secret')) {
+      if (paymentIntentData == null || !paymentIntentData.containsKey('client_secret')) {
         throw Exception("Invalid payment intent response from server.");
       }
+
+      _paymentIntentClientSecret = paymentIntentData['client_secret'];
+      transactionId = _extractPaymentIntentId(_paymentIntentClientSecret); 
+
+       if (transactionId == null) {
+         print("Warning: Could not extract Payment Intent ID from client secret.");
+       } else {
+         print("Extracted Transaction ID: $transactionId");
+       }
 
       await Stripe.instance.initPaymentSheet(
         paymentSheetParameters: SetupPaymentSheetParameters(
           customFlow: false,
           merchantDisplayName: 'Medical App',
-          paymentIntentClientSecret: data['client_secret'],
+          paymentIntentClientSecret: _paymentIntentClientSecret!,
           style: ThemeMode.system,
         ),
       );
 
       await Stripe.instance.presentPaymentSheet();
+
+      print("Payment sheet completed successfully.");
+
+      await _recordPayment(
+          status: 'success', isPaid: true, transactionId: transactionId);
+      await _updateAppointmentStatus('success');
+
       showPaymentSuccessDialog();
 
-    } on Exception catch (e) {
-      print("Payment Error: $e");
-      if (e is StripeException) {
-        showPaymentError(
-            "Payment failed: ${e.error.localizedMessage ?? e.toString()}");
-      } else {
-        showPaymentError("An error occurred during payment: ${e.toString()}");
-      }
+    } on StripeException catch (e) {
+        print("Stripe Error: ${e.error.code} - ${e.error.message}");
+        String failureStatus = 'failed';
+        String failureReason = e.error.message ?? 'Stripe Error: ${e.error.code}';
+
+        if (e.error.code == FailureCode.Canceled) {
+            print("Payment was cancelled by the user.");
+            failureStatus = 'cancelled'; 
+            await _recordPayment(status: failureStatus, isPaid: false, transactionId: transactionId, failureReason: "User cancelled");
+            await _updateAppointmentStatus(failureStatus); 
+            showPaymentError("Payment Cancelled");
+
+        } else {
+             print("Payment failed.");
+             await _recordPayment(status: failureStatus, isPaid: false, transactionId: transactionId, failureReason: failureReason);
+             await _updateAppointmentStatus(failureStatus);
+             showPaymentError("Payment failed: ${e.error.localizedMessage ?? e.toString()}");
+        }
+
     } catch (e) {
       print("Generic Payment Error: $e");
+      await _recordPayment(status: 'failed', isPaid: false, transactionId: transactionId, failureReason: e.toString());
+      await _updateAppointmentStatus('failed');
       showPaymentError("An unexpected error occurred: ${e.toString()}");
+
     } finally {
       if (mounted) {
         setState(() {
@@ -161,6 +244,7 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
   void showPaymentSuccessDialog() {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) {
         return Dialog(
           shape:
@@ -178,15 +262,15 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
                 ),
                 const SizedBox(height: 10),
                 const Text(
-                  "Thank you for your payment.",
+                  "Your payment has been recorded.",
                   style: TextStyle(fontSize: 16),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.of(context).pop();
-                    // After paymet will go to below page
+                    Navigator.of(context).pop(); 
+                    // After payment will go here
                     context.go('/home');
                   },
                   style: ElevatedButton.styleFrom(
@@ -206,8 +290,9 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
   }
 
   void showPaymentError(String message) {
-    showDialog(
+     showDialog(
       context: context,
+       barrierDismissible: false,
       builder: (context) {
         return Dialog(
           shape:
@@ -220,7 +305,7 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
                 const Icon(Icons.error, size: 60, color: Colors.red),
                 const SizedBox(height: 20),
                 const Text(
-                  "Payment Failed",
+                  "Payment Failed", 
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 10),
@@ -241,7 +326,7 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
                     ),
                     backgroundColor: Colors.redAccent,
                   ),
-                  child: const Text("Try Again"),
+                  child: const Text("OK"),
                 )
               ],
             ),
@@ -254,7 +339,7 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+     return Scaffold(
       appBar: AppBar(
         title: const Text(
           "Medical App Payment",
@@ -349,12 +434,12 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
                               _isLoadingPatientData ||
                               _loadingError != null ||
                               _patientInfo == null)
-                          ? null 
+                          ? null
                           : processPayment,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blueAccent,
                         disabledBackgroundColor:
-                            Colors.grey, 
+                            Colors.grey,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -364,7 +449,7 @@ class _PaymentHomePageState extends State<PaymentHomePage> {
                               valueColor:
                                   AlwaysStoppedAnimation<Color>(Colors.white),
                             )
-                          : const Text(
+                          : Text(
                               "Proceed to Pay",
                               style:
                                   TextStyle(fontSize: 18, color: Colors.white),
