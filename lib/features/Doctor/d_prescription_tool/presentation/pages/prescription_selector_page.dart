@@ -308,8 +308,21 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
     }
   }
 
-  void _handlePrintPrescription(List<SelectedMedicine> medicinesToPrint) {
-    PdfUtils.printPrescription(medicinesToPrint);
+  Future<void> _handlePrintPrescription(
+      List<SelectedMedicine> medicinesToPrint) async {
+    try {
+      final pdfBytes =
+          await PdfUtils.generatePrescriptionPdfBytes(medicinesToPrint);
+      await PdfUtils.printPdfBytes(pdfBytes);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Error generating PDF for print: $e'),
+          backgroundColor: Colors.redAccent,
+        ));
+      }
+      print("Error preparing PDF for print: $e");
+    }
   }
 
   @override
