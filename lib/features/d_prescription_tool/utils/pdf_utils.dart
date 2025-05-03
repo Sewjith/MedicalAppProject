@@ -1,11 +1,14 @@
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../data/models/medicine_models.dart';
+import 'dart:typed_data';
 
 class PdfUtils {
-  static Future<void> printPrescription(
+  static Future<Uint8List> generatePrescriptionPdfBytes(
       List<SelectedMedicine> medicines) async {
-    if (medicines.isEmpty) return; // Don't print if empty
+    if (medicines.isEmpty) {
+      throw Exception("Cannot generate PDF for empty prescription.");
+    }
 
     final pdf = pw.Document();
     pdf.addPage(
@@ -27,6 +30,10 @@ class PdfUtils {
         },
       ),
     );
-    await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+    return pdf.save();
+  }
+
+  static Future<void> printPdfBytes(Uint8List pdfBytes) async {
+    await Printing.layoutPdf(onLayout: (format) async => pdfBytes);
   }
 }

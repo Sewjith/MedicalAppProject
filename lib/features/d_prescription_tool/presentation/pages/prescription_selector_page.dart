@@ -288,8 +288,7 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
         selectedMedicines: medicinesToSubmit,
       );
       success = true;
-      if (mounted)
-        setState(() => _selectedMedicines.clear()); // Clear list
+      if (mounted) setState(() => _selectedMedicines.clear()); // Clear list
     } catch (e) {
       submitError = e.toString();
     } finally {
@@ -298,17 +297,27 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
         context: context,
         success: success,
         errorMessage: submitError,
-        medicinesToPrint: success
-            ? medicinesToSubmit
-            : null,
-        onPrint: () =>
-            _handlePrintPrescription(medicinesToSubmit),
+        medicinesToPrint: success ? medicinesToSubmit : null,
+        onPrint: () => _handlePrintPrescription(medicinesToSubmit),
       );
     }
   }
 
-  void _handlePrintPrescription(List<SelectedMedicine> medicinesToPrint) {
-    PdfUtils.printPrescription(medicinesToPrint);
+  Future<void> _handlePrintPrescription(
+      List<SelectedMedicine> medicinesToPrint) async {
+    try {
+      final pdfBytes =
+          await PdfUtils.generatePrescriptionPdfBytes(medicinesToPrint);
+      await PdfUtils.printPdfBytes(pdfBytes);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Error generating PDF for print: $e'),
+          backgroundColor: Colors.redAccent,
+        ));
+      }
+      print("Error preparing PDF for print: $e");
+    }
   }
 
   @override

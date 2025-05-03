@@ -1,10 +1,14 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../models/medicine_models.dart';
+import 'dart:typed_data';
+import '../../utils/pdf_utils.dart';
 
 class PrescriptionService {
   final SupabaseClient _supabase = Supabase.instance.client;
   final Uuid _uuid = const Uuid();
+
+  final String _prescriptionBucket = 'prescription-pdfs'; // Choose a name
 
   // Fetch available medicines
   Future<List<SupabaseMedicine>> fetchMedicines() async {
@@ -70,6 +74,8 @@ class PrescriptionService {
       throw Exception("Cannot submit an empty prescription.");
     }
 
+    String? pdfPublicUrl;
+
     try {
       // Create prescription record
       final String uniquePrescriptionIdentifier =
@@ -100,10 +106,36 @@ class PrescriptionService {
         };
       }).toList();
 
-      // Insert into supabase table
+      // PDF Generation and upload to supabase
       await _supabase
           .from('prescription_medicines')
           .insert(prescriptionMedicinesData);
+      if (newPrescriptionUUID != null) {
+        final Uint8List pdfBytes =
+            await PdfUtils.generatePrescriptionPdfBytes(selectedMedicines);
+
+        final String filePath =
+            'public/prescription_$newPrescriptionUUID.pdf';
+
+        await _supabase.storage.from(_prescriptionBucket).uploadBinary(
+              filePath,
+              pdfBytes,
+              fileOptions: const FileOptions(
+                  cacheControl: '3600',
+                  upsert: true
+                  ),
+            );
+
+        pdfPublicUrl =
+            _supabase.storage.from(_prescriptionBucket).getPublicUrl(filePath);
+
+        await _supabase
+            .from('prescriptions')
+            .update({'pdf_url': pdfPublicUrl}).eq(
+                'id', newPrescriptionUUID);
+
+        print('PDF uploaded and URL saved: $pdfPublicUrl');
+      }
     } catch (e) {
       print('Supabase submit prescription error: $e');
       throw Exception('Failed to submit prescription: $e');
