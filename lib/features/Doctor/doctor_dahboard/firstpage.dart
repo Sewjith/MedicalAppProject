@@ -1,295 +1,275 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart'; // Import Bloc
+import 'package:go_router/go_router.dart'; // Import GoRouter
+import 'package:medical_app/core/common/cubits/user_session/app_user_cubit.dart'; // Import Cubit
 import 'package:medical_app/core/themes/color_palette.dart';
-import 'package:medical_app/features/doctor/doctor_dahboard/appoinment.dart';
-import 'package:medical_app/features/doctor/doctor_dahboard/patient_list.dart';
-import 'package:medical_app/features/doctor/doctor_dahboard/inbox.dart';
-import 'package:medical_app/features/doctor/doctor_dahboard/earnings.dart';
-import 'package:medical_app/features/doctor/doctor_dahboard/overview.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:medical_app/features/Doctor/doctor_profile/profile_db.dart'; // Use ProfileDB
 
-class DoctorDashboard extends StatelessWidget {
-  const DoctorDashboard({Key? key}) : super(key: key);
+// Removed imports for screens navigated to via GoRouter
+// import 'package:medical_app/features/doctor/doctor_dahboard/appoinment.dart'; // (Now uses GoRouter)
+// import 'package:medical_app/features/doctor/doctor_dahboard/patient_list.dart'; // (Now uses GoRouter)
+// import 'package:medical_app/features/doctor/doctor_dahboard/inbox.dart'; // (Now uses GoRouter)
+// import 'package:medical_app/features/doctor/doctor_dahboard/earnings.dart'; // (Now uses GoRouter)
+// import 'package:medical_app/features/doctor/doctor_dahboard/overview.dart'; // (Now uses GoRouter)
+// Removed unused import
+// import 'package:supabase_flutter/supabase_flutter.dart';
 
-  @override
-  Widget build(BuildContext context) {
-    const String doctorId = "79ee85c5-c5da-41f5-b4a0-579f4792f32f";
-    return DashboardScreen(doctorId: doctorId);
-  }
-}
+// Removed the StatelessWidget wrapper DoctorDashboard
 
 class DashboardScreen extends StatefulWidget {
-  final String doctorId;
-
-  const DashboardScreen({required this.doctorId, Key? key}) : super(key: key);
+  // Removed doctorId parameter - will fetch internally
+  const DashboardScreen({Key? key}) : super(key: key);
 
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  bool _isHoveredPatientList = false;
-  bool _isHoveredInbox = false;
-  bool _isHoveredEarnings = false;
-  bool _isHoveredOverview = false;
-  bool _isHoveredSchdule = false;
-  bool _isHoveredProfile = false;
-  int _selectedIndex = 0;
+  // Use ProfileDB from doctor_profile feature
+  final ProfileDB _profileDB = ProfileDB();
+  String? _currentDoctorId;
+  Map<String, dynamic>? _doctorData;
+  bool _isLoading = true;
+  String? _errorMessage;
 
-  late Future<Map<String, dynamic>> _doctorData;
+  // Removed hover state variables and selectedIndex
 
   @override
   void initState() {
     super.initState();
-    _doctorData = _fetchDoctorData();
-  }
-
-  Future<Map<String, dynamic>> _fetchDoctorData() async {
-    try {
-      final data = await Supabase.instance.client
-          .from('doctors')
-          .select('first_name, last_name, title, specialty')
-          .eq('id', widget.doctorId)
-          .maybeSingle();
-
-      return data ?? {
-        'first_name': 'Doctor',
-        'last_name': '',
-        'title': 'Dr.',
-        'specialty': 'General Practitioner'
-      };
-    } catch (e) {
-      return {
-        'first_name': 'Doctor',
-        'last_name': '',
-        'title': 'Dr.',
-        'specialty': 'General Practitioner'
-      };
-    }
-  }
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
+    // Fetch data after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeDoctorData();
     });
   }
 
-  Widget drawerItem(String title, BuildContext context, bool isHovered, Function(bool) onHover) {
-    return MouseRegion(
-      onEnter: (_) => onHover(true),
-      onExit: (_) => onHover(false),
-      child: ListTile(
-        title: Text(
-          title,
-          style: TextStyle(
-            fontSize: 18,
-            color: AppPallete.whiteColor,
-            decoration: isHovered ? TextDecoration.underline : TextDecoration.none,
-          ),
+  // Fetches doctor ID from Cubit and loads data
+  void _initializeDoctorData() {
+    final userState = context.read<AppUserCubit>().state;
+    if (userState is AppUserLoggedIn && userState.user.role == 'doctor') {
+      setState(() {
+        _currentDoctorId = userState.user.uid; // Get doctor ID (uid)
+        _isLoading = true; // Set loading before fetch
+        _errorMessage = null; // Clear previous errors
+      });
+      if (_currentDoctorId != null) {
+        _loadDoctorData(_currentDoctorId!);
+      } else {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = "Could not retrieve doctor ID.";
+        });
+      }
+    } else {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = "User is not logged in as a doctor.";
+        // Optionally redirect: context.go('/login');
+      });
+    }
+  }
+
+  // Fetches doctor data using ProfileDB
+  Future<void> _loadDoctorData(String doctorId) async {
+    try {
+      final data = await _profileDB.getDoctorProfile(doctorId);
+      if (mounted) {
+        setState(() {
+          _doctorData = data;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading doctor data: $_errorMessage')),
+        );
+      }
+    }
+  }
+
+  // Simplified drawer item without hover state
+  Widget drawerItem(String title, String routePath, BuildContext context) {
+    return ListTile(
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          color: AppPallete.whiteColor,
         ),
-        onTap: () {
-          Navigator.pop(context);
-          if (title == "PATIENT LIST") {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => PatientList()),
-            );
-          } else if (title == "INBOX") {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => InboxPage()),
-            );
-          } else if (title == "EARNINGS") {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => EarningsPage()),
-            );
-          } else if (title == "OVERVIEW") {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => OverviewPage()),
-            );
-          } else if (title == "SCHDULE") {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => AppointmentSchedulePage()),
-            );
-          } else if (title == "PROFILE") {
-            // Add profile navigation here if needed
-          }
-        },
       ),
+      onTap: () {
+        Navigator.pop(context); // Close the drawer
+        context.go(routePath); // Navigate using GoRouter
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // AppBar managed by MainLayout if needed, or keep simple one here
       appBar: AppBar(
         backgroundColor: AppPallete.secondaryColor,
         elevation: 0,
+        // Menu icon to open drawer
         leading: Builder(
           builder: (context) => IconButton(
-            icon: Icon(Icons.menu, color: AppPallete.primaryColor),
-            onPressed: () {
-              Scaffold.of(context).openDrawer();
-            },
+            icon: const Icon(Icons.menu, color: AppPallete.primaryColor),
+            onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.notifications, color: AppPallete.primaryColor),
-            onPressed: () {},
+          IconButton( // Navigate to Notifications
+            icon: const Icon(Icons.notifications, color: AppPallete.primaryColor),
+             onPressed: () {
+               if (_currentDoctorId != null) {
+                 context.go('/notifications', extra: {
+                   'receiverId': _currentDoctorId!,
+                   'receiverType': 'doctor'
+                 });
+               }
+             },
           ),
         ],
       ),
+      // Drawer for navigation
       drawer: Drawer(
         child: Container(
           color: AppPallete.primaryColor,
           child: ListView(
             padding: EdgeInsets.zero,
             children: [
-              DrawerHeader(
+              const DrawerHeader(
                 decoration: BoxDecoration(color: AppPallete.primaryColor),
                 child: Text(
                   "MENU",
-                  style: TextStyle(fontSize: 24, color: AppPallete.whiteColor),
+                  style: TextStyle(fontSize: 24, color: AppPallete.whiteColor, fontWeight: FontWeight.bold), // Added bold
                 ),
               ),
-              drawerItem("PATIENT LIST", context, _isHoveredPatientList, (hovered) {
-                setState(() {
-                  _isHoveredPatientList = hovered;
-                });
-              }),
-              drawerItem("INBOX", context, _isHoveredInbox, (hovered) {
-                setState(() {
-                  _isHoveredInbox = hovered;
-                });
-              }),
-              drawerItem("EARNINGS", context, _isHoveredEarnings, (hovered) {
-                setState(() {
-                  _isHoveredEarnings = hovered;
-                });
-              }),
-              drawerItem("OVERVIEW", context, _isHoveredOverview, (hovered) {
-                setState(() {
-                  _isHoveredOverview = hovered;
-                });
-              }),
-              drawerItem("SCHDULE", context, _isHoveredSchdule, (hovered) {
-                setState(() {
-                  _isHoveredSchdule = hovered;
-                });
-              }),
-              drawerItem("PROFILE", context, _isHoveredProfile, (hovered) {
-                setState(() {
-                  _isHoveredProfile = hovered;
-                });
-              }),
+              // Use context.go for navigation
+              drawerItem("OVERVIEW", '/doctor/overview', context),
+              //drawerItem("PATIENT LIST", '/doctor/patients', context),
+              drawerItem("PATIENT LIST", '/doctor/patient-list', context),
+              drawerItem("INBOX", '/doctor/inbox', context),
+              drawerItem("SCHEDULE", '/doctor/appointment/schedule', context),
+              drawerItem("AVAILABILITY", '/doctor/availability', context),
+              drawerItem("PRESCRIPTIONS", '/doctor/prescription-tool', context),
+              drawerItem("MY ARTICLES", '/doctor/articles', context),
+              drawerItem("EARNINGS", '/doctor/earnings', context),
+              drawerItem("CONSULTATION HISTORY", '/doctor/consultation-history', context),
+              drawerItem("PROFILE", '/doctor/profile', context),
+              // Add other relevant items like Settings if needed
             ],
           ),
         ),
       ),
-      body: Container(
-        color: AppPallete.secondaryColor,
-        padding: const EdgeInsets.all(16.0),
-        child: FutureBuilder<Map<String, dynamic>>(
-          future: _doctorData,
-          builder: (context, snapshot) {
-            final firstName = snapshot.data?['first_name'] ?? 'Doctor';
-            final lastName = snapshot.data?['last_name'] ?? '';
-            final title = snapshot.data?['title'] ?? 'Dr.';
-            final specialty = snapshot.data?['specialty'] ?? 'General Practitioner';
-            final fullName = '$title $firstName $lastName'.trim();
+      body: BlocBuilder<AppUserCubit, AppUserState>( // Rebuild on auth state changes
+        builder: (context, state) {
+          if (_isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (_errorMessage != null) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text('Error: $_errorMessage'),
+              ),
+            );
+          }
+          if (state is! AppUserLoggedIn || state.user.role != 'doctor' || _doctorData == null) {
+             return const Center(child: Text("Please log in as a doctor."));
+          }
 
-            return Column(
+          // Extract data safely after checks
+          final firstName = _doctorData?['first_name'] ?? 'Doctor';
+          final lastName = _doctorData?['last_name'] ?? '';
+          final title = _doctorData?['title'] ?? 'Dr.';
+          final specialty = _doctorData?['specialty'] ?? 'Specialist';
+          final fullName = '$title $firstName $lastName'.trim();
+          final avatarUrl = _doctorData?['avatar_url'] as String?; // Get avatar URL
+
+          // Main content when data is loaded
+          return Container(
+            color: AppPallete.secondaryColor, // Background color
+            padding: const EdgeInsets.only(bottom: 16.0), // Padding at the bottom
+            child: Column( // Use Column instead of nested Containers
               children: [
-                Expanded(
-                  child: Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: AppPallete.primaryColor,
-                      borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(height: 10),
-                        Text(
-                          'Hi ! $firstName',
-                          style: TextStyle(
-                            fontSize: 44,
-                            fontWeight: FontWeight.bold,
-                            color: AppPallete.whiteColor,
-                          ),
+                // Top section with gradient/color
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30), // Adjusted padding
+                  decoration: const BoxDecoration(
+                    color: AppPallete.primaryColor,
+                    borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Hi ! $firstName',
+                        style: const TextStyle(
+                          fontSize: 38, // Adjusted size
+                          fontWeight: FontWeight.bold,
+                          color: AppPallete.whiteColor,
                         ),
-                        Text(
-                          'Welcome Back',
-                          style: TextStyle(
-                            fontSize: 35,
-                            color: AppPallete.whiteColor,
-                          ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const Text(
+                        'Welcome Back',
+                        style: TextStyle(
+                          fontSize: 30, // Adjusted size
+                          color: AppPallete.whiteColor,
                         ),
-                        SizedBox(height: 20),
-                        CircleAvatar(
-                          radius: 120,
-                          backgroundColor: AppPallete.whiteColor,
-                          backgroundImage: AssetImage('assets/images/doctor1.jpg'),
-                        ),
-                        SizedBox(height: 10),
-                        Text(
-                          fullName,
-                          style: TextStyle(
-                            fontSize: 33,
-                            fontWeight: FontWeight.bold,
-                            color: AppPallete.textColor,
-                          ),
-                        ),
-                        Text(
-                          specialty,
-                          style: TextStyle(
-                            fontSize: 23,
-                            color: AppPallete.borderColor,
-                          ),
-                        ),
-                      ],
-                    ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 ),
-                SizedBox(height: 20),
+                // Profile section below the colored header
+                Expanded( // Allow the profile section to take remaining space
+                 child: SingleChildScrollView( // Make profile scrollable if needed
+                    padding: const EdgeInsets.only(top: 20.0),
+                    child: Column(
+                       mainAxisAlignment: MainAxisAlignment.center, // Center content vertically
+                       children: [
+                          CircleAvatar(
+                           radius: 100, // Adjusted size
+                           backgroundColor: AppPallete.whiteColor,
+                           // Use fetched avatar URL or default
+                           backgroundImage: (avatarUrl != null
+                               ? NetworkImage(avatarUrl)
+                               : const AssetImage('assets/images/doctor1.jpg')) as ImageProvider,
+                          ),
+                          const SizedBox(height: 15),
+                          Text(
+                           fullName,
+                           style: const TextStyle(
+                             fontSize: 28, // Adjusted size
+                             fontWeight: FontWeight.bold,
+                             color: AppPallete.textColor,
+                           ),
+                          ),
+                          Text(
+                           specialty,
+                           style: const TextStyle(
+                             fontSize: 20, // Adjusted size
+                             color: AppPallete.greyColor,
+                           ),
+                          ),
+                       ],
+                    ),
+                 ),
+                ),
               ],
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
-      bottomNavigationBar: BottomNavBar(
-        selectedIndex: _selectedIndex,
-        onItemTapped: _onItemTapped,
-      ),
-    );
-  }
-}
-
-class BottomNavBar extends StatelessWidget {
-  final int selectedIndex;
-  final Function(int) onItemTapped;
-
-  const BottomNavBar({required this.selectedIndex, required this.onItemTapped});
-
-  @override
-  Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: selectedIndex,
-      onTap: onItemTapped,
-      selectedItemColor: AppPallete.primaryColor,
-      unselectedItemColor: AppPallete.greyColor,
-      type: BottomNavigationBarType.fixed,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: ""),
-        BottomNavigationBarItem(icon: Icon(Icons.chat), label: ""),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: ""),
-        BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: ""),
-      ],
     );
   }
 }

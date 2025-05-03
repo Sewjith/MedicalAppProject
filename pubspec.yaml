@@ -58,6 +58,12 @@ dependencies:
   universal_io: ^2.0.4
   uuid: ^4.1.0
 
+  pdf: ^3.10.1
+  printing: ^5.9.0
+
+  audioplayers: ^5.2.1
+  flutter_markdown: ^0.7.7
+
 
 dev_dependencies:
   flutter_test:
@@ -85,6 +91,8 @@ flutter:
   assets:
      - assets/Icons/
      - assets/images/
+     - assets/.env
+     
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

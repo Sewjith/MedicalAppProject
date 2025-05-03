@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
 import 'package:medical_app/features/patient/patient_dashboard/dashboard_db.dart';
 
@@ -87,8 +88,22 @@ class DoctorSearchDelegate extends SearchDelegate<Map<String, dynamic>?> {
                 ),
                 subtitle: Text(doctor['specialty']),
                 onTap: () {
-                  close(context, doctor);
-                },
+                    final String? doctorId = doctor['id'] as String?; // Extract ID
+                    if (doctorId != null && doctorId.isNotEmpty) {
+                      // Navigate directly from here OR close with ID if the caller handles navigation
+                      // Option A: Navigate directly
+                      context.go('/patient/doctors/profile_view', extra: doctorId);
+
+                      // Option B: Close with ID (if the page that called showSearch handles it)
+                      // close(context, doctorId);
+                    } else {
+                      // Handle missing ID if necessary
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Could not get doctor ID.')),
+                      );
+                      close(context, null); // Close without selection
+                    }
+},
               ),
             );
           },

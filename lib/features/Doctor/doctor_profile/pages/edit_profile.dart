@@ -4,13 +4,18 @@ import 'package:image_picker/image_picker.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
 import 'package:medical_app/features/doctor/doctor_profile/pages/settings.dart';
 import 'package:medical_app/features/doctor/doctor_profile/profile_db.dart';
+import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart'; // Ensure this is imported
+
 
 class EditProfilePage extends StatefulWidget {
+  final String doctorId;
   final Map<String, dynamic> doctorData;
   final VoidCallback onProfileUpdated;
 
   const EditProfilePage({
     Key? key,
+    required this.doctorId,
     required this.doctorData,
     required this.onProfileUpdated,
   }) : super(key: key);
@@ -23,7 +28,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
   final ProfileDB _profileDB = ProfileDB();
   final ImagePicker _picker = ImagePicker();
-  final String doctorId = "79ee85c5-c5da-41f5-b4a0-579f4792f32f";
+
 
   late final TextEditingController _firstNameController;
   late final TextEditingController _lastNameController;
@@ -41,6 +46,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   String? _avatarPath;
   String? _avatarUrl;
   bool _isUploading = false;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -60,19 +66,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _phoneNumberController = TextEditingController(text: widget.doctorData['phone_number']?.toString() ?? '');
     _emailController = TextEditingController(text: widget.doctorData['email']?.toString() ?? '');
     _qualificationsController = TextEditingController(
-        text: (widget.doctorData['qualifications'] != null)
+        text: (widget.doctorData['qualifications'] != null && widget.doctorData['qualifications'] is List)
             ? (widget.doctorData['qualifications'] as List).join(', ')
-            : '');
+            : widget.doctorData['qualifications']?.toString() ?? '');
     _genderController = TextEditingController(text: widget.doctorData['gender']?.toString() ?? '');
     _amountController = TextEditingController(
         text: widget.doctorData['amount']?.toString() ?? '0.0');
     _languageController = TextEditingController(
-        text: (widget.doctorData['language'] != null)
+        text: (widget.doctorData['language'] != null && widget.doctorData['language'] is List)
             ? (widget.doctorData['language'] as List).join(', ')
-            : '');
+            : widget.doctorData['language']?.toString() ?? '');
   }
 
   Future<void> _pickImage() async {
+    if (_isUploading) return;
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
       if (image == null) return;
@@ -80,34 +87,49 @@ class _EditProfilePageState extends State<EditProfilePage> {
       setState(() {
         _selectedImage = File(image.path);
         _isUploading = true;
+        _avatarUrl = null;
       });
 
-      final path = await _profileDB.uploadAvatar(doctorId, image.path);
+      final path = await _profileDB.uploadAvatar(widget.doctorId, image.path);
 
-      setState(() {
-        _avatarPath = path;
-        _isUploading = false;
-      });
+      if (path != null) {
+           final url = _profileDB.getAvatarUrl(path); // Use the new method
+           setState(() {
+             _avatarPath = path;
+             _avatarUrl = url;
+             _isUploading = false;
+           });
+      } else {
+           setState(() {
+             _isUploading = false;
+           });
+           throw Exception("Upload returned null path.");
+      }
+
 
     } catch (e) {
       setState(() => _isUploading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error uploading image: ${e.toString()}'),
-          backgroundColor: AppPallete.errorColor,
-        ),
-      );
+      if (mounted){
+          ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(
+             content: Text('Error uploading image: ${e.toString()}'),
+             backgroundColor: AppPallete.errorColor,
+           ),
+         );
+      }
     }
   }
 
   Future<void> _updateProfile() async {
+     if (_isSaving) return;
     if (_formKey.currentState!.validate()) {
+      setState(() => _isSaving = true);
       try {
-        String qualificationsArrayLiteral = '{${_qualificationsController.text.split(',').map((e) => e.trim()).join(',')}}';
-        String languageArrayLiteral = '{${_languageController.text.split(',').map((e) => e.trim()).join(',')}}';
+        String qualificationsArrayLiteral = '{${_qualificationsController.text.split(',').where((s) => s.trim().isNotEmpty).map((e) => '"${e.trim()}"').join(',')}}';
+        String languageArrayLiteral = '{${_languageController.text.split(',').where((s) => s.trim().isNotEmpty).map((e) => '"${e.trim()}"').join(',')}}';
 
         await _profileDB.updateDoctorProfile(
-          doctorId: doctorId,
+          doctorId: widget.doctorId,
           firstName: _firstNameController.text,
           lastName: _lastNameController.text,
           title: _titleController.text,
@@ -130,15 +152,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
         );
 
         widget.onProfileUpdated();
-        Navigator.pop(context);
+        if (mounted) Navigator.pop(context);
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString().replaceFirst('Exception: ', '')}'),
-            duration: const Duration(seconds: 2),
-            backgroundColor: AppPallete.errorColor,
-          ),
-        );
+         if (mounted) {
+             ScaffoldMessenger.of(context).showSnackBar(
+               SnackBar(
+                 content: Text('Error: ${e.toString().replaceFirst('Exception: ', '')}'),
+                 duration: const Duration(seconds: 2),
+                 backgroundColor: AppPallete.errorColor,
+               ),
+             );
+         }
+      } finally {
+          if (mounted) setState(() => _isSaving = false);
       }
     }
   }
@@ -160,6 +186,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Widget _buildAvatarSection() {
+    ImageProvider? imageProvider;
+    if (_selectedImage != null) {
+       imageProvider = FileImage(_selectedImage!);
+    } else if (_avatarUrl != null && _avatarUrl!.isNotEmpty) {
+       imageProvider = CachedNetworkImageProvider(_avatarUrl!);
+    }
+
     return Center(
       child: Stack(
         children: [
@@ -168,18 +201,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
             child: CircleAvatar(
               radius: 60,
               backgroundColor: Colors.grey[200],
-              backgroundImage: _selectedImage != null
-                  ? FileImage(_selectedImage!)
-                  : (_avatarUrl != null ? NetworkImage(_avatarUrl!) : null),
+              backgroundImage: imageProvider,
               child: _isUploading
                   ? const CircularProgressIndicator(color: Colors.white)
-                  : (_selectedImage == null && _avatarUrl == null)
-                  ? Icon(
-                Icons.person,
-                size: 60,
-                color: Colors.grey[600],
-              )
-                  : null,
+                  : (imageProvider == null)
+                      ? Icon(Icons.person, size: 60, color: Colors.grey[600])
+                      : null,
             ),
           ),
           Positioned(
@@ -208,12 +235,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
       backgroundColor: AppPallete.whiteColor,
       appBar: AppBar(
         backgroundColor: AppPallete.whiteColor,
+        elevation: 0, // Remove elevation
         title: Text(
           'Edit Profile',
           style: TextStyle(
             color: AppPallete.primaryColor,
             fontWeight: FontWeight.bold,
-            fontSize: 35,
+            fontSize: 24, // Adjust size
           ),
         ),
         centerTitle: true,
@@ -225,10 +253,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           IconButton(
             icon: Icon(Icons.settings, color: AppPallete.primaryColor),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const settings()),
-              );
+               context.go('/doctor/profile/settings');
             },
           ),
         ],
@@ -247,33 +272,40 @@ class _EditProfilePageState extends State<EditProfilePage> {
               _buildTextField('Specialty', _specialtyController),
               _buildTextField('Years of Experience', _yearsOfExperienceController, isNumber: true),
               _buildTextField('Phone Number', _phoneNumberController),
-              _buildTextField('Email', _emailController),
-              _buildTextField('Qualifications', _qualificationsController, maxLines: 3),
+              _buildTextField('Email', _emailController, readOnly: true), // Make email read-only usually
+              _buildTextField('Qualifications (comma-separated)', _qualificationsController, maxLines: 3),
               _buildTextField('Gender', _genderController),
               _buildTextField('Consultation Fee', _amountController, isNumber: true),
               _buildTextField(
-                'Languages Spoken',
+                'Languages Spoken (comma-separated)',
                 _languageController,
                 hintText: 'Example: English, Spanish, French',
               ),
               const SizedBox(height: 24.0),
               Center(
                 child: ElevatedButton(
-                  onPressed: _updateProfile,
+                  onPressed: _isSaving ? null : _updateProfile,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppPallete.primaryColor,
-                    padding: const EdgeInsets.symmetric(
+                     padding: const EdgeInsets.symmetric(
                       horizontal: 24,
                       vertical: 15,
                     ),
+                    disabledBackgroundColor: AppPallete.greyColor,
+                     shape: RoundedRectangleBorder(
+                       borderRadius: BorderRadius.circular(12), // Consistent radius
+                     ),
                   ),
-                  child: const Text(
-                    'Save Changes',
-                    style: TextStyle(
-                      fontSize: 20.0,
-                      color: AppPallete.whiteColor,
+                  child: _isSaving
+                   ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2,))
+                   : const Text(
+                      'Save Changes',
+                      style: TextStyle(
+                        fontSize: 18, // Adjust size
+                        color: AppPallete.whiteColor,
+                         fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
                 ),
               ),
             ],
@@ -289,20 +321,35 @@ class _EditProfilePageState extends State<EditProfilePage> {
         bool isNumber = false,
         int maxLines = 1,
         String? hintText,
+         bool readOnly = false,
       }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: TextFormField(
         controller: controller,
+        readOnly: readOnly,
         decoration: InputDecoration(
           labelText: label,
           hintText: hintText,
-          border: const OutlineInputBorder(),
-          contentPadding: const EdgeInsets.all(16.0),
+          filled: true, // Add background fill
+          fillColor: readOnly ? Colors.grey[200] : Colors.white, // Grey out if read-only
+          border: OutlineInputBorder(
+             borderRadius: BorderRadius.circular(12), // Consistent radius
+             borderSide: BorderSide(color: AppPallete.borderColor),
+          ),
+           enabledBorder: OutlineInputBorder(
+             borderRadius: BorderRadius.circular(12),
+             borderSide: BorderSide(color: AppPallete.borderColor),
+           ),
+           focusedBorder: OutlineInputBorder(
+             borderRadius: BorderRadius.circular(12),
+             borderSide: BorderSide(color: AppPallete.primaryColor, width: 1.5),
+           ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16), // Adjust padding
         ),
         keyboardType: isNumber ? TextInputType.number : TextInputType.text,
         maxLines: maxLines,
-        validator: (value) {
+        validator: readOnly ? null : (value) { // Disable validation if read-only
           if (value == null || value.isEmpty) {
             return 'Please enter $label';
           }

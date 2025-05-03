@@ -181,12 +181,12 @@ Future<List<double>> getAvailablePriceRanges() async {
   }
 }
 
-class ChatScreen extends StatefulWidget {
+class ChatBotScreen extends StatefulWidget {
   @override
-  _ChatScreenState createState() => _ChatScreenState();
+  _ChatBotScreenState createState() => _ChatBotScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _ChatBotScreenState extends State<ChatBotScreen> {
   List<Map<String, dynamic>> messages = [];
   String? selectedSpecialty;
   String? selectedGender;

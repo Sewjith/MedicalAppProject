@@ -1,361 +1,190 @@
+//@annotate:modification:lib/features/Patient/appoinment_history/upcoming.dart
 import 'package:flutter/material.dart';
-import 'package:medical_app/features/Patient/appoinment_history/appoinment.dart';
-import 'package:medical_app/features/Patient/appoinment_history/cancelled.dart';
-import 'package:medical_app/features/Patient/appoinment_history/details.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:medical_app/core/common/cubits/user_session/app_user_cubit.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
-import 'package:medical_app/features/Patient/appoinment_history/appoinment cancelation.dart';
+// Import the DB logic from appoinment.dart (or the separate file if created)
+import 'package:medical_app/features/Patient/appoinment_history/appoinment.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
-void main() {
-  runApp(const Upcoming());
-}
-
-class Upcoming extends StatelessWidget {
-  const Upcoming({super.key});
+// Renamed widget
+class UpcomingAppointmentsList extends StatefulWidget {
+  const UpcomingAppointmentsList({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: UpcomingPage(),
-    );
-  }
+  State<UpcomingAppointmentsList> createState() => _UpcomingAppointmentsListState();
 }
 
-class UpcomingPage extends StatefulWidget {
+class _UpcomingAppointmentsListState extends State<UpcomingAppointmentsList> {
+  // Use the embedded DB class instance
+  final AppointmentHistoryDb _db = AppointmentHistoryDb();
+  List<Map<String, dynamic>> _appointments = [];
+  bool _isLoading = true;
+  String? _errorMessage;
+  String? _patientId;
+
+  // Keep track of deleted items for undo functionality (optional)
+  Map<String, dynamic>? _lastCancelledAppointment;
+
   @override
-  _UpcomingPageState createState() => _UpcomingPageState();
-}
-
-class _UpcomingPageState extends State<UpcomingPage> {
-  int _selectedIndex = 1;
-
-  final List<Map<String, String>> appointments = [
-    {
-      'name': 'Dr. Olivia Turner, M.D.',
-      'specialty': 'Dermato-Endocrinology',
-      'date': 'Sunday, 12 June',
-      'time': '9:30 AM - 10:00 AM',
-      'image': 'assets/images/doc2.jpeg', // Local image path
-    },
-    {
-      'name': 'Dr. Alexander Bennett, Ph.D.',
-      'specialty': 'Dermato-Genetics',
-      'date': 'Friday, 20 June',
-      'time': '2:30 PM - 3:00 PM',
-      'image': 'assets/images/doc2.jpeg',
-    },
-    {
-      'name': 'Dr. Sophia Martinez, Ph.D.',
-      'specialty': 'Cosmetic Bioengineering',
-      'date': 'Tuesday, 15 June',
-      'time': '9:30 AM - 10:00 AM',
-      'image': 'assets/images/doc3.png',
-    },
-  ];
-
-
-  List<Map<String, String>> deletedAppointments = [];
-
-
-  void _deleteAppointment(int index) {
-    setState(() {
-
-      deletedAppointments.add(appointments[index]);
-      appointments.removeAt(index);
-    });
-  }
-
-
-  void _restoreAppointment() {
-    setState(() {
-      if (deletedAppointments.isNotEmpty) {
-        appointments.add(deletedAppointments.last);
-        deletedAppointments.removeLast();
+  void initState() {
+    super.initState();
+    // Fetch patientId and load data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final userState = context.read<AppUserCubit>().state;
+      if (userState is AppUserLoggedIn && userState.user.role == 'patient') {
+        _patientId = userState.user.uid;
+        _loadAppointments();
+      } else {
+         if(mounted){
+             setState(() {
+                 _isLoading = false;
+                 _errorMessage = "Patient not logged in.";
+             });
+         }
       }
     });
   }
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-
-    if (index == 0) {
-      Navigator.pushReplacement(context,
-          MaterialPageRoute(builder: (context) => Appointment()));
-    } else if (index == 1) {
-
-    } else if (index == 2) {
-
-    } else if (index == 3) {
-
+  Future<void> _loadAppointments() async {
+    if (_patientId == null || !mounted) return;
+    setState(() { _isLoading = true; _errorMessage = null; });
+    try {
+      final data = await _db.getUpcomingAppointments(_patientId!);
+      if (mounted) {
+        setState(() { _appointments = data; _isLoading = false; });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() { _isLoading = false; _errorMessage = e.toString().replaceFirst("Exception: ", ""); });
+      }
     }
   }
 
+  // Navigate to Cancel Form using GoRouter
+  void _navigateToCancelForm(String appointmentId) {
+     context.push('/patient/appointment/history/cancel-form', extra: appointmentId);
+     // Note: After cancellation on the form page, this list should ideally refresh.
+     // This might require passing a callback or using a state management solution
+     // that notifies this list when an appointment status changes.
+     // For now, we'll rely on manual refresh or revisiting the page.
+  }
+
+   // Navigate to Details Page using GoRouter
+  void _navigateToDetails(Map<String, dynamic> appointment) {
+     final doctorData = appointment['doctor'] as Map<String, dynamic>?;
+     final doctorName = _db.getDoctorDisplayName(doctorData);
+     final specialty = doctorData?['specialty'] ?? 'N/A';
+     final dateStr = appointment['appointment_date'];
+     final timeStr = appointment['appointment_time'];
+     final displayDateTime = _db.formatAppointmentDateTime(dateStr, timeStr);
+     // Split displayDateTime for the details page if it expects separate date/time
+     final parts = displayDateTime.split('•');
+     final displayDate = parts.isNotEmpty ? parts[0].trim() : 'N/A';
+     final displayTime = parts.length > 1 ? parts[1].trim() : 'N/A';
+
+
+      context.push('/patient/appointment/history/details', extra: {
+        'doctorName': doctorName,
+        'specialty': specialty,
+        'appointmentDate': displayDate, // Pass formatted date
+        'appointmentTime': displayTime, // Pass formatted time
+        // Pass any other needed data
+      });
+  }
+
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: AppPallete.primaryColor),
-          onPressed: () {
-            Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (context) => Appointment()));
-          },
-        ),
-        title: Text(
-          'All Appointment',
-          style: TextStyle(color: AppPallete.primaryColor, fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(2.0),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _selectedIndex = 0;
-                    });
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => Appointment()),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    backgroundColor: _selectedIndex == 0 ? AppPallete.primaryColor : AppPallete.whiteColor,
-                    foregroundColor: _selectedIndex == 0 ? AppPallete.whiteColor : AppPallete.primaryColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  child: const Text(
-                    'Complete',
-                    style: TextStyle(fontSize: 18),
-                  ),
-                ),
-                SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _selectedIndex = 1;
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    backgroundColor: _selectedIndex == 1 ? AppPallete.primaryColor : AppPallete.whiteColor,
-                    foregroundColor: _selectedIndex == 1 ? AppPallete.whiteColor : AppPallete.primaryColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  child: const Text(
-                    'Upcoming',
-                    style: TextStyle(fontSize: 18),
-                  ),
-                ),
-                SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _selectedIndex = 2;
-                    });
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => Cancel()),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    backgroundColor: _selectedIndex == 2 ? AppPallete.primaryColor : AppPallete.whiteColor,
-                    foregroundColor: _selectedIndex == 2 ? AppPallete.whiteColor : AppPallete.primaryColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  child: const Text(
-                    'Cancelled',
-                    style: TextStyle(fontSize: 18),
-                  ),
-                ),
-              ],
-            ),
+    // REMOVED Scaffold, AppBar, BottomNavBar
 
-            if (deletedAppointments.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: ElevatedButton(
-                  onPressed: _restoreAppointment,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green[50],
-                    foregroundColor: Colors.green,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_errorMessage != null) {
+      return Center(child: Text('Error: $_errorMessage'));
+    }
+    if (_appointments.isEmpty) {
+      return const Center(child: Text('No upcoming appointments.'));
+    }
+
+    // Return only the ListView
+    return ListView.builder(
+      padding: const EdgeInsets.all(16.0), // Add padding
+      itemCount: _appointments.length,
+      itemBuilder: (context, index) {
+        final appointment = _appointments[index];
+        final doctorData = appointment['doctor'] as Map<String, dynamic>?;
+        final doctorName = _db.getDoctorDisplayName(doctorData);
+        final specialty = doctorData?['specialty'] ?? 'N/A';
+        final avatarUrl = _db.getDoctorAvatarUrl(doctorData);
+
+        // Use a common card widget structure
+        return Card(
+          color: Colors.blue.shade50, // Different color for upcoming
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          elevation: 2,
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                     CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Colors.grey[300],
+                      backgroundImage: avatarUrl != null
+                          ? CachedNetworkImageProvider(avatarUrl)
+                          : const AssetImage('assets/images/doctor_placeholder.png') as ImageProvider,
+                       onBackgroundImageError: (_, __) { debugPrint("Error loading image: $avatarUrl"); },
+                       child: avatarUrl == null ? const Icon(Icons.person, size: 30, color: Colors.grey) : null,
                     ),
-                  ),
-                  child: const Text('Restore Appointment'),
-                ),
-              ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: appointments.length,
-                itemBuilder: (context, index) {
-                  final appointment = appointments[index];
-                  return Card(
-                    color: Colors.blue.shade50,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    margin: const EdgeInsets.symmetric(vertical: 10),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
+                    const SizedBox(width: 10),
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              CircleAvatar(
-                                backgroundImage: AssetImage(appointment['image']!),
-                                radius: 30,
-                              ),
-                              SizedBox(width: 10),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    appointment['name']!,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: AppPallete.primaryColor,
-                                    ),
-                                  ),
-                                  Text(appointment['specialty']!),
-                                ],
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 10),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Container(
-                                padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                                decoration: BoxDecoration(
-                                  color: AppPallete.whiteColor,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.calendar_today, size: 16, color: AppPallete.primaryColor),
-                                    SizedBox(width: 5),
-                                    Text(appointment['date']!, style: TextStyle(color: AppPallete.primaryColor)),
-                                  ],
-                                ),
-                              ),
-                              Container(
-                                padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                                decoration: BoxDecoration(
-                                  color: AppPallete.whiteColor,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.access_time, size: 16, color: AppPallete.primaryColor),
-                                    SizedBox(width: 5),
-                                    Text(appointment['time']!, style: TextStyle(color: AppPallete.primaryColor)),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 10),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              ElevatedButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => AppointmentDetailsPage(
-                                        doctorName: appointment['name']!,
-                                        specialty: appointment['specialty']!,
-                                        appointmentDate: appointment['date']!,
-                                        appointmentTime: appointment['time']!,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppPallete.primaryColor,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                ),
-                                child: Text('Details'),
-                              ),
-                              Row(
-                                children: [
-                                  IconButton(
-                                    icon: Icon(Icons.check_circle, color: Colors.green),
-                                    onPressed: () {},
-                                  ),
-                                  IconButton(
-                                    icon: Icon(Icons.cancel, color: Colors.red),
-                                    onPressed: () {
-                                      Navigator.pushReplacement(context,
-                                          MaterialPageRoute(builder: (context) => form()));
-                                    },
-                                  ),
-                                  IconButton(
-                                    icon: Icon(Icons.delete, color: AppPallete.textColor),
-                                    onPressed: () => _deleteAppointment(index),
-                                  ),
-                                ],
-                              ),
-                            ],
+                          Text(doctorName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppPallete.primaryColor)), // Adjusted color
+                          Text(specialty, style: const TextStyle(color: AppPallete.textColor)),
+                           Text(
+                             _db.formatAppointmentDateTime(appointment['appointment_date'], appointment['appointment_time']),
+                             style: const TextStyle(color: AppPallete.textColor, fontSize: 13)
                           ),
                         ],
                       ),
                     ),
-                  );
-                },
-              ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly, // Adjust button spacing
+                  children: [
+                     ElevatedButton(
+                       onPressed: () => _navigateToCancelForm(appointment['appointment_id']),
+                       style: ElevatedButton.styleFrom(
+                         backgroundColor: AppPallete.whiteColor,
+                         foregroundColor: Colors.redAccent, // Red text for cancel
+                         side: const BorderSide(color: Colors.redAccent), // Red border
+                       ),
+                       child: const Text("Cancel"),
+                     ),
+                    ElevatedButton(
+                      onPressed: () {
+                          final String appointmentId = appointment['appointment_id']; // Get the ID
+                          context.push('/patient/appointment/history/cancel-form', extra: appointmentId); // Pass as extra
+                      },
+                      style: ElevatedButton.styleFrom(backgroundColor: AppPallete.primaryColor),
+                      child: const Text("Details", style: TextStyle(color: AppPallete.whiteColor)),
+                    ),
+                  ],
+                )
+              ],
             ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.event),
-            label: 'Upcoming',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.cancel),
-            label: 'Cancelled',
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

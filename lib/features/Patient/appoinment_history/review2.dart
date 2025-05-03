@@ -45,7 +45,7 @@ class _ReviewPage2State extends State<ReviewPage2> {
           icon: Icon(Icons.arrow_back_ios, color:  AppPallete.primaryColor),
           onPressed: () {
             Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (context) => Cancel()));
+                MaterialPageRoute(builder: (context) => CancelledAppointmentsList()));
           },
         ),
         centerTitle: true,

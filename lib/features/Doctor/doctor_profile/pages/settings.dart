@@ -19,7 +19,7 @@ class settings extends StatelessWidget{
         backgroundColor: AppPallete.whiteColor,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new, color: AppPallete.primaryColor),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () =>  Navigator.of(context).pop(),
         ),
         title: Text(
           'Settings',

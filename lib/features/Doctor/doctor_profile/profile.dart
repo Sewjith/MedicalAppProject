@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:medical_app/core/common/cubits/user_session/app_user_cubit.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
 import 'package:medical_app/features/doctor/doctor_profile/pages/settings.dart';
 import 'package:medical_app/features/doctor/doctor_profile/pages/terms_and_conditions.dart';
 import 'package:medical_app/features/doctor/doctor_profile/pages/privacy_and_policy.dart';
-import 'package:medical_app/features/doctor/doctor_profile/pages/edit_profile.dart';
+// Remove direct import of edit_profile, navigation handled by GoRouter
+// import 'package:medical_app/features/doctor/doctor_profile/pages/edit_profile.dart';
 import 'package:medical_app/features/doctor/doctor_profile/profile_db.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:medical_app/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:go_router/go_router.dart'; // Import GoRouter
 
-void main() {
-  runApp(const Profile());
-}
 
 class Profile extends StatelessWidget {
   const Profile({super.key});
@@ -29,26 +31,66 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  int _selectedIndex = 2;
   final ProfileDB _profileDB = ProfileDB();
-  final String doctorId = "79ee85c5-c5da-41f5-b4a0-579f4792f32f";
   Map<String, dynamic>? doctorData;
+  String? _currentDoctorId;
+  bool _isLoading = true;
+  String? _errorMessage;
+
 
   @override
   void initState() {
     super.initState();
-    _fetchDoctorProfile();
+     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeDoctorIdAndFetchProfile();
+    });
   }
 
+  void _initializeDoctorIdAndFetchProfile() {
+    final userState = context.read<AppUserCubit>().state;
+    if (userState is AppUserLoggedIn && userState.user.role == 'doctor') {
+      setState(() {
+        _currentDoctorId = userState.user.uid;
+        _isLoading = true;
+        _errorMessage = null;
+      });
+      if (_currentDoctorId != null) {
+        _fetchDoctorProfile();
+      } else {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = "Could not retrieve doctor ID.";
+        });
+      }
+    } else {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = "User is not logged in as a doctor.";
+      });
+    }
+  }
+
+
   Future<void> _fetchDoctorProfile() async {
+    if (_currentDoctorId == null || !mounted) return;
+    if (!_isLoading) setState(() => _isLoading = true);
+
     try {
-      final data = await _profileDB.getDoctorProfile(doctorId);
+      final data = await _profileDB.getDoctorProfile(_currentDoctorId!);
+       if (!mounted) return;
       setState(() {
         doctorData = data;
+        _isLoading = false;
       });
     } catch (e) {
+       if (!mounted) return;
+      setState(() {
+          _isLoading = false;
+          _errorMessage = "Error loading profile: ${e.toString()}";
+          doctorData = null;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading profile: $e')),
+        SnackBar(content: Text(_errorMessage!)),
       );
     }
   }
@@ -88,7 +130,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   backgroundColor: AppPallete.primaryColor),
               onPressed: () {
                 Navigator.of(context).pop();
-                print("Logging out...");
+                context.read<AuthBloc>().add(AuthSignOut());
+                context.go('/login');
               },
               child: Text("Yes, Logout",
                   style: TextStyle(fontSize: 15, color: AppPallete.whiteColor)),
@@ -108,7 +151,13 @@ class _ProfilePageState extends State<ProfilePage> {
         backgroundColor: AppPallete.whiteColor,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new, color: AppPallete.primaryColor),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+             if(context.canPop()) {
+               context.pop();
+             } else {
+               context.go('/d_dashboard');
+             }
+          }
         ),
         title: Text(
           'My Profile',
@@ -119,54 +168,57 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         centerTitle: true,
       ),
-      body: doctorData == null
+      body: _isLoading
           ? Center(child: CircularProgressIndicator())
-          : Column(
-        children: [
-          SizedBox(height: 30),
-          // Updated CircleAvatar to use the URL from profile data
-          CircleAvatar(
-            radius: 75,
-            backgroundColor: Colors.grey[200],
-            backgroundImage: doctorData!['avatar_url'] != null
-                ? CachedNetworkImageProvider(doctorData!['avatar_url'])
-                : AssetImage('assets/images/doctor.jpg') as ImageProvider,
-          ),
-          SizedBox(height: 2),
-          Text(
-            '${doctorData!['title']} ${doctorData!['first_name']} ${doctorData!['last_name']}',
-            style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: AppPallete.textColor),
-          ),
-          Text(
-            doctorData!['specialty'],
-            style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppPallete.textColor),
-          ),
-          SizedBox(height: 35),
-          Expanded(
-            child: Center(
-              child: ListView(
-                children: [
-                  buildMenuItem(Icons.person, "Profile", context),
-                  buildMenuItem(Icons.calendar_today, "Appointments", context),
-                  buildMenuItem(Icons.payment, "Earnings and Payments", context),
-                  buildMenuItem(Icons.lock, "Privacy Policy", context),
-                  buildMenuItem(
-                      Icons.document_scanner_outlined, "Terms & Conditions", context),
-                  buildMenuItem(Icons.settings, "Settings", context),
-                  buildMenuItem(Icons.help_outline, "Help", context),
-                  buildMenuItem(Icons.logout, "Logout", context),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+          : _errorMessage != null
+             ? Center(child: Padding(padding: const EdgeInsets.all(16.0), child: Text(_errorMessage!, style: TextStyle(color: Colors.red))))
+             : doctorData == null
+                ? Center(child: Text('Could not load profile data.'))
+                : Column(
+                   children: [
+                     SizedBox(height: 30),
+                     CircleAvatar(
+                       radius: 75,
+                       backgroundColor: Colors.grey[200],
+                       backgroundImage: doctorData!['avatar_url'] != null
+                           ? CachedNetworkImageProvider(doctorData!['avatar_url'])
+                           : AssetImage('assets/images/doctor.jpg') as ImageProvider,
+                     ),
+                     SizedBox(height: 2),
+                     Text(
+                       '${doctorData!['title'] ?? ''} ${doctorData!['first_name'] ?? ''} ${doctorData!['last_name'] ?? ''}'.trim(),
+                       style: TextStyle(
+                           fontSize: 28,
+                           fontWeight: FontWeight.bold,
+                           color: AppPallete.textColor),
+                     ),
+                     Text(
+                       doctorData!['specialty'] ?? 'Specialty Not Set',
+                       style: TextStyle(
+                           fontSize: 18,
+                           fontWeight: FontWeight.bold,
+                           color: AppPallete.textColor),
+                     ),
+                     SizedBox(height: 35),
+                     Expanded(
+                       child: Center(
+                         child: ListView(
+                           children: [
+                             buildMenuItem(Icons.person, "Profile", context),
+                             buildMenuItem(Icons.calendar_today, "Appointments", context),
+                             buildMenuItem(Icons.payment, "Earnings and Payments", context),
+                             buildMenuItem(Icons.lock, "Privacy Policy", context),
+                             buildMenuItem(
+                                 Icons.document_scanner_outlined, "Terms & Conditions", context),
+                             buildMenuItem(Icons.settings, "Settings", context),
+                             buildMenuItem(Icons.help_outline, "Help", context),
+                             buildMenuItem(Icons.logout, "Logout", context),
+                           ],
+                         ),
+                       ),
+                     ),
+                   ],
+                 ),
     );
   }
 
@@ -181,36 +233,39 @@ class _ProfilePageState extends State<ProfilePage> {
         Icons.chevron_right, color: AppPallete.greyColor, size: 35,),
       onTap: () {
         if (text == "Profile") {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => EditProfilePage(
-                doctorData: doctorData!,
-                onProfileUpdated: _fetchDoctorProfile,
-              ),
-            ),
-          );
+           if (doctorData != null && _currentDoctorId != null) {
+              // Use context.push with extra map for GoRouter navigation
+              context.push(
+                 '/doctor/profile/edit',
+                 extra: {
+                   'doctorData': doctorData!,
+                   'doctorId': _currentDoctorId!,
+                   'onProfileUpdated': _fetchDoctorProfile, // Pass callback if needed
+                 },
+              );
+           } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Profile data not loaded yet.')),
+                );
+           }
         }
         if (text == "Settings") {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const settings()),
-          );
+           context.go('/doctor/profile/settings');
         }
         if (text == "Privacy Policy") {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const PrivacyPage()),
-          );
+            context.go('/doctor/profile/settings/privacy');
         }
         if (text == "Terms & Conditions") {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const TermsPage()),
-          );
+           context.go('/doctor/profile/settings/terms');
         }
         if (text == "Logout") {
           _showLogoutDialog(context);
+        }
+        if (text == "Appointments") {
+           context.go('/doctor/appointment/schedule');
+        }
+         if (text == "Earnings and Payments") {
+           context.go('/doctor/earnings');
         }
       },
     );

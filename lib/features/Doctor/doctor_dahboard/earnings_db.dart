@@ -1,48 +1,70 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:intl/intl.dart';
 
 class EarningsDB {
   final SupabaseClient _supabase = Supabase.instance.client;
 
+  Future<int> getPendingPaymentsCount(String doctorId) async {
+    try {
+      // *** FIX: Correct count syntax ***
+      final response = await _supabase
+          .from('payments')
+          .select() // Select something
+          .eq('doctor_id', doctorId)
+          .eq('status', 'pending')
+          .count(CountOption.exact); // Chain .count()
 
-  Future<int> getPendingPaymentsCount() async {
-    final response = await _supabase
-        .from('payments')
-        .select()
-        .eq('is_paid', false);
-    return response.length;
+      return response.count ?? 0;
+    } catch (e) {
+       print('Error getting pending payments count: $e');
+       throw Exception('Failed to get pending payments count');
+    }
   }
 
+  Future<List<double>> getWeeklyRevenue(String doctorId) async {
+    try {
+      final response = await _supabase
+          .from('payments')
+          .select('amount, payment_date')
+          .eq('doctor_id', doctorId)
+          .eq('status', 'completed')
+          .gte('payment_date', _getDateSevenDaysAgo());
 
-  Future<List<double>> getWeeklyRevenue() async {
-    final response = await _supabase
-        .from('payments')
-        .select('amount, payment_date')
-        .eq('is_paid', true)
-        .gte('payment_date', _getDateSevenDaysAgo());
-
-    return _processWeeklyData(response);
+      return _processWeeklyData(response);
+    } catch (e) {
+       print('Error getting weekly revenue: $e');
+       throw Exception('Failed to get weekly revenue');
+    }
   }
-
 
   String _getDateSevenDaysAgo() {
     final now = DateTime.now();
     final sevenDaysAgo = now.subtract(const Duration(days: 7));
-    return sevenDaysAgo.toIso8601String();
+    return DateFormat('yyyy-MM-dd').format(sevenDaysAgo);
   }
-
 
   List<double> _processWeeklyData(List<dynamic> data) {
     final now = DateTime.now();
-    final weeklyRevenue = List<double>.filled(7, 0);
+    final weeklyRevenue = List<double>.filled(7, 0.0);
 
     for (final payment in data) {
-      final date = DateTime.parse(payment['payment_date'] as String);
-      final daysAgo = now.difference(date).inDays;
-      if (daysAgo < 7) {
-        weeklyRevenue[6 - daysAgo] += (payment['amount'] as num).toDouble();
-      }
-    }
+       final dateValue = payment['payment_date'];
+       final amountValue = payment['amount'];
 
+       if (dateValue != null && amountValue != null && amountValue is num) {
+         try {
+           final date = DateTime.parse(dateValue as String).toLocal();
+           final daysAgo = now.difference(DateTime(date.year, date.month, date.day)).inDays;
+
+           if (daysAgo >= 0 && daysAgo < 7) {
+             weeklyRevenue[6 - daysAgo] += amountValue.toDouble();
+           }
+         } catch (e) {
+           print("Error processing payment date '$dateValue': $e");
+         }
+       }
+    }
+     print("Weekly Revenue: $weeklyRevenue");
     return weeklyRevenue;
   }
 }

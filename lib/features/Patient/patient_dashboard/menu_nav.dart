@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
-import 'package:medical_app/features/Patient/patient_dashboard/dashboard.dart';
+
 
 class SideMenu extends StatefulWidget {
   const SideMenu({super.key});
@@ -12,97 +13,143 @@ class _SideMenuState extends State<SideMenu> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppPallete.primaryColor
-      ,
+      backgroundColor: AppPallete.primaryColor,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: AppPallete.primaryColor,
+
         leading: Builder(
           builder: (context) => IconButton(
-            icon: Icon(Icons.menu, color: AppPallete.whiteColor,),
+            icon: const Icon(Icons.menu, color: AppPallete.whiteColor),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => Dashboard()),
-              );
+
+              Navigator.pop(context);
+
             },
           ),
         ),
       ),
-      body: Center(
-        child: SafeArea(
+      body: SafeArea(
           child: Container(
             width: 288,
-            child: Column(
+            child: ListView(
               children: [
                 ListTile(
-                  title: Text(
+                  leading: const Icon(Icons.home_outlined, color: AppPallete.whiteColor),
+                  title: const Text(
                     'HOME',
-                    style: TextStyle(fontSize: 15, color: AppPallete.whiteColor,fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 16, color: AppPallete.whiteColor, fontWeight: FontWeight.w500),
                   ),
                   onTap: () {
+                    Navigator.pop(context);
+                    context.go('/p_dashboard');
                   },
                 ),
-                ListTile(
-                  title: Text(
-                    'MEDICAL RECORDS',
-                    style: TextStyle(fontSize: 15, color: AppPallete.whiteColor,fontWeight: FontWeight.bold),
+                 ListTile(
+                   leading: const Icon(Icons.folder_copy_outlined, color: AppPallete.whiteColor),
+                   title: const Text(
+                     'MEDICAL RECORDS',
+                     style: TextStyle(fontSize: 16, color: AppPallete.whiteColor, fontWeight: FontWeight.w500),
+                   ),
+                   onTap: () {
+                     Navigator.pop(context);
+                     context.go('/patient/health-record');
+                   },
+                 ),
+                 ListTile(
+                   leading: const Icon(Icons.alarm, color: AppPallete.whiteColor),
+                   title: const Text(
+                     'MEDICATION REMINDERS',
+                     style: TextStyle(fontSize: 16, color: AppPallete.whiteColor, fontWeight: FontWeight.w500),
+                   ),
+                   onTap: () {
+                      Navigator.pop(context);
+                      context.go('/medication-reminder');
+                   },
+                 ),
+                  ListTile(
+                    leading: const Icon(Icons.monitor_heart_outlined, color: AppPallete.whiteColor), // Changed Icon
+                    title: const Text(
+                      'SYMPTOM TRACKER', // Added Text
+                      style: TextStyle(fontSize: 16, color: AppPallete.whiteColor, fontWeight: FontWeight.w500),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.go('/symptom-tracker'); // Added Navigation
+                    },
                   ),
-                  onTap: () {
-                  },
-                ),
-                ListTile(
-                  title: Text(
-                    'MEDICAL REMINDERS',
-                    style: TextStyle(fontSize: 15, color: AppPallete.whiteColor,fontWeight: FontWeight.bold),
-                  ),
-                  onTap: () {
-                  },
-                ),
-                ListTile(
-                  title: Text(
-                    'HEALTH ARTICLES',
-                    style: TextStyle(fontSize: 15, color: AppPallete.whiteColor,fontWeight: FontWeight.bold),
-                  ),
-                  onTap: () {
-                  },
-                ),
-                ListTile(
-                  title: Text(
-                    'VACCINATION REMINDERS',
-                    style: TextStyle(fontSize: 15, color: AppPallete.whiteColor,fontWeight: FontWeight.bold),
-                  ),
-                  onTap: () {
-                  },
-                ),
-                ListTile(
-                  title: Text(
-                    'BOOKINGS',
-                    style: TextStyle(fontSize: 15, color: AppPallete.whiteColor,fontWeight: FontWeight.bold),
-                  ),
-                  onTap: () {
-                  },
-                ),
-                ListTile(
-                  title: Text(
-                    'DOCTORS',
-                    style: TextStyle(fontSize: 15, color: AppPallete.whiteColor,fontWeight: FontWeight.bold),
-                  ),
-                  onTap: () {
-                  },
-                ),
-                ListTile(
-                  title: Text(
-                    'SETTINGS',
-                    style: TextStyle(fontSize: 15, color: AppPallete.whiteColor,fontWeight: FontWeight.bold),
-                  ),
-                  onTap: () {
-                  },
-                ),
+                  ListTile(
+                   leading: const Icon(Icons.article_outlined, color: AppPallete.whiteColor),
+                   title: const Text(
+                     'HEALTH ARTICLES', // Renamed from HEALTH ARTICLES
+                     style: TextStyle(fontSize: 16, color: AppPallete.whiteColor, fontWeight: FontWeight.w500),
+                   ),
+                   onTap: () {
+                     Navigator.pop(context);
+                     context.go('/patient/articles'); // Navigate to patient article list
+                   },
+                 ),
+                  ListTile(
+                   leading: const Icon(Icons.vaccines_outlined, color: AppPallete.whiteColor),
+                   title: const Text(
+                     'VACCINATION REMINDERS',
+                     style: TextStyle(fontSize: 16, color: AppPallete.whiteColor, fontWeight: FontWeight.w500),
+                   ),
+                   onTap: () {
+                      Navigator.pop(context);
+                      context.go('/medication-reminder/vaccination'); // Updated route based on router.dart
+                   },
+                 ),
+                 ListTile(
+                   leading: const Icon(Icons.book_online_outlined, color: AppPallete.whiteColor),
+                   title: const Text(
+                     'BOOKINGS',
+                     style: TextStyle(fontSize: 16, color: AppPallete.whiteColor, fontWeight: FontWeight.w500),
+                   ),
+                   onTap: () {
+                     Navigator.pop(context);
+                     context.go('/patient/appointment/history');
+                   },
+                 ),
+                  ListTile(
+                   leading: const Icon(Icons.search_outlined, color: AppPallete.whiteColor),
+                   title: const Text(
+                     'DOCTORS',
+                     style: TextStyle(fontSize: 16, color: AppPallete.whiteColor, fontWeight: FontWeight.w500),
+                   ),
+                   onTap: () {
+                     Navigator.pop(context);
+                     context.go('/patient/doctors/search');
+                   },
+                 ),
+                 const Divider(color: AppPallete.whiteColor),
+                 ListTile(
+                   leading: const Icon(Icons.settings_outlined, color: AppPallete.whiteColor),
+                   title: const Text(
+                     'SETTINGS',
+                     style: TextStyle(fontSize: 16, color: AppPallete.whiteColor, fontWeight: FontWeight.w500),
+                   ),
+                   onTap: () {
+                     Navigator.pop(context);
+                     context.go('/patient/profile/settings');
+                   },
+                 ),
+                 ListTile(
+                   leading: const Icon(Icons.logout_outlined, color: AppPallete.whiteColor),
+                   title: const Text(
+                     'LOGOUT',
+                     style: TextStyle(fontSize: 16, color: AppPallete.whiteColor, fontWeight: FontWeight.w500),
+                   ),
+                   onTap: () {
+                     Navigator.pop(context);
+
+                     context.go('/login');
+                   },
+                 ),
               ],
             ),
           ),
         ),
-      ),
     );
   }
 }

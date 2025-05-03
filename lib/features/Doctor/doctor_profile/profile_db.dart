@@ -1,11 +1,13 @@
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/foundation.dart'; // Add this import
 
 class ProfileDB {
   final SupabaseClient _supabase = Supabase.instance.client;
 
   Future<Map<String, dynamic>> getDoctorProfile(String doctorId) async {
-    try {
+    // ... existing code ...
+     try {
       final response = await _supabase
           .from('doctors')
           .select()
@@ -20,12 +22,17 @@ class ProfileDB {
         response['avatar_url'] = _supabase.storage
             .from('Doctor Avatars')
             .getPublicUrl(response['avatar_path']);
+      } else {
+         response['avatar_url'] = null; // Ensure URL is null if path is missing
       }
+
 
       return response;
     } catch (e) {
+      debugPrint('Failed to load profile: ${e.toString()}'); // Keep or remove debugPrint as needed
       throw Exception('Failed to load profile: ${e.toString()}');
     }
+    // ... existing code ...
   }
 
   Future<void> updateDoctorProfile({
@@ -43,7 +50,8 @@ class ProfileDB {
     required String language,
     String? avatarPath,
   }) async {
-    try {
+     // ... existing code ...
+       try {
       final updateData = {
         'first_name': firstName.trim(),
         'last_name': lastName.trim(),
@@ -65,13 +73,15 @@ class ProfileDB {
           .update(updateData)
           .eq('id', doctorId);
     } catch (e) {
+      debugPrint('Update failed: ${e.toString()}'); // Keep or remove debugPrint
       throw Exception('Update failed: ${e.toString()}');
     }
+     // ... existing code ...
   }
 
   Future<String?> uploadAvatar(String doctorId, String filePath) async {
-    try {
-      // Validate file type
+     // ... existing code ...
+        try {
       final fileExt = filePath.split('.').last.toLowerCase();
       if (!['jpg', 'jpeg', 'png'].contains(fileExt)) {
         throw Exception('Only JPG/PNG images allowed');
@@ -94,7 +104,19 @@ class ProfileDB {
 
       return storagePath;
     } catch (e) {
+       debugPrint('Avatar upload failed: ${e.toString()}'); // Keep or remove debugPrint
       throw Exception('Avatar upload failed: ${e.toString()}');
     }
+     // ... existing code ...
+  }
+
+  // Added method
+  String getAvatarUrl(String path) {
+     try {
+        return _supabase.storage.from('Doctor Avatars').getPublicUrl(path);
+     } catch (e) {
+        debugPrint("Error getting public URL for path $path: $e");
+        return ''; // Return empty string or handle error as needed
+     }
   }
 }

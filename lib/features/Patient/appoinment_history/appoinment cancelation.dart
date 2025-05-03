@@ -1,172 +1,230 @@
+//@annotate:rewritten:lib/features/Patient/appoinment_history/appoinment cancelation.dart
 import 'package:flutter/material.dart';
-import 'package:medical_app/features/Patient/appoinment_history/upcoming.dart';
+import 'package:go_router/go_router.dart'; // Import GoRouter for navigation and state access
 import 'package:medical_app/core/themes/color_palette.dart';
+// Import the file containing the embedded AppointmentHistoryDb class
+import 'package:medical_app/features/Patient/appoinment_history/appoinment.dart';
+import 'package:flutter/foundation.dart'; // For debugPrint
 
-void main() {
-  runApp(form());
-}
-
-class form extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Appointment History',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        fontFamily: 'Arial',
-      ),
-      home: CancelAppointmentPage(),
-    );
-  }
-}
+// Removed main() and outer MaterialApp wrapper as this is a page within the app
 
 class CancelAppointmentPage extends StatefulWidget {
+  // Constructor remains simple, ID is expected via GoRouter's extra
+  const CancelAppointmentPage({super.key});
+
   @override
   _CancelAppointmentPageState createState() => _CancelAppointmentPageState();
 }
 
 class _CancelAppointmentPageState extends State<CancelAppointmentPage> {
-  String selectedReason = 'Weather Conditions';
-  int _selectedIndex = 0;
+  // State variable to hold the selected reason
+  String selectedReason = 'Rescheduling'; // Default selection
+  // Controller for the "Others" reason details TextField
+  final TextEditingController _detailsController = TextEditingController();
+  // Loading state for the submission button
+  bool _isSubmitting = false;
+  // Instance of the DB class (defined in appoinment.dart)
+  final AppointmentHistoryDb _db = AppointmentHistoryDb();
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+  @override
+  void dispose() {
+    _detailsController.dispose(); // Dispose the controller
+    super.dispose();
   }
+
+  // --- Function to handle the actual cancellation ---
+  Future<void> _submitCancellation() async {
+    // Retrieve the appointment ID passed via GoRouter's 'extra' parameter
+    final String? appointmentId = GoRouterState.of(context).extra as String?;
+
+    // Validate if appointmentId was received
+    if (appointmentId == null || appointmentId.isEmpty) {
+       ScaffoldMessenger.of(context).showSnackBar(
+         const SnackBar(content: Text('Error: Could not identify appointment to cancel.'), backgroundColor: Colors.red),
+       );
+       return;
+    }
+
+    // Prepare the reason string
+    String reasonDetails = selectedReason;
+    // If "Others" is selected, validate and use the text field content
+    if (selectedReason == 'Others') {
+      if (_detailsController.text.trim().isEmpty) {
+         ScaffoldMessenger.of(context).showSnackBar(
+           const SnackBar(content: Text('Please provide details for "Others".'), backgroundColor: Colors.orange),
+         );
+         return; // Stop submission if details are missing for "Others"
+      }
+      reasonDetails = _detailsController.text.trim();
+    }
+
+    // Set loading state
+    if (!mounted) return;
+    setState(() => _isSubmitting = true);
+
+    try {
+      // Call the cancelAppointment method from the DB class
+      await _db.cancelAppointment(appointmentId, reasonDetails);
+
+      if (!mounted) return; // Check again before showing SnackBar/popping
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Appointment cancelled successfully.'), backgroundColor: Colors.green),
+      );
+      // Pop back to the previous screen (likely Upcoming list)
+      context.pop();
+      // Note: The previous screen (Upcoming list) will need a refresh mechanism
+      // to reflect the change immediately (e.g., pull-to-refresh or state management).
+
+    } catch (e) {
+       if (!mounted) return;
+       ScaffoldMessenger.of(context).showSnackBar(
+         SnackBar(content: Text('Error cancelling appointment: ${e.toString().replaceFirst("Exception: ","")}'), backgroundColor: Colors.red),
+       );
+    } finally {
+       // Ensure loading state is reset even if an error occurs
+       if (mounted) {
+         setState(() => _isSubmitting = false);
+       }
+    }
+  }
+  // --- End cancellation function ---
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:  AppPallete.whiteColor,
+      backgroundColor: AppPallete.whiteColor,
       appBar: AppBar(
-        backgroundColor:  AppPallete.whiteColor,
+        backgroundColor: AppPallete.whiteColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color:  AppPallete.primaryColor),
-          onPressed: () {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (context) => Upcoming()));
+          icon: const Icon(Icons.arrow_back_ios, color: AppPallete.primaryColor),
+                onPressed: ()  {
+            // Use context.pop() for GoRouter navigation back
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              // Fallback if it cannot pop (e.g., deep linked)
+              context.go('/patient/appointment/history'); // Go back to history base
+            } 
           },
         ),
         centerTitle: true,
-        title: Text(
+        title: const Text(
           'Cancel Appointment',
           style: TextStyle(
-            color:  AppPallete.primaryColor,
+            color: AppPallete.primaryColor,
             fontWeight: FontWeight.bold,
           ),
         ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Please select the reason for cancelling your appointment.',
-              style: TextStyle(fontSize: 14, color:  AppPallete.textColor),
-            ),
-            SizedBox(height: 20),
-            buildRadioButton('Rescheduling'),
-            buildRadioButton('Weather Conditions'),
-            buildRadioButton('Unexpected Work'),
-            buildRadioButton('Others'),
-            SizedBox(height: 20),
-            Text(
-              'Provide additional details if needed.',
-              style: TextStyle(fontSize: 14, color:  AppPallete.primaryColor),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              maxLines: 5,
-              decoration: InputDecoration(
-                hintText: 'Enter Your Reason Here…',
-                filled: true,
-                fillColor: Colors.blue.shade50,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: BorderSide.none,
-                ),
+        child: SingleChildScrollView( // Allows scrolling if content overflows
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Please select the reason for cancelling your appointment.',
+                style: TextStyle(fontSize: 14, color: AppPallete.textColor),
               ),
-            ),
-            SizedBox(height: 20),
-            Center(
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:  AppPallete.primaryColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+              const SizedBox(height: 20),
+              // Use a Column for RadioListTiles
+              Column(
+                 children: [
+                    _buildRadioButton('Rescheduling'),
+                    _buildRadioButton('Weather Conditions'),
+                    _buildRadioButton('Unexpected Work'),
+                    _buildRadioButton('Others'), // Selecting this shows the TextField
+                 ]
+              ),
+              const SizedBox(height: 20),
+
+              // Conditionally display the TextField for "Others" reason
+              if (selectedReason == 'Others')
+                Column(
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   children: [
+                      const Text(
+                        'Please provide specific reason:',
+                        style: TextStyle(fontSize: 14, color: AppPallete.primaryColor),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField( // The text input box for "Others"
+                         controller: _detailsController,
+                         maxLines: 5,
+                         decoration: InputDecoration(
+                          hintText: 'Enter Your Reason Here…',
+                          filled: true,
+                          fillColor: Colors.blue.shade50, // Light background
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: BorderSide.none, // No border
+                          ),
+                         ),
+                      ),
+                      const SizedBox(height: 20), // Add space after TextField
+                   ],
+                ),
+
+              // Confirmation Button
+              Center(
+                child: ElevatedButton(
+                  onPressed: _isSubmitting ? null : _submitCancellation, // Disable while submitting
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppPallete.primaryColor, // Button color
+                    foregroundColor: AppPallete.whiteColor, // Text color
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                   ),
-                  padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                  child: _isSubmitting
+                      // Show loading indicator when submitting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      // Show button text otherwise
+                      : const Text(
+                          'Confirm Cancellation',
+                          style: TextStyle(fontSize: 16),
+                        ),
                 ),
-                child: Text('Cancel Appointment', style: TextStyle(fontSize: 16, color:  AppPallete.whiteColor)),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-      bottomNavigationBar: BottomNavBar(
-        selectedIndex: _selectedIndex,
-        onItemTapped: _onItemTapped,
-      ),
+      // No BottomNavigationBar here, assuming it's handled by MainLayout/ShellRoute
     );
   }
 
-  Widget buildRadioButton(String title) {
-    return ListTile(
+  // Helper widget for creating RadioListTiles
+  Widget _buildRadioButton(String title) {
+    return RadioListTile<String>(
       title: Text(title),
-      leading: Radio(
-        value: title,
-        groupValue: selectedReason,
-        activeColor:  AppPallete.primaryColor,
-        onChanged: (value) {
+      value: title,
+      groupValue: selectedReason, // Tracks the currently selected value
+      activeColor: AppPallete.primaryColor, // Color when selected
+      onChanged: (value) {
+        // Update the state when a radio button is tapped
+        if (value != null) {
           setState(() {
-            selectedReason = value.toString();
+            selectedReason = value;
           });
-        },
-      ),
-      tileColor: selectedReason == title ?  AppPallete.primaryColor.withOpacity(0.2) : null,
+        }
+      },
+      // Optional styling for better appearance
+      tileColor: selectedReason == title ? AppPallete.primaryColor.withOpacity(0.1) : null,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      contentPadding: EdgeInsets.symmetric(horizontal: 10),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 0),
+      visualDensity: VisualDensity.compact,
     );
   }
 }
 
-class BottomNavBar extends StatelessWidget {
-  final int selectedIndex;
-  final Function(int) onItemTapped;
-
-  BottomNavBar({required this.selectedIndex, required this.onItemTapped});
-
-  @override
-  Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: selectedIndex,
-      onTap: onItemTapped,
-      selectedItemColor:  AppPallete.primaryColor,
-      unselectedItemColor:  AppPallete.greyColor,
-      type: BottomNavigationBarType.fixed,
-      items: [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: "", // Empty label (icon only)
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.chat),
-          label: "", // Empty label (icon only)
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: "", // Empty label (icon only)
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today),
-          label: "", // Empty label (icon only)
-        ),
-      ],
-    );
-  }
-}
+// Removed redundant BottomNavBar class definition

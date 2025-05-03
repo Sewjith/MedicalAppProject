@@ -45,7 +45,7 @@ class _ReviewPageState extends State<ReviewPage> {
           icon: Icon(Icons.arrow_back_ios, color:  AppPallete.primaryColor),
           onPressed: () {
             Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (context) => Appointment()));
+                MaterialPageRoute(builder: (context) => AppointmentHistoryPage()));
           },
         ),
         centerTitle: true,

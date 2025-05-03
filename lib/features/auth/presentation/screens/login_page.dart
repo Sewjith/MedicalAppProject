@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
+import 'package:go_router/go_router.dart'; // Keep for navigating to register/reset
 import 'package:medical_app/core/common/cubits/user_session/app_user_cubit.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
 import 'package:medical_app/features/auth/presentation/bloc/auth_bloc.dart';
@@ -49,198 +49,230 @@ class _LoginState extends State<Login> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocSelector<AppUserCubit, AppUserState, bool>(
-      selector: (state) => state is AppUserLoggedIn,
-      builder: (context, isLoggedIn) {
-        if (isLoggedIn) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            context.go('/home');
-          });
-        }
+    // Removed BlocSelector checking for isLoggedIn, as redirect happens globally
 
-        return Scaffold(
-          body: BlocConsumer<AuthBloc, AuthState>(
-            listener: (context, state) {
-              if (state is AuthSuccess) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Successfully logged in")),
-                );
+    return Scaffold(
+      body: BlocConsumer<AuthBloc, AuthState>(
+        listener: (context, state) {
+          // *** FIX: Removed navigation logic from here ***
+          // Let the global listener in main.dart handle dashboard navigation.
+          // This listener now only handles UI feedback specific to the login attempt.
+          if (state is AuthSuccess) {
+            // Optional: Show success message only if needed, might be redundant
+            // ScaffoldMessenger.of(context).showSnackBar(
+            //   const SnackBar(content: Text("Successfully logged in")),
+            // );
 
-                final role = state.user.role; // Get role from the logged-in user
+            // // --- REMOVED NAVIGATION ---
+            // final role = state.user.role; // Get role from the logged-in user
+            // // Navigate based on actual role from server
+            // if (role == 'patient') {
+            //   context.go('/p_dashboard');
+            // } else if (role == 'doctor') {
+            //   context.go('/d_dashboard');
+            // } else {
+            //   // fallback
+            //   ScaffoldMessenger.of(context).showSnackBar(
+            //     const SnackBar(
+            //         content: Text('Unknown role. Redirecting home.')),
+            //   );
+            //    context.go('/home'); // Fallback to home
+            // }
+            // --- END REMOVED NAVIGATION ---
 
-                // Navigate based on actual role from server
-                if (role == 'patient') {
-                  context.go('/p_dashboard');
-                } else if (role == 'doctor') {
-                  context.go('/d_dashboard');
-                } else {
-                  // fallback
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Unknown role. Please contact support.')),
-                  );
-                }
-              } else if (state is AuthFailed) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(state.error)),
-                );
-              }
-            },
-            builder: (context, state) {
-              final isLoading = state is AuthLoading;
+          } else if (state is AuthFailed) {
+             // Show specific failure message from the login attempt
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text(state.error),
+                  backgroundColor: AppPallete.errorColor // Use error color
+              ),
+            );
+          }
+        },
+        builder: (context, state) {
+          final isLoading = state is AuthLoading;
 
-              return Padding(
-                padding: const EdgeInsets.all(5.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Row(
+          return Padding(
+            padding: const EdgeInsets.all(5.0),
+            child: SingleChildScrollView( // Added SingleChildScrollView
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  const SizedBox(height: kToolbarHeight * 0.5), // Add top padding like AppBar
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      // Use context.canPop() to decide whether to show back button
+                      if(context.canPop())
+                        BackButton(onPressed: () => context.pop()),
+                      // If it cannot pop (e.g., initial route), don't show back button
+                      // Or always navigate home: BackButton(onPressed: () => context.go('/home')),
+                      const Spacer(), // Pushes title towards center
+                      const Text(
+                        'Login',
+                        style: TextStyle(
+                          fontSize: 30, // Reduced size slightly
+                          fontWeight: FontWeight.bold,
+                          color: AppPallete.headings,
+                        ),
+                      ),
+                      const Spacer(), // Pushes title towards center
+                      SizedBox(width: AppBar().preferredSize.height), // Placeholder for symmetry if needed
+                    ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(35.0),
+                    child: Column(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        BackButton(onPressed: () => context.go('/home')),
-                        const SizedBox(width: 90),
-                        const Text(
-                          'Login',
-                          style: TextStyle(
-                            fontSize: 50,
-                            fontWeight: FontWeight.bold,
-                            color: AppPallete.headings,
+                        Container(
+                          alignment: Alignment.centerLeft,
+                          child: const Text(
+                            'Welcome Back!', // Changed text
+                            style: TextStyle(
+                              color: AppPallete.headings,
+                              fontSize: 25,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                      ],
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(35.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          Container(
-                            alignment: Alignment.centerLeft,
+                        const SizedBox(height: 8), // Reduce space
+                        const Text(
+                          'Log in to access your medical records and appointments.', // Updated text
+                          style: TextStyle(color: AppPallete.greyColor, fontSize: 14), // Style text
+                        ),
+                        const SizedBox(height: 30),
+
+                        // Email Input
+                        Container( // Add label above field
+                          alignment: Alignment.centerLeft,
+                          child: const Text(
+                            'Email',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500, // Medium weight
+                              color: AppPallete.textColor,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        AuthDetails( // Assuming AuthDetails handles validation/styling
+                          hintText: 'Enter your email',
+                          controller: _emailController,
+                          // Add validator if needed: validator: FormValidators.emailValidation,
+                          // Add keyboardType: TextInputType.emailAddress
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Password Input
+                         Container( // Add label above field
+                           alignment: Alignment.centerLeft,
+                           child: const Text(
+                             'Password',
+                             style: TextStyle(
+                               fontSize: 16,
+                               fontWeight: FontWeight.w500,
+                               color: AppPallete.textColor,
+                             ),
+                           ),
+                         ),
+                        const SizedBox(height: 8),
+                        AuthDetails(
+                          hintText: 'Enter your password',
+                          controller: _passwordController,
+                          isPassword: true,
+                           // Add validator if needed: validator: FormValidators.passwordValidation,
+                        ),
+
+                        const SizedBox(height: 8), // Reduced space
+                        // Forgot Password Link
+                        Container(
+                          alignment: Alignment.centerRight,
+                          child: InkWell(
+                            onTap: () => context.go('/forgot-password-email'), // Navigate to request link
                             child: const Text(
-                              'Welcome',
-                              style: TextStyle(
-                                color: AppPallete.headings,
-                                fontSize: 25,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              'Forgot Password?',
+                              style: TextStyle(color: AppPallete.headings),
                             ),
                           ),
-                          const Text(
-                            'Log in to access your medical records and book appointments.',
-                          ),
-                          const SizedBox(height: 30),
+                        ),
 
-                          // Email Input
-                          const Text(
-                            'Enter Email or Username',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppPallete.textColor,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          AuthDetails(
-                            hintText: 'example@example.com',
-                            controller: _emailController,
-                          ),
+                        const SizedBox(height: 30),
 
-                          const SizedBox(height: 20),
-
-                          // Password Input
-                          const Text(
-                            'Enter Password',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppPallete.textColor,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          AuthDetails(
-                            hintText: 'Enter Password',
-                            controller: _passwordController,
-                            isPassword: true,
-                          ),
-
-                          const SizedBox(height: 2),
-                          Container(
-                            alignment: Alignment.centerRight,
-                            child: InkWell(
-                              onTap: () => context.go('/reset-password'),
-                              child: const Text(
-                                'Forgot Password?',
-                                style: TextStyle(color: AppPallete.headings),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 30),
-
-                          // Login Button
-                          FilledButton(
+                        // Login Button
+                        SizedBox( // Ensure button stretches
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
                             onPressed: isLoading ? null : _loginUser,
-                            style: const ButtonStyle(
-                              backgroundColor:
-                                  WidgetStatePropertyAll(Colors.blueAccent),
-                              foregroundColor:
-                                  WidgetStatePropertyAll(Colors.white),
-                              padding: WidgetStatePropertyAll(
-                                EdgeInsets.symmetric(
-                                    horizontal: 80, vertical: 10),
+                            style: ElevatedButton.styleFrom( // Use theme style potentially
+                              backgroundColor: AppPallete.primaryColor,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10), // Consistent radius
                               ),
                             ),
+                            // style: const ButtonStyle( // Old Style
+                            //   backgroundColor: WidgetStatePropertyAll(Colors.blueAccent),
+                            //   foregroundColor: WidgetStatePropertyAll(Colors.white),
+                            //   padding: WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 80, vertical: 10)),
+                            // ),
                             child: isLoading
-                                ? const CircularProgressIndicator(
-                                    color: Colors.white)
+                                ? const SizedBox( // Smaller indicator
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                        color: Colors.white, strokeWidth: 3))
                                 : const Text(
                                     'Login',
                                     style: TextStyle(
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 20),
+                                        fontSize: 18), // Adjusted size
                                   ),
                           ),
+                        ),
 
-                          const SizedBox(height: 20),
+                        const SizedBox(height: 20),
 
-                          // Continue as Guest
-                          TextButton(
-                            onPressed: _continueAsGuest,
-                            child: const Text(
-                              'Continue as Guest',
-                              style: TextStyle(
-                                color: Colors.blueAccent,
-                                fontSize: 16,
-                              ),
+                        // Continue as Guest
+                        TextButton(
+                          onPressed: isLoading ? null : _continueAsGuest, // Disable while loading
+                          child: const Text(
+                            'Continue as Guest',
+                            style: TextStyle(
+                              color: Colors.blueAccent,
+                              fontSize: 16,
                             ),
                           ),
+                        ),
 
-                          const SizedBox(height: 20),
+                        const SizedBox(height: 20),
 
-                          // Sign Up Redirect
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Text("Don't have an account? "),
-                              InkWell(
-                                onTap: () => context.go('/register'),
-                                child: const Text(
-                                  'Sign Up',
-                                  style: TextStyle(color: Colors.blueAccent),
-                                ),
+                        // Sign Up Redirect
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text("Don't have an account? "),
+                            InkWell(
+                              onTap: isLoading ? null : () => context.go('/register'), // Disable while loading
+                              child: const Text(
+                                'Sign Up',
+                                style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold), // Make bold
                               ),
-                            ],
-                          ),
-                        ],
-                      ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              );
-            },
-          ),
-        );
-      },
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }

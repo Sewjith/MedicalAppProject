@@ -1,354 +1,339 @@
+//@annotate:modification:lib/features/Patient/appoinment_history/appoinment.dart
 import 'package:flutter/material.dart';
-import 'package:medical_app/features/Patient/appoinment_history/upcoming.dart';
-import 'package:medical_app/features/Patient/appoinment_history/cancelled.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:medical_app/core/common/cubits/user_session/app_user_cubit.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
-import 'package:medical_app/features/Patient/appoinment_history/review.dart';
-void main() {
-  runApp(Appointment());
-}
+import 'package:medical_app/features/Patient/appoinment_history/upcoming.dart'; // Import UpcomingAppointmentsList
+import 'package:medical_app/features/Patient/appoinment_history/cancelled.dart'; // Import CancelledAppointmentsList
+import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase
+import 'package:cached_network_image/cached_network_image.dart'; // Import CachedNetworkImage
+import 'package:flutter/foundation.dart'; // For debugPrint
 
-class Appointment extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Appointment History',
-      theme: ThemeData(
-        primaryColor: AppPallete .primaryColor,
-        fontFamily: 'Arial',
-        primarySwatch: Colors.blue,
-      ),
-      home: CompletedAppointmentsPage(),
-    );
+// --- BEGIN EMBEDDED DB LOGIC ---
+class AppointmentHistoryDb {
+  final _supabase = Supabase.instance.client;
+
+  Future<List<Map<String, dynamic>>> _fetchAppointmentsByStatus(
+      String patientId, List<String> statuses) async {
+    try {
+      // --- FIX: Removed the Dart comment from inside the SELECT string ---
+      final response = await _supabase
+          .from('appointments')
+          .select('''
+            appointment_id,
+            appointment_date,
+            appointment_time,
+            appointment_status,
+            doctor:doctor_id (
+              id,
+              title,
+              first_name,
+              last_name,
+              specialty,
+              gender,
+              avatar_path
+            )
+          ''')
+          // --- END FIX ---
+          .eq('patient_id', patientId)
+          .inFilter('appointment_status', statuses)
+          .order('appointment_date', ascending: false)
+          .order('appointment_time', ascending: false);
+
+       // ...(image URL fetching logic remains the same)...
+       for (var appointment in response) {
+         if (appointment['doctor'] != null && appointment['doctor']['avatar_path'] != null) {
+           try {
+              final url = _supabase.storage
+                 .from('Doctor Avatars') // Ensure bucket name is correct
+                 .getPublicUrl(appointment['doctor']['avatar_path']);
+              appointment['doctor']['avatar_url'] = url;
+           } catch(e) {
+              debugPrint("Error getting avatar URL for doctor ${appointment['doctor']['id']}: $e");
+              appointment['doctor']['avatar_url'] = null;
+           }
+         } else {
+            if(appointment['doctor'] != null) {
+               appointment['doctor']['avatar_url'] = null;
+            }
+         }
+       }
+
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      debugPrint("Error fetching appointments with status $statuses: $e");
+      if (e is PostgrestException && e.code == '42703'){
+          debugPrint("DB Schema Error: A column referenced in the query does not exist.");
+          throw Exception('Database schema mismatch. Please contact support.');
+      }
+      throw Exception('Failed to load appointments.');
+    }
   }
+
+  // ...(rest of AppointmentHistoryDb methods remain the same)...
+  Future<List<Map<String, dynamic>>> getCompletedAppointments(String patientId) async {
+    return _fetchAppointmentsByStatus(patientId, ['completed']);
+  }
+  Future<List<Map<String, dynamic>>> getUpcomingAppointments(String patientId) async {
+    return _fetchAppointmentsByStatus(patientId, ['upcoming']);
+  }
+  Future<List<Map<String, dynamic>>> getCancelledAppointments(String patientId) async {
+    return _fetchAppointmentsByStatus(patientId, ['cancelled']);
+  }
+   Future<void> cancelAppointment(String appointmentId, String reason) async {
+      try {
+         await _supabase.from('appointments').update({
+            'appointment_status': 'cancelled',
+            // If you added 'cancellation_reason' to DB, uncomment below:
+            // 'cancellation_reason': reason,
+         }).eq('appointment_id', appointmentId);
+      } catch (e) {
+         debugPrint("Error cancelling appointment $appointmentId: $e");
+         throw Exception('Failed to cancel appointment.');
+      }
+   }
+   String formatAppointmentDateTime(String? dateStr, String? timeStr) {
+     if (dateStr == null) return 'Date N/A';
+     try {
+       final date = DateTime.parse(dateStr);
+       String formattedDate = DateFormat('EEE, MMM dd, yyyy').format(date); // Use yyyy for year
+       String formattedTime = 'Time N/A';
+       if (timeStr != null) {
+          try {
+             final parsedTime = DateFormat('HH:mm:ss').parseStrict(timeStr);
+             formattedTime = DateFormat('h:mm a').format(parsedTime);
+          } catch (e) {
+             formattedTime = timeStr; // Fallback if parsing fails
+             debugPrint("Could not parse time '$timeStr' for display");
+             }
+       }
+       return '$formattedDate • $formattedTime';
+     } catch (e) {
+        debugPrint("Could not parse date '$dateStr'");
+        return 'Invalid Date';
+     }
+   }
+   String getDoctorDisplayName(Map<String, dynamic>? doctorData) {
+      if (doctorData == null) return 'Unknown Doctor';
+      return '${doctorData['title'] ?? ''} ${doctorData['first_name'] ?? ''} ${doctorData['last_name'] ?? ''}'.trim();
+   }
+   String? getDoctorAvatarUrl(Map<String, dynamic>? doctorData) {
+      return doctorData?['avatar_url'] as String?;
+   }
+}
+// --- END EMBEDDED DB LOGIC ---
+// --- END EMBEDDED DB LOGIC ---
+
+// --- AppointmentHistoryPage widget remains the same ---
+class AppointmentHistoryPage extends StatefulWidget {
+  const AppointmentHistoryPage({super.key});
+
+  @override
+  State<AppointmentHistoryPage> createState() => _AppointmentHistoryPageState();
 }
 
-class CompletedAppointmentsPage extends StatelessWidget {
+class _AppointmentHistoryPageState extends State<AppointmentHistoryPage>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'All Appointment',
+        title: const Text(
+          'My Appointments',
           style: TextStyle(
-            color: AppPallete .primaryColor,
+            color: AppPallete.primaryColor,
             fontWeight: FontWeight.bold,
           ),
         ),
         centerTitle: true,
-        backgroundColor: AppPallete .whiteColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_outlined, color: AppPallete .primaryColor),
-          onPressed: () {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Appointment()),);
-          },
+        backgroundColor: AppPallete.whiteColor,
+        elevation: 1,
+        automaticallyImplyLeading: false,
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: AppPallete.primaryColor,
+          unselectedLabelColor: AppPallete.greyColor,
+          indicatorColor: AppPallete.primaryColor,
+          indicatorWeight: 3.0,
+          tabs: const [
+            Tab(text: 'Completed'),
+            Tab(text: 'Upcoming'),
+            Tab(text: 'Cancelled'),
+          ],
         ),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(2.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(onPressed: (){},
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    backgroundColor: AppPallete .primaryColor,
-                    foregroundColor:  AppPallete .whiteColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  child: const Text(
-                    'Complete',
-                    style: TextStyle(fontSize: 18),
-                  ),
-                ),
-                SizedBox(width: 10),
-                ElevatedButton(onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => Upcoming()),);
-                },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:  AppPallete .lightBackground,
-                    foregroundColor:  AppPallete .primaryColor,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  child: const Text('Upcoming',
-                    style: TextStyle(fontSize: 18),),
-                ),
-                SizedBox(width: 10),
-                ElevatedButton(onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => Cancel()),);
-                },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppPallete .lightBackground,
-                    foregroundColor:  AppPallete .primaryColor,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  child: const Text('Cancelled',
-                    style: TextStyle(fontSize: 18),),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView(
-              children: [
-                AppointmentCard(
-                  doctorName: "Dr. Olivia Turner, M.D.",
-                  specialty: "Dermato-Endocrinology",
-                  rating: 5,
-                  imageUrl: "assets/images/doc2.jpeg",
-                  onRebook: () {},
-                  onAddReview: () {
-                    Navigator.pushReplacement(context,
-                        MaterialPageRoute(builder: (context) => review()));
-                  },
-                ),
-                AppointmentCard(
-                  doctorName: "Dr. Alexander Bennett, Ph.D.",
-                  specialty: "Dermato-Genetics",
-                  rating: 4,
-                  imageUrl: "assets/images/doc1.jpeg",
-                  onRebook: () {},
-                  onAddReview: () {
-                    Navigator.pushReplacement(context,
-                        MaterialPageRoute(builder: (context) => review()));
-                  },
-                ),
-                AppointmentCard(
-                  doctorName: "Dr. Sophia Martinez, Ph.D.",
-                  specialty: "Cosmetic Bioengineering",
-                  rating: 5,
-                  imageUrl: "assets/images/doc3.png",
-                  onRebook: () {},
-                  onAddReview: () {
-                    Navigator.pushReplacement(context,
-                        MaterialPageRoute(builder: (context) => review()));
-                  },
-                ),
-              ],
-            ),
-          ),
+      body: TabBarView(
+        controller: _tabController,
+        children: const [
+          _CompletedAppointmentsList(),
+          UpcomingAppointmentsList(),
+          CancelledAppointmentsList(),
         ],
       ),
-      bottomNavigationBar: BottomNavBar(
-        selectedIndex: 2,
-        onItemTapped: (index) {},
-      ),
     );
   }
 }
 
-class FilterButton extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-
-  FilterButton({required this.label, this.isSelected = false});
+// --- _CompletedAppointmentsList widget remains the same ---
+class _CompletedAppointmentsList extends StatefulWidget {
+  const _CompletedAppointmentsList();
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 5.0),
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isSelected ?  AppPallete .primaryColor :  AppPallete .greyColor,
-          foregroundColor: isSelected ?  AppPallete .whiteColor :  AppPallete.textColor,
-        ),
-        onPressed: () {},
-        child: Text(label),
-      ),
-    );
-  }
+  State<_CompletedAppointmentsList> createState() => _CompletedAppointmentsListState();
 }
 
-class AppointmentCard extends StatelessWidget {
-  final String doctorName;
-  final String specialty;
-  final int rating;
-  final String imageUrl;
-  final VoidCallback onRebook;
-  final VoidCallback onAddReview;
+class _CompletedAppointmentsListState extends State<_CompletedAppointmentsList> {
+  final AppointmentHistoryDb _db = AppointmentHistoryDb();
+  List<Map<String, dynamic>> _appointments = [];
+  bool _isLoading = true;
+  String? _errorMessage;
+  String? _patientId;
 
-  AppointmentCard({
-    required this.doctorName,
-    required this.specialty,
-    required this.rating,
-    required this.imageUrl,
-    required this.onRebook,
-    required this.onAddReview,
-  });
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final userState = context.read<AppUserCubit>().state;
+      if (userState is AppUserLoggedIn && userState.user.role == 'patient') {
+        _patientId = userState.user.uid;
+        _loadAppointments();
+      } else {
+         if(mounted){
+             setState(() { _isLoading = false; _errorMessage = "Patient not logged in."; });
+         }
+      }
+    });
+  }
+
+  Future<void> _loadAppointments() async {
+    if (_patientId == null || !mounted) return;
+    setState(() { _isLoading = true; _errorMessage = null; });
+    try {
+      final data = await _db.getCompletedAppointments(_patientId!);
+      if (mounted) {
+        setState(() { _appointments = data; _isLoading = false; });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() { _isLoading = false; _errorMessage = e.toString().replaceFirst("Exception: ", ""); });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.all(10),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-      ),
-      color:  Colors.blue.shade50,
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            //
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Doctor's profile image.
-                CircleAvatar(
-                  backgroundImage: AssetImage(imageUrl),
-                  radius: 30,
-                ),
-                SizedBox(width: 10),
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_errorMessage != null) {
+      return Center(child: Padding( padding: const EdgeInsets.all(16.0), child: Text('Error: $_errorMessage', textAlign: TextAlign.center)));
+    }
+    if (_appointments.isEmpty) {
+      return const Center(child: Text('No completed appointments found.', style: TextStyle(color: AppPallete.greyColor)));
+    }
 
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+    return RefreshIndicator(
+      onRefresh: _loadAppointments,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16.0),
+        itemCount: _appointments.length,
+        itemBuilder: (context, index) {
+          final appointment = _appointments[index];
+          final doctorData = appointment['doctor'] as Map<String, dynamic>?;
+          final doctorName = _db.getDoctorDisplayName(doctorData);
+          final specialty = doctorData?['specialty'] ?? 'N/A';
+          final avatarUrl = _db.getDoctorAvatarUrl(doctorData);
+
+          return Card(
+            color: Colors.grey.shade100,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            elevation: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                children: [
+                  Row(
                     children: [
-                      Text(
-                        doctorName,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color:  AppPallete .primaryColor,
-                        ),
+                      CircleAvatar(
+                        radius: 30,
+                        backgroundColor: Colors.grey[300],
+                        backgroundImage: avatarUrl != null
+                            ? CachedNetworkImageProvider(avatarUrl)
+                            : const AssetImage('assets/images/doctor_placeholder.png') as ImageProvider,
+                         onBackgroundImageError: (_, __) { debugPrint("Error loading image: $avatarUrl"); },
+                         child: avatarUrl == null ? const Icon(Icons.person, size: 30, color: Colors.grey) : null,
                       ),
-                      Text(
-                        specialty,
-                        style: TextStyle(color:  AppPallete.textColor),
-                      ),
-
-                      Container(
-                        margin: EdgeInsets.only(top: 8),
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color:  AppPallete .whiteColor,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Star icons (blue)
-                            Row(
-                              children: List.generate(
-                                5,
-                                    (index) => Icon(
-                                  index < rating
-                                      ? Icons.star
-                                      : Icons.star_border,
-                                  color:  AppPallete .primaryColor,
-                                  size: 16,
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 8),
-                            // Heart icon (blue)
-                            Icon(
-                              Icons.favorite,
-                              color:  AppPallete .primaryColor,
-                              size: 16,
+                            Text(doctorName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppPallete.textColor)),
+                            Text(specialty, style: const TextStyle(color: AppPallete.greyColor)),
+                            Text(
+                               _db.formatAppointmentDateTime(appointment['appointment_date'], appointment['appointment_time']),
+                               style: const TextStyle(color: AppPallete.greyColor, fontSize: 13)
                             ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: AppPallete.whiteColor, foregroundColor: AppPallete.primaryColor),
+                        onPressed: () {
+                          if (doctorData?['id'] != null) {
+                             // Ensure doctorId is passed as String
+                             context.go('/patient/doctors/profile_view', extra: doctorData!['id'].toString());
+                          }
+                        },
+                        child: const Text("Re-Book"),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: AppPallete.primaryColor),
+                        onPressed: () {
+                          context.push('/patient/appointment/history/review2', extra: {
+                            'appointmentId': appointment['appointment_id'],
+                            'doctorName': doctorName,
+                             'specialty': specialty,
+                             'avatarUrl': avatarUrl,
+                          });
+                        },
+                        child: const Text("Add Review", style: TextStyle(color: AppPallete.whiteColor)),
+                      ),
+                    ],
+                  )
+                ],
+              ),
             ),
-            SizedBox(height: 10),
-            // Buttons row.
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:  AppPallete .whiteColor,
-                    foregroundColor:  AppPallete .primaryColor,
-                  ),
-                  onPressed: onRebook,
-                  child: Text("Re-Book"),
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:  AppPallete .primaryColor,
-                    foregroundColor: AppPallete .whiteColor,
-                  ),
-                  onPressed: onAddReview,
-                  child: Text("Add Review"),
-                ),
-              ],
-            )
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 }
 
-class ReviewPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Add Review", style: TextStyle(color:  AppPallete .primaryColor)),
-        backgroundColor:  AppPallete .whiteColor,
-        iconTheme: IconThemeData(color:  AppPallete .primaryColor),
-        elevation: 0,
-      ),
-      body: Center(
-        child: Text("Review Page", style: TextStyle(fontSize: 24)),
-      ),
-    );
-  }
-}
-
-class BottomNavBar extends StatelessWidget {
-  final int selectedIndex;
-  final Function(int) onItemTapped;
-
-  BottomNavBar({required this.selectedIndex, required this.onItemTapped});
-
-  @override
-  Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: selectedIndex,
-      onTap: onItemTapped,
-      selectedItemColor:  AppPallete .primaryColor,
-      unselectedItemColor:  AppPallete .greyColor,
-      type: BottomNavigationBarType.fixed,
-      items: [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: "", // Empty label (icon only)
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.chat),
-          label: "", // Empty label (icon only)
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: "", // Empty label (icon only)
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today),
-          label: "", // Empty label (icon only)
-        ),
-      ],
-    );
-  }
-}
+// Ensure the classes UpcomingAppointmentsList (in upcoming.dart)
+// and CancelledAppointmentsList (in cancelled.dart) are also using
+// AppointmentHistoryDb and context.go/push for navigation.

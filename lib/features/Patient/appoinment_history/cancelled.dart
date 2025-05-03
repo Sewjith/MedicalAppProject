@@ -1,344 +1,172 @@
+//@annotate:modification:lib/features/Patient/appoinment_history/cancelled.dart
 import 'package:flutter/material.dart';
-import 'package:medical_app/features/Patient/appoinment_history/review2.dart';
-import 'package:medical_app/features/Patient/appoinment_history/appoinment.dart';
-import 'package:medical_app/features/Patient/appoinment_history/upcoming.dart';
-import 'package:medical_app/features/Patient/appoinment_history/review2.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:medical_app/core/common/cubits/user_session/app_user_cubit.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
+// Import the DB logic from appoinment.dart (or the separate file if created)
+import 'package:medical_app/features/Patient/appoinment_history/appoinment.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
-void main() {
-  runApp(Cancel());
+// Renamed widget
+class CancelledAppointmentsList extends StatefulWidget {
+  const CancelledAppointmentsList({super.key});
+
+  @override
+  State<CancelledAppointmentsList> createState() => _CancelledAppointmentsListState();
 }
 
-class Cancel extends StatelessWidget {
+class _CancelledAppointmentsListState extends State<CancelledAppointmentsList> {
+  // Use the embedded DB class instance
+  final AppointmentHistoryDb _db = AppointmentHistoryDb();
+  List<Map<String, dynamic>> _appointments = [];
+  bool _isLoading = true;
+  String? _errorMessage;
+  String? _patientId;
+
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Appointment History',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        fontFamily: 'Arial',
-      ),
-      home: CancelPage(),
-    );
+  void initState() {
+    super.initState();
+    // Fetch patientId and load data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final userState = context.read<AppUserCubit>().state;
+      if (userState is AppUserLoggedIn && userState.user.role == 'patient') {
+        _patientId = userState.user.uid;
+        _loadAppointments();
+      } else {
+         if(mounted){
+             setState(() {
+                 _isLoading = false;
+                 _errorMessage = "Patient not logged in.";
+             });
+         }
+      }
+    });
   }
-}
 
-class CancelPage extends StatelessWidget {
+  Future<void> _loadAppointments() async {
+    if (_patientId == null || !mounted) return;
+    setState(() { _isLoading = true; _errorMessage = null; });
+    try {
+      final data = await _db.getCancelledAppointments(_patientId!);
+      if (mounted) {
+        setState(() { _appointments = data; _isLoading = false; });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() { _isLoading = false; _errorMessage = e.toString().replaceFirst("Exception: ", ""); });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'All Appointment',
-          style: TextStyle(
-            color:  AppPallete.headings,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor:  AppPallete.whiteColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_outlined, color:  AppPallete.primaryColor),
-          onPressed: () {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (context) => Appointment()));
-          },
-        ),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(2.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+    // REMOVED Scaffold, AppBar, BottomNavBar
+
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_errorMessage != null) {
+      return Center(child: Text('Error: $_errorMessage'));
+    }
+    if (_appointments.isEmpty) {
+      return const Center(child: Text('No cancelled appointments.'));
+    }
+
+    // Return only the ListView
+    return ListView.builder(
+       padding: const EdgeInsets.all(16.0), // Add padding
+      itemCount: _appointments.length,
+      itemBuilder: (context, index) {
+        final appointment = _appointments[index];
+        final doctorData = appointment['doctor'] as Map<String, dynamic>?;
+        final doctorName = _db.getDoctorDisplayName(doctorData);
+        final specialty = doctorData?['specialty'] ?? 'N/A';
+        final avatarUrl = _db.getDoctorAvatarUrl(doctorData);
+
+        // Use a common card widget structure
+        return Card(
+          color: Colors.red.shade50, // Different color for cancelled
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          elevation: 1,
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Column(
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    ElevatedButton(onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => Appointment()),);
-                    }, style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      backgroundColor:  AppPallete.lightBackground,
-                      foregroundColor:  AppPallete.primaryColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
+                     CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Colors.grey[300],
+                      backgroundImage: avatarUrl != null
+                          ? CachedNetworkImageProvider(avatarUrl)
+                          : const AssetImage('assets/images/doctor_placeholder.png') as ImageProvider,
+                       onBackgroundImageError: (_, __) { debugPrint("Error loading image: $avatarUrl"); },
+                       child: avatarUrl == null ? const Icon(Icons.person, size: 30, color: Colors.grey) : null,
                     ),
-                      child: const Text(
-                        'Complete',
-                        style: TextStyle(fontSize: 18),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(doctorName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppPallete.textColor)),
+                          Text(specialty, style: const TextStyle(color: AppPallete.greyColor)),
+                           Text(
+                             _db.formatAppointmentDateTime(appointment['appointment_date'], appointment['appointment_time']),
+                             style: const TextStyle(color: AppPallete.greyColor, fontSize: 13)
+                          ),
+                          // Optionally display cancellation reason if available
+                          if (appointment['cancellation_reason'] != null && appointment['cancellation_reason'].isNotEmpty)
+                             Padding(
+                               padding: const EdgeInsets.only(top: 4.0),
+                               child: Text(
+                                 "Reason: ${appointment['cancellation_reason']}",
+                                 style: const TextStyle(color: Colors.redAccent, fontSize: 13, fontStyle: FontStyle.italic),
+                                 maxLines: 2,
+                                 overflow: TextOverflow.ellipsis,
+                               ),
+                             ),
+                        ],
                       ),
-                    ),
-                    SizedBox(width: 10),
-                    ElevatedButton(onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => Upcoming()),);
-                    },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        backgroundColor:  AppPallete.lightBackground,
-                        foregroundColor:  AppPallete.primaryColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                      child: const Text('Upcoming',
-                        style: TextStyle(fontSize: 18),),
-                    ),
-                    SizedBox(width: 10),
-                    ElevatedButton(onPressed: () {
-                    },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:  AppPallete.primaryColor,
-                        foregroundColor:  AppPallete.whiteColor,
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                      child: const Text('Cancelled',
-                        style: TextStyle(fontSize: 18),),
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView(
-              children: [
-                AppointmentCard(
-                  doctorName: "Dr. Olivia Turner, M.D.",
-                  specialty: "Dermato-Endocrinology",
-                  rating: 5,
-                  imageUrl: "assets/images/doc2.jpeg",
-                  onAddReview: () {
-                    Navigator.pushReplacement(context,
-                        MaterialPageRoute(builder: (context) => review2()));
-                  },
-                ),
-                AppointmentCard(
-                  doctorName: "Dr. Alexander Bennett, Ph.D.",
-                  specialty: "Dermato-Genetics",
-                  rating: 4,
-                  imageUrl: "assets/images/doc2.jpeg",
-                  onAddReview: () {
-                    Navigator.pushReplacement(context,
-                        MaterialPageRoute(builder: (context) => review2()));
-                  },
-                ),
-                AppointmentCard(
-                  doctorName: "Dr. Sophia Martinez, Ph.D.",
-                  specialty: "Cosmetic Bioengineering",
-                  rating: 5,
-                  imageUrl: "assets/images/doc3.png",
-                  onAddReview: () {
-                    Navigator.pushReplacement(context,
-                        MaterialPageRoute(builder: (context) => review2()));
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: BottomNavBar(
-        selectedIndex: 2, // Update as needed
-        onItemTapped: (index) {
-          // Handle navigation here
-        },
-      ),
-    );
-  }
-}
-
-class FilterButton extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-
-  FilterButton({required this.label, this.isSelected = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 5.0),
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isSelected ?  AppPallete.primaryColor :  AppPallete.greyColor,
-          foregroundColor: isSelected ?  AppPallete.whiteColor :  AppPallete.textColor,
-        ),
-        onPressed: () {},
-        child: Text(label),
-      ),
-    );
-  }
-}
-
-class AppointmentCard extends StatelessWidget {
-  final String doctorName;
-  final String specialty;
-  final int rating;
-  final String imageUrl;
-  final VoidCallback onAddReview;
-
-  AppointmentCard({
-    required this.doctorName,
-    required this.specialty,
-    required this.rating,
-    required this.imageUrl,
-    required this.onAddReview,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.all(10),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-      ),
-      color:  Colors.blue.shade50,
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CircleAvatar(
-                  backgroundImage: AssetImage(imageUrl),
-                  radius: 30,
-                ),
-                SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        doctorName,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color:  AppPallete.primaryColor,
-                        ),
-                      ),
-                      Text(
-                        specialty,
-                        style: TextStyle(color:  AppPallete.textColor),
-                      ),
-                      Container(
-                        margin: EdgeInsets.only(top: 8),
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color:  AppPallete.whiteColor,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Row(
-                              children: List.generate(
-                                5,
-                                    (index) => Icon(
-                                  index < rating ? Icons.star : Icons.star_border,
-                                  color:  AppPallete.primaryColor,
-                                  size: 16,
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 8),
-                            Icon(
-                              Icons.favorite,
-                              color:  AppPallete.primaryColor,
-                              size: 16,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                SizedBox(
-                  width: 270,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:  AppPallete.primaryColor,
-                      foregroundColor:  AppPallete.whiteColor,
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: AppPallete.whiteColor, foregroundColor: AppPallete.primaryColor),
+                      onPressed: () {
+                         // Navigate to Re-book flow (e.g., doctor profile)
+                        if (doctorData?['id'] != null) {
+                           context.go('/patient/doctors/profile_view', extra: doctorData!['id']);
+                        }
+                      },
+                      child: const Text("Re-Book"),
                     ),
-                    onPressed: onAddReview,
-                    child: Text("Add Review"),
-                  ),
-                ),
+                    // Optionally add a button to leave feedback/review even for cancelled
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: AppPallete.primaryColor),
+                       onPressed: () {
+                        // Navigate to Add Review page using GoRouter
+                        context.push('/patient/appointment/history/review2', extra: {
+                          'appointmentId': appointment['appointment_id'],
+                          'doctorName': doctorName,
+                          'specialty': specialty,
+                          'avatarUrl': avatarUrl,
+                        });
+                      },
+                      child: const Text("Leave Feedback", style: TextStyle(color: AppPallete.whiteColor)),
+                    ),
+                  ],
+                )
               ],
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class ReviewPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Add Review", style: TextStyle(color:  AppPallete.primaryColor)),
-        backgroundColor: AppPallete.whiteColor,
-        iconTheme: IconThemeData(color:  AppPallete.primaryColor),
-        elevation: 0,
-      ),
-      body: Center(
-        child: Text("Review Page", style: TextStyle(fontSize: 24, color:  AppPallete.textColor)),
-      ),
-    );
-  }
-}
-
-class BottomNavBar extends StatelessWidget {
-  final int selectedIndex;
-  final Function(int) onItemTapped;
-
-  BottomNavBar({required this.selectedIndex, required this.onItemTapped});
-
-  @override
-  Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: selectedIndex,
-      onTap: onItemTapped,
-      selectedItemColor:  AppPallete.primaryColor,
-      unselectedItemColor:  AppPallete.greyColor,
-      type: BottomNavigationBarType.fixed,
-      items: [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: "",
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.chat),
-          label: "",
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: "",
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today),
-          label: "",
-        ),
-      ],
+          ),
+        );
+      },
     );
   }
 }

@@ -1,26 +1,29 @@
+//@annotate:modification:lib/features/Patient/p_appointment_schedule/p_appointment_confirmation.dart
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart'; // Import for date formatting if needed elsewhere
 import 'package:medical_app/core/themes/color_palette.dart';
 
 class AppointmentConfirmationPage extends StatelessWidget {
   final String name;
   final String age;
   final String gender;
-  final String date;
+  final String date; // Expecting formatted date string e.g., "MMM dd, yyyy"
   final String time;
-  final String doctor;
+  final String doctor; // Expecting doctor display name
   final String problem;
-  final VoidCallback onConfirm; 
+  final VoidCallback onConfirm;
 
   const AppointmentConfirmationPage({
     super.key,
     required this.name,
     required this.age,
     required this.gender,
-    required this.date,
+    required this.date, // Should be pre-formatted
     required this.time,
-    required this.doctor,
+    required this.doctor, // Display name passed from previous screen
     required this.problem,
-    required this.onConfirm, 
+    required this.onConfirm,
   });
 
   @override
@@ -28,14 +31,14 @@ class AppointmentConfirmationPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppPallete.backgroundColor,
       appBar: AppBar(
-        title: const Text("Your Appointment", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        title: const Text("Review Appointment", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: AppPallete.primaryColor,
         elevation: 0,
         foregroundColor: AppPallete.whiteColor,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context), // Simple back navigation
         ),
       ),
       body: Padding(
@@ -44,9 +47,9 @@ class AppointmentConfirmationPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              "Appointment Confirmation",
+              "Please confirm your details:", // Changed title
               style: TextStyle(
-                fontSize: 26,
+                fontSize: 22, // Adjusted size
                 fontWeight: FontWeight.bold,
                 color: AppPallete.primaryColor,
               ),
@@ -58,14 +61,15 @@ class AppointmentConfirmationPage extends StatelessWidget {
             _divider(),
             const SizedBox(height: 24),
 
-            _infoSection("Full Name", name),
+            _infoSection("Doctor", doctor), // Display doctor name
+            _infoSection("Patient Name", name),
             _infoSection("Age", age),
             _infoSection("Gender", gender),
-            _infoSection("Doctor", doctor),
             const SizedBox(height: 16),
             _problemDescriptionSection(),
-            const SizedBox(height: 24),
+            const Spacer(), // Push buttons to bottom
             _actionButtons(context),
+            const SizedBox(height: 16), // Padding at bottom
           ],
         ),
       ),
@@ -74,19 +78,22 @@ class AppointmentConfirmationPage extends StatelessWidget {
 
   Widget _dateTimeSection() {
     return Container(
-      padding: const EdgeInsets.all(20.0),
+      padding: const EdgeInsets.all(16.0), // Adjusted padding
       decoration: BoxDecoration(
         color: AppPallete.primaryColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(color: AppPallete.greyColor.withOpacity(0.2), blurRadius: 8, offset: Offset(0, 4)),
-        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _dateTimeColumn("Date", date.split(' ')[0]),
-          _dateTimeColumn("Time", time),
+           // Show Icon for clarity
+           const Icon(Icons.calendar_today_outlined, color: AppPallete.primaryColor, size: 20),
+           const SizedBox(width: 8),
+           Expanded(child: _dateTimeColumn("Date", date)), // Use Expanded
+           const SizedBox(width: 16), // Spacer
+           const Icon(Icons.access_time_outlined, color: AppPallete.primaryColor, size: 20),
+           const SizedBox(width: 8),
+           Expanded(child: _dateTimeColumn("Time", time)), // Use Expanded
         ],
       ),
     );
@@ -98,12 +105,12 @@ class AppointmentConfirmationPage extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppPallete.headings),
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppPallete.headings.withOpacity(0.8)), // Softer label
         ),
         const SizedBox(height: 4),
         Text(
           value,
-          style: TextStyle(fontSize: 16, color: AppPallete.textColor),
+          style: const TextStyle(fontSize: 16, color: AppPallete.textColor, fontWeight: FontWeight.w500),
         ),
       ],
     );
@@ -111,19 +118,19 @@ class AppointmentConfirmationPage extends StatelessWidget {
 
   Widget _divider() {
     return Divider(
-      color: AppPallete.borderColor,
+      color: AppPallete.borderColor.withOpacity(0.5), // Softer divider
       thickness: 1,
     );
   }
 
   Widget _infoSection(String title, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: 10), // Adjusted padding
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppPallete.textColor)),
-          Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppPallete.textColor)),
+          Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: AppPallete.textColor.withOpacity(0.8))), // Softer title
+          Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppPallete.textColor)),
         ],
       ),
     );
@@ -139,7 +146,7 @@ class AppointmentConfirmationPage extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             problem.isEmpty ? "No description provided" : problem,
-            style: TextStyle(fontSize: 14, color: AppPallete.textColor),
+            style: TextStyle(fontSize: 14, color: AppPallete.textColor, height: 1.4), // Improved line height
           ),
         ],
       ),
@@ -150,15 +157,15 @@ class AppointmentConfirmationPage extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: ElevatedButton(
-            onPressed: () => Navigator.pop(context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppPallete.errorColor,
+          child: OutlinedButton( // Use OutlinedButton for cancel
+            onPressed: () => Navigator.pop(context), // Just go back
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppPallete.errorColor, // Text color
+              side: const BorderSide(color: AppPallete.errorColor), // Border color
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              elevation: 5,
             ),
             child: const Text("Cancel", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
@@ -167,15 +174,16 @@ class AppointmentConfirmationPage extends StatelessWidget {
         Expanded(
           child: ElevatedButton(
             onPressed: () {
-              _showConfirmationDialog(context);
+              _showConfirmationDialog(context); // Show dialog before saving
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppPallete.primaryColor,
+              foregroundColor: AppPallete.whiteColor, // Text color
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              elevation: 5,
+              elevation: 3,
             ),
             child: const Text("Confirm", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
@@ -183,26 +191,38 @@ class AppointmentConfirmationPage extends StatelessWidget {
       ],
     );
   }
+
+  // Show confirmation dialog, then call onConfirm and navigate back
   void _showConfirmationDialog(BuildContext context) {
     showDialog(
       context: context,
+      barrierDismissible: false, // Prevent dismissing by tapping outside
       builder: (BuildContext context) {
         return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
           title: Column(
             children: [
-              Icon(Icons.check_circle, color: Colors.green, size: 50),
+              const Icon(Icons.check_circle, color: Colors.green, size: 50),
               const SizedBox(height: 10),
-              const Text("Appointment Confirmed", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              const Text("Appointment Confirmed!", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             ],
           ),
-          content: const Text("Your appointment has been successfully confirmed.", style: TextStyle(fontSize: 16)),
+          content: const Text(
+             "Your appointment has been successfully booked. You will receive a notification reminder.",
+             textAlign: TextAlign.center,
+             style: TextStyle(fontSize: 15),
+           ),
+          actionsAlignment: MainAxisAlignment.center, // Center the button
           actions: [
             TextButton(
               onPressed: () {
-                onConfirm();
-                
-                Navigator.pop(context);
-                Navigator.pop(context); 
+                 Navigator.of(context).pop(); // Close the dialog FIRST
+                 onConfirm(); // Call the save function
+                 // Navigate back twice: once from confirmation, once from schedule page
+                 if(context.canPop()) context.pop(); // Pop confirmation page
+                 if(context.canPop()) context.pop(); // Pop schedule page
+                 // Optional: Navigate to a specific page like history
+                 // context.go('/patient/appointment/history');
               },
               child: const Text("OK", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),
