@@ -1,5 +1,4 @@
 
-// screens/notification_screen.dart
 import 'package:flutter/material.dart';
 import '../models/notification_model.dart';
 import '../widgets/notification_title.dart';
@@ -22,7 +21,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     NotificationItem(title: "Medical History Update", description: "Lorem ipsum...", timeAgo: "5D", dateGroup: "15 April", icon: Icons.chat_bubble_outline, id: ''),
   ];
 
-  // Function to group notifications by date
   Map<String, List<NotificationItem>> groupByDate(List<NotificationItem> items) {
     Map<String, List<NotificationItem>> grouped = {};
     for (var item in items) {
