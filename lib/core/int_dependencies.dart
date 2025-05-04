@@ -1,3 +1,5 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:get_it/get_it.dart';
 import 'package:medical_app/core/common/cubits/user_session/app_user_cubit.dart';
 import 'package:medical_app/core/secrets/supabase_secrets.dart';
@@ -20,6 +22,12 @@ Future<void> initDependencies() async {
     url: SupabaseSecrets.supabaseUrl,
     anonKey: SupabaseSecrets.key,
   );
+
+  await dotenv.load(fileName: ".env");
+  Stripe.publishableKey = dotenv.env["STRIPE_PUBLISH_KEY"]!;
+  Stripe.merchantIdentifier = 'merchant.flutter.stripe.test';
+  Stripe.urlScheme = 'flutterstripe';
+  await Stripe.instance.applySettings();
 
   initializedServices.registerLazySingleton(() => supabase.client);
   initializedServices.registerLazySingleton(() => AppUserCubit());
