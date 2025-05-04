@@ -7,13 +7,9 @@ import 'package:medical_app/core/themes/color_palette.dart';
 import 'package:medical_app/features/patient/patient_dashboard/menu_nav.dart';
 import 'package:medical_app/features/patient/patient_dashboard/dashboard_db.dart';
 import 'package:medical_app/features/patient/patient_dashboard/pages/doctor_search.dart';
-import 'package:medical_app/features/Patient/doctor-search/data/model/doctor_list_model.dart'; 
-
-
+import 'package:medical_app/features/Patient/doctor-search/data/model/doctor_list_model.dart';
 
 class DashboardScreen extends StatefulWidget {
- 
-
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
@@ -45,17 +41,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final userState = context.read<AppUserCubit>().state;
     if (userState is AppUserLoggedIn && userState.user.role == 'patient') {
       setState(() {
-         _currentPatientId = userState.user.uid; // Get patient ID (uid)
-         isLoading = true; // Set loading true before fetching data
+        _currentPatientId = userState.user.uid; // Get patient ID (uid)
+        isLoading = true; // Set loading true before fetching data
       });
       if (_currentPatientId != null) {
         _loadInitialData(_currentPatientId!);
       } else {
-         // Handle case where ID is unexpectedly null
-         setState(() {
-            isLoading = false;
-            errorMessage = "Could not retrieve patient ID.";
-         });
+        // Handle case where ID is unexpectedly null
+        setState(() {
+          isLoading = false;
+          errorMessage = "Could not retrieve patient ID.";
+        });
       }
     } else {
       // Handle cases where user is not logged in or not a patient
@@ -67,18 +63,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-
   // accept patientId
   Future<void> _loadInitialData(String patientId) async {
     // Ensure the initial loading state is set correctly
-     if (!isLoading) { // Check if loading state needs resetting
-       setState(() {
-         isLoading = true;
-         appointmentLoading = true;
-         doctorsLoading = true;
-         errorMessage = null; // Clear previous errors
-       });
-     }
+    if (!isLoading) {
+      // Check if loading state needs resetting
+      setState(() {
+        isLoading = true;
+        appointmentLoading = true;
+        doctorsLoading = true;
+        errorMessage = null; // Clear previous errors
+      });
+    }
 
     try {
       // Fetch data concurrently
@@ -91,29 +87,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       // Safely update state if the widget is still mounted
       if (mounted) {
-         setState(() {
+        setState(() {
           patientFirstName = results[0] as String;
           upcomingAppointment = results[1] as Map<String, dynamic>?;
           // Cast the result correctly
-          availableDoctors = List<Map<String, dynamic>>.from(results[2] as List);
+          availableDoctors =
+              List<Map<String, dynamic>>.from(results[2] as List);
           isLoading = false; // Overall loading done
           doctorsLoading = false;
           appointmentLoading = false;
         });
       }
-
     } catch (e) {
-       if (mounted) {
-         setState(() {
+      if (mounted) {
+        setState(() {
           isLoading = false;
           doctorsLoading = false;
           appointmentLoading = false;
           errorMessage = e.toString().replaceFirst('Exception: ', '');
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading dashboard data: $errorMessage')),
+          SnackBar(
+              content: Text('Error loading dashboard data: $errorMessage')),
         );
-       }
+      }
     }
   }
 
@@ -130,17 +127,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
 
         // Show error if user is not a logged-in patient or data loading failed
-        if (state is! AppUserLoggedIn || state.user.role != 'patient' || errorMessage != null) {
-           return Scaffold(
-             appBar: AppBar(title: const Text("Error")),
-             drawer: const Drawer(child: SideMenu()), // Still show drawer for potential navigation
-             body: Center(
-               child: Padding(
-                 padding: const EdgeInsets.all(16.0),
-                 child: Text(errorMessage ?? "Access denied. Please log in as a patient."),
-               ),
-             ),
-           );
+        if (state is! AppUserLoggedIn ||
+            state.user.role != 'patient' ||
+            errorMessage != null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text("Error")),
+            drawer: const Drawer(
+                child:
+                    SideMenu()), // Still show drawer for potential navigation
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(errorMessage ??
+                    "Access denied. Please log in as a patient."),
+              ),
+            ),
+          );
         }
 
         // Main dashboard content once patient ID is available
@@ -148,14 +150,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
           drawer: const Drawer(child: SideMenu()),
           backgroundColor: AppPallete.whiteColor,
           body: SafeArea(
-            child: RefreshIndicator( // Add pull-to-refresh
+            child: RefreshIndicator(
+              // Add pull-to-refresh
               onRefresh: () async {
-                 if (_currentPatientId != null) {
-                   await _loadInitialData(_currentPatientId!);
-                 }
+                if (_currentPatientId != null) {
+                  await _loadInitialData(_currentPatientId!);
+                }
               },
               child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(), // Ensure scroll physics for RefreshIndicator
+                physics:
+                    const AlwaysScrollableScrollPhysics(), // Ensure scroll physics for RefreshIndicator
                 child: Column(
                   children: [
                     _buildHeaderSection(),
@@ -171,16 +175,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           // Add Floating Action Button for Chatbot
           floatingActionButton: FloatingActionButton(
-             onPressed: () => context.push('/chatbot'), // Navigate to chatbot route
-             tooltip: 'Find a Doctor',
-             backgroundColor: AppPallete.primaryColor,
-             child: const Icon(Icons.chat_bubble_outline, color: AppPallete.whiteColor),
+            onPressed: () =>
+                context.push('/chatbot'), // Navigate to chatbot route
+            tooltip: 'Find a Doctor',
+            backgroundColor: AppPallete.primaryColor,
+            child: const Icon(Icons.chat_bubble_outline,
+                color: AppPallete.whiteColor),
           ),
         );
       },
     );
   }
-
 
   Widget _buildHeaderSection() {
     // Access first name fetched in _loadInitialData
@@ -189,7 +194,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Builder( // Ensure context for Scaffold.of is correct
+          Builder(
+            // Ensure context for Scaffold.of is correct
             builder: (context) => IconButton(
               icon: const Icon(Icons.menu, color: AppPallete.textColor),
               onPressed: () => Scaffold.of(context).openDrawer(),
@@ -199,7 +205,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               const CircleAvatar(
                 radius: 32,
-                backgroundImage: AssetImage('assets/images/patient.jpeg'), // Consider making this dynamic
+                backgroundImage: AssetImage(
+                    'assets/images/patient.jpeg'), // Consider making this dynamic
               ),
               const SizedBox(width: 7),
               Column(
@@ -215,28 +222,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Text(
                     patientFirstName, // Use fetched name
                     style: const TextStyle(
-                      fontSize: 20,
-                      color: AppPallete.textColor,
-                      fontWeight: FontWeight.bold // Make name bold
-                    ),
+                        fontSize: 20,
+                        color: AppPallete.textColor,
+                        fontWeight: FontWeight.bold // Make name bold
+                        ),
                   ),
                 ],
               ),
             ],
           ),
-          IconButton( // Navigate to Notifications
+          IconButton(
+            // Navigate to Notifications
             icon: const Icon(
               Icons.notifications_outlined,
               color: AppPallete.textColor,
             ),
-             onPressed: () {
-               if (_currentPatientId != null) {
-                 context.go('/notifications', extra: {
-                   'receiverId': _currentPatientId!,
-                   'receiverType': 'patient'
-                 });
-               }
-             },
+            onPressed: () {
+              if (_currentPatientId != null) {
+                context.go('/notifications', extra: {
+                  'receiverId': _currentPatientId!,
+                  'receiverType': 'patient'
+                });
+              }
+            },
           ),
         ],
       ),
@@ -252,15 +260,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               IconButton(
                 onPressed: () {
-                   // Ensure patientId is available before navigating
-                   if (_currentPatientId != null) {
-                     // Navigate using GoRouter and pass patientId
-                     context.go('/patient/doctors/favorites', extra: _currentPatientId);
-                   } else {
-                     ScaffoldMessenger.of(context).showSnackBar(
-                       const SnackBar(content: Text('Please wait, loading user data...')),
-                     );
-                   }
+                  // Ensure patientId is available before navigating
+                  if (_currentPatientId != null) {
+                    // Navigate using GoRouter and pass patientId
+                    context.go('/patient/doctors/favorites',
+                        extra: _currentPatientId);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Please wait, loading user data...')),
+                    );
+                  }
                 },
                 icon: const Icon(
                   Icons.favorite_border_outlined,
@@ -280,7 +290,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(width: 10),
           Expanded(
             child: TextField(
-              readOnly: true, // Make TextField non-editable, taps trigger search
+              readOnly:
+                  true, // Make TextField non-editable, taps trigger search
               onTap: () async {
                 // Use the search delegate for doctor search
                 final selectedDoctor = await showSearch<Map<String, dynamic>?>(
@@ -288,19 +299,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   delegate: DoctorSearchDelegate(dashboardDB: _dashboardDB),
                 );
                 if (selectedDoctor != null) {
-                   // Navigate to doctor profile view
-                    // Create a DoctorListModel from the map
-                    final doctorModel = DoctorListModel(
-                        id: selectedDoctor['id'] ?? '',
-                        firstName: selectedDoctor['firstName'] ?? '',
-                        lastName: selectedDoctor['lastName'] ?? '',
-                        specialty: selectedDoctor['specialty'] ?? '',
-                        // Assuming number and email might not be in search results,
-                        // provide defaults or fetch them if needed on the profile page
-                        number: selectedDoctor['number'] ?? 'N/A',
-                        email: selectedDoctor['email'] ?? 'N/A',
-                    );
-                   context.go('/patient/doctors/profile_view', extra: doctorModel);
+                  // Navigate to doctor profile view
+                  // Create a DoctorListModel from the map
+                  final doctorModel = DoctorListModel(
+                    id: selectedDoctor['id'] ?? '',
+                    firstName: selectedDoctor['firstName'] ?? '',
+                    lastName: selectedDoctor['lastName'] ?? '',
+                    specialty: selectedDoctor['specialty'] ?? '',
+                    // Assuming number and email might not be in search results,
+                    // provide defaults or fetch them if needed on the profile page
+                    number: selectedDoctor['number'] ?? 'N/A',
+                    email: selectedDoctor['email'] ?? 'N/A',
+                  );
+                  context.go('/patient/doctors/profile_view',
+                      extra: doctorModel);
                 }
               },
               decoration: InputDecoration(
@@ -321,43 +333,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-
   Widget _buildQuickAccessSection() {
     // These can be made dynamic later if needed
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20), // Added vertical padding
+      padding: const EdgeInsets.symmetric(
+          horizontal: 20, vertical: 20), // Added vertical padding
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           _QuickAccessButton(
             icon: Icons.medical_services_outlined,
             label: 'Doctor',
-            onTap: () => context.go('/patient/doctors/search'), // Navigate to doctor search
+            onTap: () => context
+                .go('/patient/doctors/search'), // Navigate to doctor search
           ),
           _QuickAccessButton(
             icon: Icons.local_pharmacy_rounded,
             label: 'Pharmacy',
-            onTap: () {
-               // TODO: Add navigation for Pharmacy
-               ScaffoldMessenger.of(context).showSnackBar(
-                 const SnackBar(content: Text('Pharmacy section not yet implemented')),
-               );
-            },
+            onTap: () => context.go('/pharmacies'),
           ),
           _QuickAccessButton(
             icon: Icons.local_hospital_rounded,
             label: 'Hospital',
-             onTap: () {
-               // TODO: Add navigation for Hospital
-               ScaffoldMessenger.of(context).showSnackBar(
-                 const SnackBar(content: Text('Hospital section not yet implemented')),
-               );
-            },
+            onTap: () => context.go('/hospitals'),
           ),
           _QuickAccessButton(
-            icon: Icons.local_hospital_outlined, // Consider a better icon like Icons.emergency
+            icon: Icons
+                .local_hospital_outlined, // Consider a better icon like Icons.emergency
             label: 'Ambulance',
-             onTap: () => context.go('/emergency-assistance'), // Navigate to emergency
+            onTap: () =>
+                context.go('/emergency-assistance'), // Navigate to emergency
           ),
         ],
       ),
@@ -372,7 +377,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           const SizedBox(height: 10), // Reduced space
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween, // Add space-between
+            mainAxisAlignment:
+                MainAxisAlignment.spaceBetween, // Add space-between
             children: [
               const Text(
                 'Upcoming Schedule',
@@ -382,17 +388,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              InkWell( // Make "See All" tappable
-                 onTap: () => context.go('/patient/appointment/history'),
-                 child: const Text(
-                   'See All',
-                   style: TextStyle(
-                     fontSize: 14,
-                     color: AppPallete.primaryColor,
-                     fontWeight: FontWeight.w500,
-                   ),
-                 ),
-               ),
+              InkWell(
+                // Make "See All" tappable
+                onTap: () => context.go('/patient/appointment/history'),
+                child: const Text(
+                  'See All',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppPallete.primaryColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -413,28 +420,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
         padding: const EdgeInsets.symmetric(vertical: 20), // Add padding
         child: const Center(
           child: Text(
-           'No upcoming appointments',
-           style: TextStyle(fontSize: 16, color: AppPallete.greyColor),
+            'No upcoming appointments',
+            style: TextStyle(fontSize: 16, color: AppPallete.greyColor),
           ),
         ),
       );
     }
 
     // Extract appointment details safely
-    final doctor = upcomingAppointment!['doctor'] as Map<String, dynamic>? ?? {};
-    final appointmentDateStr = upcomingAppointment!['appointment_date'] as String?;
-    final appointmentTime = upcomingAppointment!['appointment_time'] as String? ?? 'N/A';
-    final appointmentId = upcomingAppointment!['id'] as String? ?? ''; // Get appointment ID for call
+    final doctor =
+        upcomingAppointment!['doctor'] as Map<String, dynamic>? ?? {};
+    final appointmentDateStr =
+        upcomingAppointment!['appointment_date'] as String?;
+    final appointmentTime =
+        upcomingAppointment!['appointment_time'] as String? ?? 'N/A';
+    final appointmentId = upcomingAppointment!['id'] as String? ??
+        ''; // Get appointment ID for call
     DateTime? appointmentDate;
     String formattedDate = 'N/A';
 
     if (appointmentDateStr != null) {
-       try {
-         appointmentDate = DateTime.parse(appointmentDateStr);
-         formattedDate = DateFormat('EEEE, MMMM d').format(appointmentDate);
-       } catch (e) {
-         formattedDate = 'Invalid Date'; // Handle parsing error
-       }
+      try {
+        appointmentDate = DateTime.parse(appointmentDateStr);
+        formattedDate = DateFormat('EEEE, MMMM d').format(appointmentDate);
+      } catch (e) {
+        formattedDate = 'Invalid Date'; // Handle parsing error
+      }
     }
 
     // Build the card UI
@@ -460,84 +471,96 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Row(
               children: [
-                CircleAvatar( // Use a default or fetch dynamically
+                CircleAvatar(
+                  // Use a default or fetch dynamically
                   radius: 35, // Slightly smaller
-                  backgroundImage: AssetImage('assets/images/doctor.jpg'), // TODO: Fetch doctor avatar if available
+                  backgroundImage: AssetImage(
+                      'assets/images/doctor.jpg'), // TODO: Fetch doctor avatar if available
                 ),
                 const SizedBox(width: 10), // Increased space
-                Expanded( // Allow text to wrap
+                Expanded(
+                  // Allow text to wrap
                   child: Column(
-                   crossAxisAlignment: CrossAxisAlignment.start,
-                   children: [
-                     Text(
-                       '${doctor['title'] ?? ''} ${doctor['first_name'] ?? ''} ${doctor['last_name'] ?? 'Unknown Doctor'}'.trim(),
-                       style: const TextStyle(
-                         fontSize: 18, // Adjusted font size
-                         color: AppPallete.whiteColor,
-                         fontWeight: FontWeight.bold,
-                       ),
-                       overflow: TextOverflow.ellipsis, // Prevent overflow
-                     ),
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                       doctor['specialty'] ?? 'Unknown Specialty',
-                       style: const TextStyle(
-                         fontSize: 15, // Adjusted font size
-                         color: AppPallete.whiteColor,
-                       ),
+                        '${doctor['title'] ?? ''} ${doctor['first_name'] ?? ''} ${doctor['last_name'] ?? 'Unknown Doctor'}'
+                            .trim(),
+                        style: const TextStyle(
+                          fontSize: 18, // Adjusted font size
+                          color: AppPallete.whiteColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis, // Prevent overflow
+                      ),
+                      Text(
+                        doctor['specialty'] ?? 'Unknown Specialty',
+                        style: const TextStyle(
+                          fontSize: 15, // Adjusted font size
+                          color: AppPallete.whiteColor,
+                        ),
                         overflow: TextOverflow.ellipsis,
-                     ),
+                      ),
                       const SizedBox(height: 6),
                       Text(
-                       '$formattedDate • $appointmentTime',
-                       style: const TextStyle(
-                         fontSize: 14, // Adjusted font size
-                         color: AppPallete.whiteColor,
-                       ),
-                     ),
-                   ],
+                        '$formattedDate • $appointmentTime',
+                        style: const TextStyle(
+                          fontSize: 14, // Adjusted font size
+                          color: AppPallete.whiteColor,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 15), // Increased spacing
-            Row( // Align button to the right
+            Row(
+              // Align button to the right
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                ElevatedButton.icon( // Use ElevatedButton.icon
-                   onPressed: () {
-                     // TODO: Fetch actual Agora App ID and Token dynamically
-                     const appId = "bc06bf6bab7645abbc9b9d56db3f2868"; // Placeholder
-                     const token = "007eJxTYLh7OefL0v7fU7e+81X30H74mZ369K6Jz993fT6/uMX+a84KDKZGhqkmhqlppoYWRhamxkbJyebJiUbGyeZJqUaGacmmzJ59SmsIZGTY8X9kYIRCEH4GRkYGJmZmlgaGADK+H/s="; // Placeholder/Temporary
+                ElevatedButton.icon(
+                  // Use ElevatedButton.icon
+                  onPressed: () {
+                    // TODO: Fetch actual Agora App ID and Token dynamically
+                    const appId =
+                        "bc06bf6bab7645abbc9b9d56db3f2868"; // Placeholder
+                    const token =
+                        "007eJxTYLh7OefL0v7fU7e+81X30H74mZ369K6Jz993fT6/uMX+a84KDKZGhqkmhqlppoYWRhamxkbJyebJiUbGyeZJqUaGacmmzJ59SmsIZGTY8X9kYIRCEH4GRkYGJmZmlgaGADK+H/s="; // Placeholder/Temporary
 
-                     if (appId.isEmpty || token.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                           const SnackBar(content: Text('Video call configuration missing.')),
-                        );
-                        return;
-                     }
-                     // Navigate to video call screen
-                     context.go('/video-call', extra: {
-                       'appId': appId,
-                       'token': token,
-                       'channelName': appointmentId, // Use appointment ID as channel name
-                     });
-                   },
-                   icon: const Icon(Icons.video_call_rounded, color: AppPallete.primaryColor),
-                   label: const Text(
-                     'Join Call',
-                     style: TextStyle(
-                       fontSize: 16, // Adjusted font size
-                       fontWeight: FontWeight.bold,
-                       color: AppPallete.primaryColor,
-                     ),
-                   ),
-                   style: ElevatedButton.styleFrom(
+                    if (appId.isEmpty || token.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Video call configuration missing.')),
+                      );
+                      return;
+                    }
+                    // Navigate to video call screen
+                    context.go('/video-call', extra: {
+                      'appId': appId,
+                      'token': token,
+                      'channelName':
+                          appointmentId, // Use appointment ID as channel name
+                    });
+                  },
+                  icon: const Icon(Icons.video_call_rounded,
+                      color: AppPallete.primaryColor),
+                  label: const Text(
+                    'Join Call',
+                    style: TextStyle(
+                      fontSize: 16, // Adjusted font size
+                      fontWeight: FontWeight.bold,
+                      color: AppPallete.primaryColor,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
                       backgroundColor: AppPallete.whiteColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8) // Adjusted padding
-                   ),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8) // Adjusted padding
+                      ),
                 ),
               ],
             ),
@@ -554,7 +577,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start, // Align left
         children: [
           const SizedBox(height: 25), // Adjusted space
-           Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
@@ -565,16 +588,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              InkWell( // Make "See All" tappable
-                onTap: () => context.go('/patient/doctors/search'), // Navigate to doctor search page
+              InkWell(
+                // Make "See All" tappable
+                onTap: () => context.go(
+                    '/patient/doctors/search'), // Navigate to doctor search page
                 child: const Text(
-                   'See All',
-                   style: TextStyle(
-                     fontSize: 14,
-                     color: AppPallete.primaryColor,
-                     fontWeight: FontWeight.w500,
-                   ),
-                 ),
+                  'See All',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppPallete.primaryColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
             ],
           ),
@@ -585,7 +610,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-   Widget _buildDoctorsList() {
+  Widget _buildDoctorsList() {
     // Show loading indicator
     if (doctorsLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -596,10 +621,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
     // Build list using ListView for better performance if list gets long
     return ListView.builder(
-       shrinkWrap: true, // Important inside SingleChildScrollView
-       physics: const NeverScrollableScrollPhysics(), // Disable internal scrolling
-       itemCount: availableDoctors.length,
-       itemBuilder: (context, index) {
+        shrinkWrap: true, // Important inside SingleChildScrollView
+        physics:
+            const NeverScrollableScrollPhysics(), // Disable internal scrolling
+        itemCount: availableDoctors.length,
+        itemBuilder: (context, index) {
           final doctor = availableDoctors[index];
           // Pass the dynamic patientId to the card
           return Padding(
@@ -608,14 +634,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               doctor: doctor,
               patientId: _currentPatientId!, // Pass the dynamic ID
               dashboardDB: _dashboardDB,
-              onFavoriteChanged: () => setState(() {}), // Refresh state on change
+              onFavoriteChanged: () =>
+                  setState(() {}), // Refresh state on change
             ),
           );
-       }
-    );
+        });
   }
 } // End of _DashboardScreenState
-
 
 // --- Quick Access Button Widget ---
 class _QuickAccessButton extends StatelessWidget {
@@ -693,35 +718,38 @@ class _DoctorCardState extends State<_DoctorCard> {
 
   // Checks favorite status using the dynamic patientId
   Future<void> _checkFavoriteStatus() async {
-     if (!mounted) return; // Check if widget is still mounted
-     setState(() => isLoading = true); // Start loading
+    if (!mounted) return; // Check if widget is still mounted
+    setState(() => isLoading = true); // Start loading
     try {
       final status = await widget.dashboardDB.isDoctorFavorited(
         widget.patientId,
         widget.doctor['id'],
       );
-      if (mounted) { // Check again before setting state
+      if (mounted) {
+        // Check again before setting state
         setState(() {
           isFavorite = status;
           isLoading = false;
         });
       }
     } catch (e) {
-       if (mounted) {
-         setState(() {
-            isLoading = false; // Stop loading even on error
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error checking favorite: ${e.toString().replaceFirst('Exception: ', '')}')),
-          );
-       }
+      if (mounted) {
+        setState(() {
+          isLoading = false; // Stop loading even on error
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  'Error checking favorite: ${e.toString().replaceFirst('Exception: ', '')}')),
+        );
+      }
     }
   }
 
   // Toggles favorite status using the dynamic patientId
   Future<void> _toggleFavorite() async {
-     if (!mounted) return;
-     setState(() => isLoading = true); // Show loading during update
+    if (!mounted) return;
+    setState(() => isLoading = true); // Show loading during update
     try {
       if (isFavorite) {
         await widget.dashboardDB.removeFavorite(
@@ -734,20 +762,23 @@ class _DoctorCardState extends State<_DoctorCard> {
           widget.doctor['id'],
         );
       }
-       if (mounted) { // Check before setting state
-         setState(() {
-           isFavorite = !isFavorite;
-           isLoading = false;
-         });
-         widget.onFavoriteChanged(); // Notify parent if needed
-       }
+      if (mounted) {
+        // Check before setting state
+        setState(() {
+          isFavorite = !isFavorite;
+          isLoading = false;
+        });
+        widget.onFavoriteChanged(); // Notify parent if needed
+      }
     } catch (e) {
-       if (mounted) {
-          setState(() => isLoading = false); // Stop loading on error
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error updating favorite: ${e.toString().replaceFirst('Exception: ', '')}')),
-          );
-       }
+      if (mounted) {
+        setState(() => isLoading = false); // Stop loading on error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  'Error updating favorite: ${e.toString().replaceFirst('Exception: ', '')}')),
+        );
+      }
     }
   }
 
@@ -759,15 +790,20 @@ class _DoctorCardState extends State<_DoctorCard> {
       firstName: widget.doctor['firstName'] ?? '',
       lastName: widget.doctor['lastName'] ?? '',
       specialty: widget.doctor['specialty'] ?? '',
-      number: widget.doctor['number'] ?? 'N/A', // Provide default or fetch if needed
-      email: widget.doctor['email'] ?? 'N/A', // Provide default or fetch if needed
+      number: widget.doctor['number'] ??
+          'N/A', // Provide default or fetch if needed
+      email:
+          widget.doctor['email'] ?? 'N/A', // Provide default or fetch if needed
     );
 
-    return InkWell( // Wrap card in InkWell for tap detection
-       onTap: () {
-        final String? doctorId = widget.doctor['id'] as String?; // Extract ID as String
+    return InkWell(
+      // Wrap card in InkWell for tap detection
+      onTap: () {
+        final String? doctorId =
+            widget.doctor['id'] as String?; // Extract ID as String
         if (doctorId != null && doctorId.isNotEmpty) {
-          context.go('/patient/doctors/profile_view', extra: doctorId); // Pass ONLY the ID string
+          context.go('/patient/doctors/profile_view',
+              extra: doctorId); // Pass ONLY the ID string
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Could not get doctor ID.')),
@@ -779,7 +815,8 @@ class _DoctorCardState extends State<_DoctorCard> {
         decoration: BoxDecoration(
           color: AppPallete.lightBackground, // Lighter background
           borderRadius: BorderRadius.circular(15),
-          boxShadow: [ // Softer shadow
+          boxShadow: [
+            // Softer shadow
             BoxShadow(
               color: AppPallete.greyColor.withOpacity(0.3),
               blurRadius: 4,
@@ -789,9 +826,11 @@ class _DoctorCardState extends State<_DoctorCard> {
         ),
         child: Row(
           children: [
-            CircleAvatar( // Use default or fetch dynamically
+            CircleAvatar(
+              // Use default or fetch dynamically
               radius: 30, // Smaller avatar
-              backgroundImage: AssetImage('assets/images/doctor.jpg'), // TODO: Fetch doctor avatar
+              backgroundImage: AssetImage(
+                  'assets/images/doctor.jpg'), // TODO: Fetch doctor avatar
             ),
             const SizedBox(width: 12), // Adjusted space
             Expanded(
@@ -799,7 +838,8 @@ class _DoctorCardState extends State<_DoctorCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${widget.doctor['title'] ?? ''} ${widget.doctor['firstName'] ?? ''} ${widget.doctor['lastName'] ?? 'Doctor'}'.trim(),
+                    '${widget.doctor['title'] ?? ''} ${widget.doctor['firstName'] ?? ''} ${widget.doctor['lastName'] ?? 'Doctor'}'
+                        .trim(),
                     style: const TextStyle(
                       fontSize: 16, // Adjusted size
                       fontWeight: FontWeight.bold,
@@ -813,7 +853,7 @@ class _DoctorCardState extends State<_DoctorCard> {
                       fontSize: 13, // Adjusted size
                       color: AppPallete.greyColor,
                     ),
-                     overflow: TextOverflow.ellipsis,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
@@ -829,10 +869,14 @@ class _DoctorCardState extends State<_DoctorCard> {
                     onPressed: _toggleFavorite,
                     icon: Icon(
                       isFavorite ? Icons.favorite : Icons.favorite_border,
-                      color: isFavorite ? Colors.red : AppPallete.primaryColor, // Red when favorited
+                      color: isFavorite
+                          ? Colors.red
+                          : AppPallete.primaryColor, // Red when favorited
                       size: 24, // Adjusted size
                     ),
-                    tooltip: isFavorite ? 'Remove from favorites' : 'Add to favorites',
+                    tooltip: isFavorite
+                        ? 'Remove from favorites'
+                        : 'Add to favorites',
                   ),
           ],
         ),
