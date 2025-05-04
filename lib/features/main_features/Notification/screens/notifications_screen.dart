@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../models/notification_item.dart';
 import '../models/notification_model.dart';
 import '../widgets/notification_title.dart';
@@ -153,7 +154,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         iconTheme: const IconThemeData(color: Colors.blue),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+          onPressed: (){
+            if (context.canPop()) { // Check if navigation is possible
+               context.pop(); // Use GoRouter's pop
+            } else {
+               context.go('/p_dashboard');
+            }
+          }
         ),
         title: const Text(
           "Notifications",
