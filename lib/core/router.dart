@@ -365,6 +365,10 @@ final GoRouter appRouter = GoRouter(
                 GoRoute( path: 'privacy', builder: (context, state) => const DoctorPrivacy.PrivacyPage()),
             ]
         ),
+        GoRoute(
+            path: '/chatbot', // Path: /chatbot (relative to root, but handled by Shell)
+            builder: (context, state) =>  ChatBotScreen(),
+          ),
        GoRoute(
       path: '/doctor/consultation-history',
       parentNavigatorKey: _rootNavigatorKey, // Place outside shell
@@ -553,7 +557,7 @@ final GoRouter appRouter = GoRouter(
              }
              return NotificationsScreen( receiverId: receiverId, receiverType: receiverType);
            }),
-        GoRoute( path: '/chatbot', builder: (context, state) => ChatBotScreen()),
+        //GoRoute( path: '/chatbot', builder: (context, state) => ChatBotScreen()),
         GoRoute( path: '/symptom-tracker', builder: (context, state) => const SymptomTrackerScreen()),
         GoRoute(
           path: '/medication-reminder',

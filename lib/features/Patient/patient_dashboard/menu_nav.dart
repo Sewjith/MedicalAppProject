@@ -1,3 +1,4 @@
+//@annotate:modification:lib/features/Patient/patient_dashboard/menu_nav.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
@@ -120,6 +121,18 @@ class _SideMenuState extends State<SideMenu> {
                    onTap: () {
                      Navigator.pop(context);
                      context.go('/patient/doctors/search');
+                   },
+                 ),
+                 // Add Doctor Finder ListTile
+                 ListTile(
+                   leading: const Icon(Icons.chat_bubble_outline, color: AppPallete.whiteColor), // Chatbot icon
+                   title: const Text(
+                     'FIND A DOCTOR', // Changed text for clarity
+                     style: TextStyle(fontSize: 16, color: AppPallete.whiteColor, fontWeight: FontWeight.w500),
+                   ),
+                   onTap: () {
+                     Navigator.pop(context); // Close drawer
+                     context.push('/chatbot'); // Navigate to the chatbot route
                    },
                  ),
                  const Divider(color: AppPallete.whiteColor),

@@ -1,4 +1,3 @@
-//@annotate:modification:lib/features/Patient/patient_dashboard/dashboard.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart'; // Import Bloc
 import 'package:go_router/go_router.dart'; // Import GoRouter for navigation
@@ -6,17 +5,14 @@ import 'package:intl/intl.dart';
 import 'package:medical_app/core/common/cubits/user_session/app_user_cubit.dart'; // Import Cubit
 import 'package:medical_app/core/themes/color_palette.dart';
 import 'package:medical_app/features/patient/patient_dashboard/menu_nav.dart';
-// Removed duplicate import for favorite.dart (it's handled by GoRouter now)
-// import 'package:medical_app/features/patient/patient_dashboard/pages/favorite.dart';
 import 'package:medical_app/features/patient/patient_dashboard/dashboard_db.dart';
 import 'package:medical_app/features/patient/patient_dashboard/pages/doctor_search.dart';
-import 'package:medical_app/features/Patient/doctor-search/data/model/doctor_list_model.dart'; // Import DoctorListModel
+import 'package:medical_app/features/Patient/doctor-search/data/model/doctor_list_model.dart'; 
 
-// Removed the testing main function and StatelessWidget wrapper
+
 
 class DashboardScreen extends StatefulWidget {
-  // Removed const constructor as we now have state dependent on Bloc
-  // const DashboardScreen({super.key});
+ 
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -24,8 +20,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final DashboardDB _dashboardDB = DashboardDB();
-  // Removed hardcoded patientId
-  // final String patientId = "a5073dd2-a726-43e6-9a25-1454ac6dfda5";
+
   String? _currentPatientId; // Store the dynamic patient ID
   String patientFirstName = 'Patient'; // Default name
   bool isLoading = true; // General loading state for initial setup
@@ -73,7 +68,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
 
-  // Modified to accept patientId
+  // accept patientId
   Future<void> _loadInitialData(String patientId) async {
     // Ensure the initial loading state is set correctly
      if (!isLoading) { // Check if loading state needs resetting
@@ -90,7 +85,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final results = await Future.wait([
         _dashboardDB.getPatientFirstName(patientId),
         _dashboardDB.getUpcomingAppointment(patientId),
-        // Fetch all doctors (or implement specific logic like top-rated/nearby)
+        // Fetch all doctors
         _dashboardDB.searchDoctors(''), // Fetch all doctors initially
       ]);
 
@@ -173,6 +168,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
             ),
+          ),
+          // Add Floating Action Button for Chatbot
+          floatingActionButton: FloatingActionButton(
+             onPressed: () => context.push('/chatbot'), // Navigate to chatbot route
+             tooltip: 'Find a Doctor',
+             backgroundColor: AppPallete.primaryColor,
+             child: const Icon(Icons.chat_bubble_outline, color: AppPallete.whiteColor),
           ),
         );
       },
