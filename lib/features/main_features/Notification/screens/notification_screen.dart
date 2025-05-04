@@ -15,11 +15,11 @@ class NotificationsScreen extends StatefulWidget {
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
   List<NotificationItem> notifications = [
-    NotificationItem(title: "Scheduled Appointment", description: "Lorem ipsum...", timeAgo: "2M", dateGroup: "Today", icon: Icons.calendar_today),
-    NotificationItem(title: "Scheduled Change", description: "Lorem ipsum...", timeAgo: "2H", dateGroup: "Today", icon: Icons.calendar_today, isRead: true),
-    NotificationItem(title: "Medical Notes", description: "Lorem ipsum...", timeAgo: "3H", dateGroup: "Today", icon: Icons.note),
-    NotificationItem(title: "Scheduled Appointment", description: "Lorem ipsum...", timeAgo: "1D", dateGroup: "Yesterday", icon: Icons.calendar_today, isRead: true),
-    NotificationItem(title: "Medical History Update", description: "Lorem ipsum...", timeAgo: "5D", dateGroup: "15 April", icon: Icons.chat_bubble_outline),
+    NotificationItem(title: "Scheduled Appointment", description: "Lorem ipsum...", timeAgo: "2M", dateGroup: "Today", icon: Icons.calendar_today, id: ''),
+    NotificationItem(title: "Scheduled Change", description: "Lorem ipsum...", timeAgo: "2H", dateGroup: "Today", icon: Icons.calendar_today, isRead: true, id: ''),
+    NotificationItem(title: "Medical Notes", description: "Lorem ipsum...", timeAgo: "3H", dateGroup: "Today", icon: Icons.note, id: ''),
+    NotificationItem(title: "Scheduled Appointment", description: "Lorem ipsum...", timeAgo: "1D", dateGroup: "Yesterday", icon: Icons.calendar_today, isRead: true, id: ''),
+    NotificationItem(title: "Medical History Update", description: "Lorem ipsum...", timeAgo: "5D", dateGroup: "15 April", icon: Icons.chat_bubble_outline, id: ''),
   ];
 
   // Function to group notifications by date
