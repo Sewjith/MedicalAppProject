@@ -1,3 +1,5 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:get_it/get_it.dart';
 import 'package:medical_app/core/common/cubits/user_session/app_user_cubit.dart';
 import 'package:medical_app/core/secrets/supabase_secrets.dart';
@@ -25,6 +27,31 @@ Future<void> initDependencies() async {
   initializedServices.registerLazySingleton(() => AppUserCubit());
 
   _initAuth();
+
+  try {
+    await dotenv.load(fileName: ".env");
+    final stripePublishKey = dotenv.env["STRIPE_PUBLISH_KEY"];
+    if (stripePublishKey == null || stripePublishKey.isEmpty) {
+      print("❌ ERROR: Stripe publishable key not found in .env file.");
+      throw Exception("Stripe publishable key not found in .env file.");
+    } else {
+      Stripe.publishableKey = stripePublishKey;
+    }
+    Stripe.merchantIdentifier = 'merchant.flutter.stripe.test';
+    Stripe.urlScheme = 'flutterstripe';
+    print("Applying Stripe settings...");
+    await Stripe.instance.applySettings();
+    print("✅ Stripe settings applied successfully."); // Add log
+  } catch (e) {
+    print("❌❌❌ CRITICAL ERROR during Stripe initialization: $e");
+    // You might want to re-throw or handle this critical failure appropriately
+  }
+
+  // await dotenv.load(fileName: ".env");
+  // Stripe.publishableKey = dotenv.env["STRIPE_PUBLISH_KEY"]!;
+  // Stripe.merchantIdentifier = 'merchant.flutter.stripe.test';
+  // Stripe.urlScheme = 'flutterstripe';
+  // await Stripe.instance.applySettings();
 }
 
 void _initAuth() {

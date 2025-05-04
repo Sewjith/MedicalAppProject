@@ -81,6 +81,7 @@ import 'package:medical_app/features/main_features/health_articles/d_create_edit
 import 'package:medical_app/features/main_features/health_articles/d_my_articles_page.dart';
 import 'package:medical_app/features/main_features/health_articles/p_article_detail_page.dart';
 import 'package:medical_app/features/main_features/health_articles/p_article_list_page.dart';
+import 'package:medical_app/features/main_features/in-app-payments/payment_home.dart';
 
 // --- Shared Features ---
 import 'package:medical_app/features/main_features/teleconsultation/presentation/index.dart';
@@ -280,6 +281,25 @@ final GoRouter appRouter = GoRouter(
           }
           return ReviewPage2();
         }),
+    GoRoute(
+      path: '/payment', // Or your chosen path for payment
+      parentNavigatorKey:
+          _rootNavigatorKey, // Decide if it needs the shell or not
+      builder: (context, state) {
+        final appointmentId = state.extra as String?;
+        if (appointmentId == null || appointmentId.isEmpty) {
+          debugPrint(
+              "Router Error: [/payment] Appointment ID missing in extra data.");
+          // Return an error page or navigate back
+          return const Scaffold(
+              body: Center(
+                  child:
+                      Text("Error: Appointment ID is required for payment.")));
+        }
+        // Pass the received ID to your PaymentHomePage
+        return PaymentHomePage(appointmentId: appointmentId);
+      },
+    ),
 
     // --- Health Record Add/Edit (Full Screen) ---
     GoRoute(
