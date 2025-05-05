@@ -6,6 +6,7 @@ import 'package:medical_app/core/themes/color_palette.dart';
 import 'package:medical_app/features/Patient/appoinment_history/appoinment.dart'; // Import the DB class
 import 'package:cached_network_image/cached_network_image.dart'; // For doctor image
 import 'package:flutter/foundation.dart'; // For debugPrint
+import 'package:url_launcher/url_launcher.dart';
 
 class AppointmentDetailsPage extends StatefulWidget {
   final String appointmentId; // Accept only appointmentId
@@ -24,6 +25,7 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
   Map<String, dynamic>? _appointmentData; // State to hold fetched data
   bool _isLoading = true;
   String? _errorMessage;
+  String? _prescriptionPdfUrl;
 
   @override
   void initState() {
@@ -36,12 +38,14 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _prescriptionPdfUrl = null;
     });
     try {
       final data = await _db.getAppointmentDetails(widget.appointmentId);
       if (mounted) {
         setState(() {
           _appointmentData = data;
+          _prescriptionPdfUrl = data['prescription_pdf_url'] as String?;
           _isLoading = false;
         });
       }
@@ -52,6 +56,35 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
           _errorMessage = e.toString().replaceFirst("Exception: ", "");
         });
       }
+    }
+  }
+
+  Future<void> _launchPrescriptionUrl() async {
+    if (_prescriptionPdfUrl == null || _prescriptionPdfUrl!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No prescription URL found.')),
+      );
+      return;
+    }
+
+    final Uri url = Uri.parse(_prescriptionPdfUrl!);
+    try {
+      bool launched = await launchUrl(
+        url,
+        mode: LaunchMode
+            .externalApplication, // Try opening in external app/browser
+      );
+      if (!launched) {
+        debugPrint('Could not launch $url');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not open prescription: $url')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error launching URL: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error opening prescription link.')),
+      );
     }
   }
 
@@ -110,6 +143,8 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
     final patientName = _appointmentData!['patient_name'] ?? 'N/A';
     final patientAge = _appointmentData!['patient_age']?.toString() ?? 'N/A';
     final patientGender = _appointmentData!['patient_gender'] ?? 'N/A';
+    final displayAppointmentId =
+        _appointmentData!['appointment_id'] ?? widget.appointmentId;
 
     return SingleChildScrollView(
       // Make content scrollable
@@ -209,6 +244,13 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
           ),
           const SizedBox(height: 30),
 
+          if (_prescriptionPdfUrl != null &&
+              _prescriptionPdfUrl!.isNotEmpty) ...[
+            _buildSectionTitle("Prescription"),
+            _buildPrescriptionButton(),
+            const SizedBox(height: 20),
+          ],
+
           // Action Buttons (Conditional)
           if (status.toLowerCase() == 'upcoming' &&
               paymentStatus.toLowerCase() == 'pending')
@@ -261,6 +303,24 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPrescriptionButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        icon: const Icon(Icons.download_for_offline_outlined),
+        label: const Text("View/Download Prescription"),
+        onPressed: _launchPrescriptionUrl, // Call the launch function
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppPallete.secondaryColor, // Use a distinct color
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
       ),
     );
   }
