@@ -222,7 +222,7 @@ class AppointmentConfirmationPage extends StatelessWidget {
                  if(context.canPop()) context.pop(); // Pop confirmation page
                  if(context.canPop()) context.pop(); // Pop schedule page
                  // Optional: Navigate to a specific page like history
-                 // context.go('/patient/appointment/history');
+                 context.go('/patient/appointment/history');
               },
               child: const Text("OK", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),

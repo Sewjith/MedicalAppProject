@@ -40,8 +40,8 @@ class AppointmentHistoryDb {
           // --- END FIX ---
           .eq('patient_id', patientId)
           .inFilter('appointment_status', statuses)
-          .order('appointment_date', ascending: false)
-          .order('appointment_time', ascending: false);
+          .order('appointment_date', ascending: true)
+          .order('appointment_time', ascending: true);
 
       // ...(image URL fetching logic remains the same)...
       for (var appointment in response) {
@@ -143,7 +143,8 @@ class AppointmentHistoryDb {
 
 // --- AppointmentHistoryPage widget remains the same ---
 class AppointmentHistoryPage extends StatefulWidget {
-  const AppointmentHistoryPage({super.key});
+  final int initialTabIndex;
+  const AppointmentHistoryPage({super.key, this.initialTabIndex = 1});
 
   @override
   State<AppointmentHistoryPage> createState() => _AppointmentHistoryPageState();
@@ -156,7 +157,11 @@ class _AppointmentHistoryPageState extends State<AppointmentHistoryPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: widget.initialTabIndex,
+    );
   }
 
   @override
