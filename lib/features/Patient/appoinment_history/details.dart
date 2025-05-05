@@ -316,7 +316,7 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
         onPressed: _launchPrescriptionUrl, // Call the launch function
         style: ElevatedButton.styleFrom(
           backgroundColor: AppPallete.secondaryColor, // Use a distinct color
-          foregroundColor: Colors.white,
+          foregroundColor: AppPallete.textColor,
           padding: const EdgeInsets.symmetric(vertical: 14),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

@@ -502,6 +502,32 @@ class _CompletedAppointmentsListState
                         child: const Text("Add Review",
                             style: TextStyle(color: AppPallete.whiteColor)),
                       ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              AppPallete.primaryColor, // Match upcoming style
+                          // foregroundColor: AppPallete.whiteColor, // Set text color below
+                        ),
+                        onPressed: () {
+                          final String? appointmentId =
+                              appointment['appointment_id'];
+                          if (appointmentId != null) {
+                            context.push('/patient/appointment/history/details',
+                                extra: appointmentId);
+                          } else {
+                            debugPrint(
+                                "Error: Missing appointment_id for details");
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      "Error: Could not get appointment ID.")),
+                            );
+                          }
+                        },
+                        child: const Text("Details",
+                            style: TextStyle(
+                                color: AppPallete.whiteColor)), // White text
+                      ),
                     ],
                   )
                 ],
