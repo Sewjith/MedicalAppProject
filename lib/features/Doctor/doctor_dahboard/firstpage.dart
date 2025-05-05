@@ -1,23 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart'; // Import Bloc
-import 'package:go_router/go_router.dart'; // Import GoRouter
-import 'package:medical_app/core/common/cubits/user_session/app_user_cubit.dart'; // Import Cubit
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:medical_app/core/common/cubits/user_session/app_user_cubit.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
-import 'package:medical_app/features/Doctor/doctor_profile/profile_db.dart'; // Use ProfileDB
-
-// Removed imports for screens navigated to via GoRouter
-// import 'package:medical_app/features/doctor/doctor_dahboard/appoinment.dart'; // (Now uses GoRouter)
-// import 'package:medical_app/features/doctor/doctor_dahboard/patient_list.dart'; // (Now uses GoRouter)
-// import 'package:medical_app/features/doctor/doctor_dahboard/inbox.dart'; // (Now uses GoRouter)
-// import 'package:medical_app/features/doctor/doctor_dahboard/earnings.dart'; // (Now uses GoRouter)
-// import 'package:medical_app/features/doctor/doctor_dahboard/overview.dart'; // (Now uses GoRouter)
-// Removed unused import
-// import 'package:supabase_flutter/supabase_flutter.dart';
-
-// Removed the StatelessWidget wrapper DoctorDashboard
+import 'package:medical_app/features/Doctor/doctor_profile/profile_db.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DashboardScreen extends StatefulWidget {
-  // Removed doctorId parameter - will fetch internally
   const DashboardScreen({Key? key}) : super(key: key);
 
   @override
@@ -25,32 +14,29 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  // Use ProfileDB from doctor_profile feature
   final ProfileDB _profileDB = ProfileDB();
+  final AppointmentService _appointmentService =
+      AppointmentService(Supabase.instance.client);
   String? _currentDoctorId;
   Map<String, dynamic>? _doctorData;
   bool _isLoading = true;
   String? _errorMessage;
 
-  // Removed hover state variables and selectedIndex
-
   @override
   void initState() {
     super.initState();
-    // Fetch data after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeDoctorData();
     });
   }
 
-  // Fetches doctor ID from Cubit and loads data
   void _initializeDoctorData() {
     final userState = context.read<AppUserCubit>().state;
     if (userState is AppUserLoggedIn && userState.user.role == 'doctor') {
       setState(() {
-        _currentDoctorId = userState.user.uid; // Get doctor ID (uid)
-        _isLoading = true; // Set loading before fetch
-        _errorMessage = null; // Clear previous errors
+        _currentDoctorId = userState.user.uid;
+        _isLoading = true;
+        _errorMessage = null;
       });
       if (_currentDoctorId != null) {
         _loadDoctorData(_currentDoctorId!);
@@ -64,12 +50,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       setState(() {
         _isLoading = false;
         _errorMessage = "User is not logged in as a doctor.";
-        // Optionally redirect: context.go('/login');
       });
     }
   }
 
-  // Fetches doctor data using ProfileDB
   Future<void> _loadDoctorData(String doctorId) async {
     try {
       final data = await _profileDB.getDoctorProfile(doctorId);
@@ -92,7 +76,72 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  // Simplified drawer item without hover state
+  Future<void> _showTodayAppointments() async {
+    if (_currentDoctorId == null) return;
+
+    try {
+      final today = DateTime.now();
+      final appointments = await _appointmentService.getDoctorAppointments(
+          _currentDoctorId!, today);
+
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Today's Appointments"),
+          content: appointments.isEmpty
+              ? const Text("No appointments for today.")
+              : SizedBox(
+                  width: double.maxFinite,
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: appointments.length,
+                    itemBuilder: (context, index) {
+                      final appointment = appointments[index];
+                      final time = appointment['appointment_time'] ?? 'N/A';
+                      final patient = appointment['patient_name'] ?? 'Unknown';
+                      final status = appointment['status'] ?? 'scheduled';
+
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        child: ListTile(
+                          title: Text(patient),
+                          subtitle: Text('Time: $time'),
+                          trailing: Chip(
+                            label: Text(
+                              status.toUpperCase(),
+                              style: TextStyle(
+                                color: status == 'completed'
+                                    ? Colors.green
+                                    : status == 'cancelled'
+                                        ? Colors.red
+                                        : Colors.orange,
+                              ),
+                            ),
+                            backgroundColor: Colors.grey[200],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Close"),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading appointments: ${e.toString()}')),
+      );
+    }
+  }
+
   Widget drawerItem(String title, String routePath, BuildContext context) {
     return ListTile(
       title: Text(
@@ -103,8 +152,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
       onTap: () {
-        Navigator.pop(context); // Close the drawer
-        context.go(routePath); // Navigate using GoRouter
+        Navigator.pop(context);
+        context.go(routePath);
       },
     );
   }
@@ -112,11 +161,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // AppBar managed by MainLayout if needed, or keep simple one here
       appBar: AppBar(
         backgroundColor: AppPallete.secondaryColor,
         elevation: 0,
-        // Menu icon to open drawer
         leading: Builder(
           builder: (context) => IconButton(
             icon: const Icon(Icons.menu, color: AppPallete.primaryColor),
@@ -124,20 +171,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
         actions: [
-          IconButton( // Navigate to Notifications
-            icon: const Icon(Icons.notifications, color: AppPallete.primaryColor),
-             onPressed: () {
-               if (_currentDoctorId != null) {
-                 context.go('/notifications', extra: {
-                   'receiverId': _currentDoctorId!,
-                   'receiverType': 'doctor'
-                 });
-               }
-             },
+          IconButton(
+            icon:
+                const Icon(Icons.notifications, color: AppPallete.primaryColor),
+            onPressed: _showTodayAppointments,
           ),
         ],
       ),
-      // Drawer for navigation
       drawer: Drawer(
         child: Container(
           color: AppPallete.primaryColor,
@@ -148,12 +188,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 decoration: BoxDecoration(color: AppPallete.primaryColor),
                 child: Text(
                   "MENU",
-                  style: TextStyle(fontSize: 24, color: AppPallete.whiteColor, fontWeight: FontWeight.bold), // Added bold
+                  style: TextStyle(
+                    fontSize: 24,
+                    color: AppPallete.whiteColor,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-              // Use context.go for navigation
               drawerItem("OVERVIEW", '/doctor/overview', context),
-              //drawerItem("PATIENT LIST", '/doctor/patients', context),
               drawerItem("PATIENT LIST", '/doctor/patient-list', context),
               drawerItem("INBOX", '/doctor/inbox', context),
               drawerItem("SCHEDULE", '/doctor/appointment/schedule', context),
@@ -161,14 +203,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
               drawerItem("PRESCRIPTIONS", '/doctor/prescription-tool', context),
               drawerItem("MY ARTICLES", '/doctor/articles', context),
               drawerItem("EARNINGS", '/doctor/earnings', context),
-              drawerItem("CONSULTATION HISTORY", '/doctor/consultation-history', context),
+              drawerItem("CONSULTATION HISTORY", '/doctor/consultation-history',
+                  context),
               drawerItem("PROFILE", '/doctor/profile', context),
-              // Add other relevant items like Settings if needed
             ],
           ),
         ),
       ),
-      body: BlocBuilder<AppUserCubit, AppUserState>( // Rebuild on auth state changes
+      body: BlocBuilder<AppUserCubit, AppUserState>(
         builder: (context, state) {
           if (_isLoading) {
             return const Center(child: CircularProgressIndicator());
@@ -181,31 +223,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             );
           }
-          if (state is! AppUserLoggedIn || state.user.role != 'doctor' || _doctorData == null) {
-             return const Center(child: Text("Please log in as a doctor."));
+          if (state is! AppUserLoggedIn ||
+              state.user.role != 'doctor' ||
+              _doctorData == null) {
+            return const Center(child: Text("Please log in as a doctor."));
           }
 
-          // Extract data safely after checks
           final firstName = _doctorData?['first_name'] ?? 'Doctor';
           final lastName = _doctorData?['last_name'] ?? '';
           final title = _doctorData?['title'] ?? 'Dr.';
           final specialty = _doctorData?['specialty'] ?? 'Specialist';
           final fullName = '$title $firstName $lastName'.trim();
-          final avatarUrl = _doctorData?['avatar_url'] as String?; // Get avatar URL
+          final avatarUrl = _doctorData?['avatar_url'] as String?;
 
-          // Main content when data is loaded
           return Container(
-            color: AppPallete.secondaryColor, // Background color
-            padding: const EdgeInsets.only(bottom: 16.0), // Padding at the bottom
-            child: Column( // Use Column instead of nested Containers
+            color: AppPallete.secondaryColor,
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: Column(
               children: [
-                // Top section with gradient/color
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30), // Adjusted padding
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
                   decoration: const BoxDecoration(
                     color: AppPallete.primaryColor,
-                    borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
+                    borderRadius:
+                        BorderRadius.vertical(bottom: Radius.circular(40)),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -213,7 +256,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Text(
                         'Hi ! $firstName',
                         style: const TextStyle(
-                          fontSize: 38, // Adjusted size
+                          fontSize: 38,
                           fontWeight: FontWeight.bold,
                           color: AppPallete.whiteColor,
                         ),
@@ -222,7 +265,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       const Text(
                         'Welcome Back',
                         style: TextStyle(
-                          fontSize: 30, // Adjusted size
+                          fontSize: 30,
                           color: AppPallete.whiteColor,
                         ),
                         textAlign: TextAlign.center,
@@ -230,40 +273,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ],
                   ),
                 ),
-                // Profile section below the colored header
-                Expanded( // Allow the profile section to take remaining space
-                 child: SingleChildScrollView( // Make profile scrollable if needed
+                Expanded(
+                  child: SingleChildScrollView(
                     padding: const EdgeInsets.only(top: 20.0),
                     child: Column(
-                       mainAxisAlignment: MainAxisAlignment.center, // Center content vertically
-                       children: [
-                          CircleAvatar(
-                           radius: 100, // Adjusted size
-                           backgroundColor: AppPallete.whiteColor,
-                           // Use fetched avatar URL or default
-                           backgroundImage: (avatarUrl != null
-                               ? NetworkImage(avatarUrl)
-                               : const AssetImage('assets/images/doctor1.jpg')) as ImageProvider,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircleAvatar(
+                          radius: 100,
+                          backgroundColor: AppPallete.whiteColor,
+                          backgroundImage: (avatarUrl != null
+                                  ? NetworkImage(avatarUrl)
+                                  : const AssetImage(
+                                      'assets/images/doctor1.jpg'))
+                              as ImageProvider,
+                        ),
+                        const SizedBox(height: 15),
+                        Text(
+                          fullName,
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: AppPallete.textColor,
                           ),
-                          const SizedBox(height: 15),
-                          Text(
-                           fullName,
-                           style: const TextStyle(
-                             fontSize: 28, // Adjusted size
-                             fontWeight: FontWeight.bold,
-                             color: AppPallete.textColor,
-                           ),
+                        ),
+                        Text(
+                          specialty,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            color: AppPallete.greyColor,
                           ),
-                          Text(
-                           specialty,
-                           style: const TextStyle(
-                             fontSize: 20, // Adjusted size
-                             color: AppPallete.greyColor,
-                           ),
-                          ),
-                       ],
+                        ),
+                      ],
                     ),
-                 ),
+                  ),
                 ),
               ],
             ),
@@ -271,5 +314,55 @@ class _DashboardScreenState extends State<DashboardScreen> {
         },
       ),
     );
+  }
+}
+
+class AppointmentService {
+  final SupabaseClient _supabase;
+
+  AppointmentService(this._supabase);
+
+  Future<List<Map<String, dynamic>>> getDoctorAppointments(
+      String doctorId, DateTime selectedDate) async {
+    try {
+      final startDate =
+          DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+      final endDate = startDate.add(const Duration(days: 1));
+
+      final response = await _supabase
+          .from('appointments')
+          .select('''
+            appointment_id,
+            appointment_datetime,
+            status,
+            notes,
+            patient_name,
+            patient_age,
+            patient_gender,
+            appointment_time
+          ''')
+          .eq('doctor_id', doctorId)
+          .gte('appointment_datetime', startDate.toIso8601String())
+          .lt('appointment_datetime', endDate.toIso8601String())
+          .order('appointment_time', ascending: true);
+
+      if (response.isNotEmpty) {
+        return List<Map<String, dynamic>>.from(response);
+      }
+      return [];
+    } catch (e) {
+      throw Exception('Failed to fetch appointments: $e');
+    }
+  }
+
+  Future<void> updateAppointmentStatus(
+      String appointmentId, String status) async {
+    try {
+      await _supabase
+          .from('appointments')
+          .update({'status': status}).eq('appointment_id', appointmentId);
+    } catch (e) {
+      throw Exception('Failed to update appointment status: $e');
+    }
   }
 }

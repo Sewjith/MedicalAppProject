@@ -247,7 +247,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
         centerTitle: true,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new, color: AppPallete.primaryColor),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (context.canPop()) { // Check if navigation is possible
+               context.pop(); // Use GoRouter's pop
+            } else {
+                context.go('/doctor/profile');
+            }
+         },
         ),
         actions: [
           IconButton(

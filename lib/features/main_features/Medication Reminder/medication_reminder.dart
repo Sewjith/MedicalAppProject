@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
 import 'package:medical_app/features/main_features/Medication%20reminder/Vaccination_Reminder.dart';
 import 'package:medical_app/features/main_features/Medication%20reminder/pillDetails.dart';
@@ -282,7 +283,13 @@ class _ReminderPageState extends State<ReminderPage> {
         leading: IconButton(
           icon:
               Icon(Icons.arrow_back_ios_new_sharp, color: AppPallete.headings),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (context.canPop()) { 
+               context.pop(); 
+            } else {
+                context.go('/p_dashboard');
+            }
+          }
         ),
         title: Text(
           "Today's Plan",

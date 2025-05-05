@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
 import 'package:medical_app/features/patient/patient_dashboard/pages/a-z.dart';
 import 'package:medical_app/features/patient/patient_dashboard/pages/favorite_db.dart';
@@ -170,7 +171,13 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         backgroundColor: AppPallete.transparentColor,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new, color: AppPallete.primaryColor),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            if (context.canPop()) { // Check if navigation is possible
+               context.pop(); // Use GoRouter's pop
+            } else {
+                context.go('/p_dashboard');
+            }
+          }
         ),
         title: Text(
           'Favorites',
