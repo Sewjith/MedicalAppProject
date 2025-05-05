@@ -15,16 +15,18 @@ import 'package:flutter/foundation.dart'; // For debugPrint
 class AppointmentHistoryDb {
   final _supabase = Supabase.instance.client;
 
-  // Method to fetch details for a appointment history
+  // --- Method to fetch details for a single appointment ---
   Future<Map<String, dynamic>> getAppointmentDetails(
       String appointmentId) async {
     if (appointmentId.isEmpty) {
       throw Exception('Appointment ID cannot be empty.');
     }
     try {
-      final response = await _supabase
+      // --- MODIFICATION: Fetch primary key 'id' along with other details ---
+      final appointmentResponse = await _supabase
           .from('appointments')
           .select('''
+            id,
             appointment_id,
             appointment_date,
             appointment_time,
@@ -44,39 +46,73 @@ class AppointmentHistoryDb {
               avatar_path
             )
           ''')
-          .eq('appointment_id', appointmentId)
-          .maybeSingle(); // Use maybeSingle as ID should be unique
+          .eq('appointment_id', appointmentId) // Still filter by the varchar ID
+          .maybeSingle();
+      // --- END MODIFICATION ---
 
-      if (response == null) {
+      if (appointmentResponse == null) {
         throw Exception('Appointment not found.');
       }
 
-      // Fetch avatar URL for the doctor
-      if (response['doctor'] != null &&
-          response['doctor']['avatar_path'] != null) {
+      // Fetch avatar URL for the doctor (remains the same)
+      if (appointmentResponse['doctor'] != null &&
+          appointmentResponse['doctor']['avatar_path'] != null) {
         try {
           final url = _supabase.storage
-              .from('Doctor Avatars') // Ensure bucket name is correct
-              .getPublicUrl(response['doctor']['avatar_path']);
-          response['doctor']['avatar_url'] = url;
+              .from('Doctor Avatars')
+              .getPublicUrl(appointmentResponse['doctor']['avatar_path']);
+          appointmentResponse['doctor']['avatar_url'] = url;
         } catch (e) {
           debugPrint(
-              "Error getting avatar URL for doctor ${response['doctor']['id']}: $e");
-          response['doctor']['avatar_url'] = null;
+              "Error getting avatar URL for doctor ${appointmentResponse['doctor']['id']}: $e");
+          appointmentResponse['doctor']['avatar_url'] = null;
         }
       } else {
-        if (response['doctor'] != null) {
-          response['doctor']['avatar_url'] = null;
+        if (appointmentResponse['doctor'] != null) {
+          appointmentResponse['doctor']['avatar_url'] = null;
         }
       }
 
-      return response;
+      // --- NEW: Fetch prescription PDF URL using the appointment's primary key 'id' ---
+      final String? appointmentUUID = appointmentResponse['id'] as String?;
+      String? prescriptionPdfUrl;
+
+      if (appointmentUUID != null && appointmentUUID.isNotEmpty) {
+        try {
+          final prescriptionResponse = await _supabase
+              .from('prescriptions')
+              .select('pdf_url')
+              .eq('appointment_id', appointmentUUID) // Match foreign key
+              .maybeSingle(); // Expecting 0 or 1 prescription per appointment
+
+          if (prescriptionResponse != null &&
+              prescriptionResponse['pdf_url'] != null) {
+            prescriptionPdfUrl = prescriptionResponse['pdf_url'] as String?;
+          }
+        } catch (e) {
+          debugPrint(
+              "Error fetching prescription for appointment UUID $appointmentUUID: $e");
+          // Optionally rethrow or handle, for now just log it
+        }
+      } else {
+        debugPrint(
+            "Appointment primary key 'id' (UUID) not found or empty for appointment_id $appointmentId.");
+      }
+
+      // Add the pdf_url to the returned map
+      appointmentResponse['prescription_pdf_url'] = prescriptionPdfUrl;
+      // --- END NEW ---
+
+      return appointmentResponse; // Return the combined data
     } catch (e) {
       debugPrint("Error fetching appointment details for $appointmentId: $e");
+      if (e is PostgrestException) {
+        debugPrint("Supabase Error Details: ${e.message}");
+        throw Exception('Database error while fetching details: ${e.message}');
+      }
       throw Exception('Failed to load appointment details.');
     }
   }
-  // --- END NEW METHOD ---
 
   Future<List<Map<String, dynamic>>> _fetchAppointmentsByStatus(
       String patientId, List<String> statuses) async {
@@ -157,13 +193,32 @@ class AppointmentHistoryDb {
 
   Future<void> cancelAppointment(String appointmentId, String reason) async {
     try {
+      // --- MODIFICATION: Find appointment UUID first ---
+      final appointmentData = await _supabase
+          .from('appointments')
+          .select('id')
+          .eq('appointment_id',
+              appointmentId) // Use the varchar ID to find the record
+          .maybeSingle();
+
+      if (appointmentData == null || appointmentData['id'] == null) {
+        throw Exception('Cannot find appointment to cancel.');
+      }
+      final String appointmentUUID = appointmentData['id'];
+      // --- END MODIFICATION ---
+
+      // --- MODIFICATION: Update using the primary UUID 'id' ---
       await _supabase.from('appointments').update({
         'appointment_status': 'cancelled',
-        // If you added 'cancellation_reason' to DB, uncomment below:
-        // 'cancellation_reason': reason,
-      }).eq('appointment_id', appointmentId);
+      }).eq('id', appointmentUUID); // Use the primary key 'id' for the update
+      // --- END MODIFICATION ---
     } catch (e) {
       debugPrint("Error cancelling appointment $appointmentId: $e");
+      if (e is PostgrestException) {
+        debugPrint("Supabase Error Details: ${e.message}");
+        throw Exception(
+            'Database error while cancelling appointment: ${e.message}');
+      }
       throw Exception('Failed to cancel appointment.');
     }
   }

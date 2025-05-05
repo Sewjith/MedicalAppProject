@@ -59,8 +59,8 @@ class _PrescriptionSelectorPageState extends State<PrescriptionSelectorPage> {
     'Other'
   ];
 
-  final String _appointmentId = 'e99ba947-ec69-4993-a245-ef443a6d4adb';
-  final String _patientId = 'a5073dd2-a726-43e6-9a25-1454ac6dfda5';
+  final String _appointmentId = 'aee1ad0b-6f8d-4dcf-9320-91f701a02376';
+  final String _patientId = '235a194c-60aa-4846-b14b-d7bb5eaecf59';
 
   final PrescriptionService _prescriptionService = PrescriptionService();
 
