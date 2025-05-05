@@ -239,19 +239,17 @@ final GoRouter appRouter = GoRouter(
       path: '/patient/appointment/history/details',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) {
-        final params = state.extra as Map<String, dynamic>?;
-        if (params == null) {
+        final appointmentId = state.extra as String?;
+
+        if (appointmentId == null || appointmentId.isEmpty) {
           debugPrint(
-              "Router Error: [/patient/appointment/history/details] Missing extra data.");
+              "Router Error: [/patient/appointment/history/details] Missing or invalid appointmentId in extra data.");
           return const Scaffold(
-              body: Center(child: Text("Error: Appointment details missing.")));
+              body: Center(child: Text("Error: Appointment ID missing.")));
         }
 
         return AppointmentDetailsPage(
-          doctorName: params['doctorName']?.toString() ?? 'N/A',
-          specialty: params['specialty']?.toString() ?? 'N/A',
-          appointmentDate: params['appointmentDate']?.toString() ?? 'N/A',
-          appointmentTime: params['appointmentTime']?.toString() ?? 'N/A',
+          appointmentId: appointmentId,
         );
       },
     ),

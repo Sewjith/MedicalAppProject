@@ -15,6 +15,69 @@ import 'package:flutter/foundation.dart'; // For debugPrint
 class AppointmentHistoryDb {
   final _supabase = Supabase.instance.client;
 
+  // Method to fetch details for a appointment history
+  Future<Map<String, dynamic>> getAppointmentDetails(
+      String appointmentId) async {
+    if (appointmentId.isEmpty) {
+      throw Exception('Appointment ID cannot be empty.');
+    }
+    try {
+      final response = await _supabase
+          .from('appointments')
+          .select('''
+            appointment_id,
+            appointment_date,
+            appointment_time,
+            appointment_status,
+            "Payment Status",
+            notes,
+            patient_name,
+            patient_age,
+            patient_gender,
+            doctor:doctor_id (
+              id,
+              title,
+              first_name,
+              last_name,
+              specialty,
+              gender,
+              avatar_path
+            )
+          ''')
+          .eq('appointment_id', appointmentId)
+          .maybeSingle(); // Use maybeSingle as ID should be unique
+
+      if (response == null) {
+        throw Exception('Appointment not found.');
+      }
+
+      // Fetch avatar URL for the doctor
+      if (response['doctor'] != null &&
+          response['doctor']['avatar_path'] != null) {
+        try {
+          final url = _supabase.storage
+              .from('Doctor Avatars') // Ensure bucket name is correct
+              .getPublicUrl(response['doctor']['avatar_path']);
+          response['doctor']['avatar_url'] = url;
+        } catch (e) {
+          debugPrint(
+              "Error getting avatar URL for doctor ${response['doctor']['id']}: $e");
+          response['doctor']['avatar_url'] = null;
+        }
+      } else {
+        if (response['doctor'] != null) {
+          response['doctor']['avatar_url'] = null;
+        }
+      }
+
+      return response;
+    } catch (e) {
+      debugPrint("Error fetching appointment details for $appointmentId: $e");
+      throw Exception('Failed to load appointment details.');
+    }
+  }
+  // --- END NEW METHOD ---
+
   Future<List<Map<String, dynamic>>> _fetchAppointmentsByStatus(
       String patientId, List<String> statuses) async {
     try {

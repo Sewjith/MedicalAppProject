@@ -74,34 +74,29 @@ class _UpcomingAppointmentsListState extends State<UpcomingAppointmentsList> {
 
   // Navigate to Cancel Form using GoRouter
   void _navigateToCancelForm(String appointmentId) {
-    context.push('/patient/appointment/history/cancel-form',
-        extra: appointmentId);
-    // Note: After cancellation on the form page, this list should ideally refresh.
-    // This might require passing a callback or using a state management solution
-    // that notifies this list when an appointment status changes.
-    // For now, we'll rely on manual refresh or revisiting the page.
+    context
+        .push<bool?>('/patient/appointment/history/cancel-form',
+            extra: appointmentId)
+        .then((result) {
+      // If the cancellation page returns true (meaning successful cancellation), refresh the list
+      if (result == true && mounted) {
+        debugPrint("Cancellation successful, refreshing upcoming list.");
+        _loadAppointments(); // Refresh the list
+      }
+    });
   }
 
-  // Navigate to Details Page using GoRouter
   void _navigateToDetails(Map<String, dynamic> appointment) {
-    final doctorData = appointment['doctor'] as Map<String, dynamic>?;
-    final doctorName = _db.getDoctorDisplayName(doctorData);
-    final specialty = doctorData?['specialty'] ?? 'N/A';
-    final dateStr = appointment['appointment_date'];
-    final timeStr = appointment['appointment_time'];
-    final displayDateTime = _db.formatAppointmentDateTime(dateStr, timeStr);
-    // Split displayDateTime for the details page if it expects separate date/time
-    final parts = displayDateTime.split('•');
-    final displayDate = parts.isNotEmpty ? parts[0].trim() : 'N/A';
-    final displayTime = parts.length > 1 ? parts[1].trim() : 'N/A';
-
-    context.push('/patient/appointment/history/details', extra: {
-      'doctorName': doctorName,
-      'specialty': specialty,
-      'appointmentDate': displayDate, // Pass formatted date
-      'appointmentTime': displayTime, // Pass formatted time
-      // Pass any other needed data
-    });
+    final String? appointmentId = appointment['appointment_id'];
+    if (appointmentId != null) {
+      context.push('/patient/appointment/history/details',
+          extra: appointmentId);
+    } else {
+      debugPrint("Error: Missing appointment_id");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Error: Could not get appointment ID.")),
+      );
+    }
   }
 
   @override
@@ -222,12 +217,7 @@ class _UpcomingAppointmentsListState extends State<UpcomingAppointmentsList> {
                         child: const Text("Pay Now"),
                       ),
                     ElevatedButton(
-                      onPressed: () {
-                        final String appointmentId =
-                            appointment['appointment_id']; // Get the ID
-                        context.push('/patient/appointment/history/cancel-form',
-                            extra: appointmentId); // Pass as extra
-                      },
+                      onPressed: () => _navigateToDetails(appointment),
                       style: ElevatedButton.styleFrom(
                           backgroundColor: AppPallete.primaryColor),
                       child: const Text("Details",
