@@ -17,7 +17,8 @@ class DAppointmentManagementPage extends StatefulWidget {
       _AppointmentManagementPageState();
 }
 
-class _AppointmentManagementPageState extends State<DAppointmentManagementPage> {
+class _AppointmentManagementPageState
+    extends State<DAppointmentManagementPage> {
   DateTime _selectedDate = DateTime.now();
   late AppointmentService _appointmentService;
   List<Map<String, dynamic>> _appointments = [];
@@ -26,7 +27,6 @@ class _AppointmentManagementPageState extends State<DAppointmentManagementPage> 
   String? _currentDoctorId;
   bool _isInitialLoading = true;
   String? _initialErrorMessage;
-
 
   @override
   void initState() {
@@ -37,7 +37,7 @@ class _AppointmentManagementPageState extends State<DAppointmentManagementPage> 
     });
   }
 
- void _initializeDoctorIdAndLoadAppointments() {
+  void _initializeDoctorIdAndLoadAppointments() {
     final userState = context.read<AppUserCubit>().state;
     if (userState is AppUserLoggedIn && userState.user.role == 'doctor') {
       setState(() {
@@ -55,15 +55,14 @@ class _AppointmentManagementPageState extends State<DAppointmentManagementPage> 
     }
   }
 
-
   Future<void> _loadAppointments() async {
     if (!mounted) return;
     if (_currentDoctorId == null) {
-       setState(() {
-         _isLoading = false;
-         _errorMessage = _initialErrorMessage ?? 'Doctor ID not available.';
-         _appointments = [];
-       });
+      setState(() {
+        _isLoading = false;
+        _errorMessage = _initialErrorMessage ?? 'Doctor ID not available.';
+        _appointments = [];
+      });
       return;
     }
 
@@ -198,48 +197,50 @@ class _AppointmentManagementPageState extends State<DAppointmentManagementPage> 
   @override
   Widget build(BuildContext context) {
     if (_isInitialLoading) {
-       return Scaffold(
-         appBar: AppBar(
-          leading: IconButton( // Added explicit leading with correct logic
-          icon: const Icon(Icons.arrow_back_ios),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/d_dashboard'); // Fallback to doctor dashboard
-            }
-          },
-          color: Colors.white, // Assuming white icon for this AppBar
-        ),
-           title: const Text('Appointment Schedule'),
-           backgroundColor: const Color(0xFF2260FF),
-           elevation: 0,
-         ),
-         body: const Center(child: CircularProgressIndicator()),
-       );
-    }
-
-     if (_initialErrorMessage != null) {
-       return Scaffold(
-         appBar: AppBar(
-           title: const Text('Appointment Schedule'),
-           backgroundColor: const Color(0xFF2260FF),
-           elevation: 0,
-         ),
-         body: Center(
-            child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(_initialErrorMessage!, style: const TextStyle(color: Colors.red, fontSize: 16), textAlign: TextAlign.center),
+      return Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            // Added explicit leading with correct logic
+            icon: const Icon(Icons.arrow_back_ios),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/d_dashboard'); // Fallback to doctor dashboard
+              }
+            },
+            color: Colors.white, // Assuming white icon for this AppBar
           ),
-         ),
-       );
+          title: const Text('Appointment Schedule'),
+          backgroundColor: const Color(0xFF478FE2),
+          elevation: 0,
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
 
+    if (_initialErrorMessage != null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Appointment Schedule'),
+          backgroundColor: const Color(0xFF478FE2),
+          elevation: 0,
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(_initialErrorMessage!,
+                style: const TextStyle(color: Colors.red, fontSize: 16),
+                textAlign: TextAlign.center),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Appointment Schedule'),
-        backgroundColor: const Color(0xFF2260FF),
+        backgroundColor: const Color(0xFF478FE2),
         elevation: 0,
       ),
       body: Padding(
@@ -251,7 +252,7 @@ class _AppointmentManagementPageState extends State<DAppointmentManagementPage> 
               firstDate: DateTime.now().subtract(const Duration(days: 365)),
               lastDate: DateTime.now().add(const Duration(days: 365)),
               onDateChanged: (date) {
-                if (!isSameDay(date, _selectedDate)){
+                if (!isSameDay(date, _selectedDate)) {
                   setState(() {
                     _selectedDate = date;
                   });
@@ -291,7 +292,8 @@ class _AppointmentManagementPageState extends State<DAppointmentManagementPage> 
                             final appointment = _appointments[index];
                             final appointmentDateTime =
                                 _parseAppointmentDateTime(
-                                    appointment['appointment_datetime'] ?? DateTime.now().toIso8601String());
+                                    appointment['appointment_datetime'] ??
+                                        DateTime.now().toIso8601String());
                             final appointmentTime =
                                 appointment['appointment_time'] ??
                                     'Not mentioned';
@@ -307,8 +309,13 @@ class _AppointmentManagementPageState extends State<DAppointmentManagementPage> 
                                 leading: CircleAvatar(
                                   backgroundColor: const Color(0xFF2260FF),
                                   child: Text(
-                                    appointment['patient_name'] != null && (appointment['patient_name'] as String).isNotEmpty
-                                        ? (appointment['patient_name'] as String)[0].toUpperCase()
+                                    appointment['patient_name'] != null &&
+                                            (appointment['patient_name']
+                                                    as String)
+                                                .isNotEmpty
+                                        ? (appointment['patient_name']
+                                                as String)[0]
+                                            .toUpperCase()
                                         : '?',
                                     style: const TextStyle(color: Colors.white),
                                   ),
