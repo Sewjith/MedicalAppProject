@@ -12,9 +12,9 @@ class _IndexPageState extends State<IndexPage> {
   final TextEditingController _channelController = TextEditingController();
 
   // Securely retrieve and store credentials
-  final String appId = "bc06bf6bab7645abbc9b9d56db3f2868";
+  final String appId = "";
   final String token =
-      "007eJxTYDiSuueBzsz0RzcFk6wcJrInxwScEZe9fGjO5IWVq26v6DmswJCUbGCWlGaWlJhkbmZimpiUlGyZZJliapaSZJxmZGFmMWXVvfSGQEaGfw9eMjIyQCCIz8pQklpcYsjAAAASCyNK";
+      "";
 
   @override
   Widget build(BuildContext context) {
