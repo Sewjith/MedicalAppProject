@@ -14,7 +14,7 @@ class IndexPage extends StatefulWidget {
 class _IndexPageState extends State<IndexPage> {
   final TextEditingController _channelController = TextEditingController();
 
-  final String appId = "bc06bf6bab7645abbc9b9d56db3f2868";
+  final String appId = "";
   // Function to fetch token from the server
   Future<String> fetchToken(String appointmentId, String uid) async {
     final response = await http.get(
