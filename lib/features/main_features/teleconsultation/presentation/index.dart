@@ -17,7 +17,7 @@ class IndexPage extends StatefulWidget {
 class _IndexPageState extends State<IndexPage> {
   final TextEditingController _channelController = TextEditingController();
 
-  final String appId = "bc06bf6bab7645abbc9b9d56db3f2868";
+  final String appId = "";
 
   @override
   void initState() {
