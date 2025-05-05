@@ -1,4 +1,3 @@
-//@annotate:modification:lib/features/Patient/p_appointment_schedule/p_appointment_confirmation.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart'; // Import for date formatting if needed elsewhere
@@ -218,10 +217,10 @@ class AppointmentConfirmationPage extends StatelessWidget {
               onPressed: () {
                  Navigator.of(context).pop(); // Close the dialog FIRST
                  onConfirm(); // Call the save function
-                 // Navigate back twice: once from confirmation, once from schedule page
+   
                  if(context.canPop()) context.pop(); // Pop confirmation page
                  if(context.canPop()) context.pop(); // Pop schedule page
-                 // Optional: Navigate to a specific page like history
+            
                  context.go('/patient/appointment/history');
               },
               child: const Text("OK", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),

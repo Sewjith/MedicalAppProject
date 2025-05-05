@@ -78,7 +78,7 @@ class _EmergencyAssistantPageState extends State<EmergencyAssistantPage>
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               ),
               SizedBox(height: 30), // Increased space to move elements down
-              // Main Text: Do you have an emergency
+
               Center(
                 child: Text(
                   "Do you have an Emergency?",

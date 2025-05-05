@@ -1,4 +1,3 @@
-//@annotate:modification:lib/features/Patient/p_appointment_schedule/p_appointment_schedule_db.dart
 import 'package:flutter/foundation.dart'; // For debugPrint
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart'; // Ensure Uuid is imported
@@ -8,7 +7,7 @@ class DatabaseService {
   final supabase = Supabase.instance.client;
   final _uuid = const Uuid(); // UUID generator instance
 
-  // --- bookAppointment method modified for return type satisfaction ---
+
   Future<bool> bookAppointment({
     required String patientId,
     required String doctorId,
@@ -18,7 +17,7 @@ class DatabaseService {
     required String patientName,
     required int patientAge,
     required String patientGender,
-    // Added doctorName for notification message
+
     required String doctorName,
   }) async {
     String? bookedAppointmentId; // To store the ID of the booked appointment
@@ -101,13 +100,12 @@ class DatabaseService {
         debugPrint(
             "[BookAppointment] Notification record created successfully with ID: $notificationUuid.");
       } catch (notificationError) {
-        // Log the error but don't fail the whole booking if notification insert fails
+
         debugPrint(
             "[BookAppointment] WARNING: Failed to create notification record: $notificationError");
-        // Optionally, rethrow if notification is critical:
-        // throw Exception("Failed to create notification record.");
+
       }
-      // --- End Add Notification Record ---
+
 
       return true; // Appointment booked (notification attempt logged)
     } catch (error) {
@@ -115,16 +113,16 @@ class DatabaseService {
         debugPrint(
             "[BookAppointment] PostgrestException: code=${error.code}, message=${error.message}, details=${error.details}, hint=${error.hint}");
 
-        // Safely check error.details as String before using .contains
+  
         String detailsString = '';
         if (error.details is String) {
           detailsString = error.details as String;
         } else if (error.details != null) {
-          // If details is not null but not a string, convert it safely
+
           detailsString = error.details.toString();
         }
 
-        // Specific error handling based on code and details string
+
         if (error.code == '23505') {
           // unique constraint violation
           if (detailsString.contains('appointments_pkey') ||
@@ -135,10 +133,7 @@ class DatabaseService {
           } else if (detailsString.contains('notifications_pkey')) {
             debugPrint(
                 "[BookAppointment] WARNING: Duplicate notification ID collision (UUID).");
-            // This case is unlikely here, but if needed, decide whether to throw or allow booking to proceed.
-            // For now, just log and let booking proceed if appointment was saved.
-            // If we want to fail the booking, throw here:
-            // throw Exception("Failed to save notification details. Please try booking again.");
+
           } else {
             throw Exception(
                 "Failed to book appointment due to a data conflict. Please try again.");
@@ -154,29 +149,26 @@ class DatabaseService {
               "Failed to book appointment. Database error occurred (Code: ${error.code}). Please try again later.");
         }
       } else {
-        // Non-Postgrest error (network, parsing, etc.)
+
         debugPrint("[BookAppointment] Generic Insert Error: $error");
         throw Exception(
             "Failed to book appointment. Please check your connection and try again.");
       }
-      // **Add return false here to satisfy the compiler's non-null return path analysis**
-      // This line should not be reached if exceptions are thrown correctly above.
+
       return false;
     }
-    // **Ensure a return path exists even outside the main try-catch (although unlikely to be reached)**
-    // return false; // This is likely redundant if the catch block always throws or returns.
+
   }
 
-  // --- getAvailableDoctors method remains the same ---
   Future<List<Map<String, dynamic>>> getAvailableDoctors() async {
     try {
       final response = await supabase
           .from('doctors')
           .select(
-              'id, title, first_name, last_name, specialty') // Ensure 'id' is included
+              'id, title, first_name, last_name, specialty') 
           .order('last_name', ascending: true);
 
-      // Convert response to the expected format if needed, ensure 'id' is present
+
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
       debugPrint("[GetAvailableDoctors] Error fetching doctors: $e");
@@ -184,7 +176,6 @@ class DatabaseService {
     }
   }
 
-  // --- getDoctorAvailability method remains the same ---
   Future<List<String>> getDoctorAvailability(
       String doctorId, DateTime date) async {
     final formattedDate = DateFormat('yyyy-MM-dd').format(date);
@@ -192,12 +183,12 @@ class DatabaseService {
         "[GetAvailability] Fetching for Doctor ID: $doctorId on Date: $formattedDate");
 
     try {
-      // 1. Get Doctor's General Availability Ranges for the day
+
       final availabilityResponse = await supabase
           .from('availability')
           .select('start_time, end_time')
           .inFilter('status',
-              ['active', 'available']) // Ensure status filter is correct
+              ['active', 'available']) 
           .eq('doctor_id', doctorId)
           .eq('available_date', formattedDate)
           .order('start_time', ascending: true);
@@ -208,7 +199,7 @@ class DatabaseService {
         return []; // No general availability defined for this day
       }
 
-      // 2. Generate all potential 15-min slots from the ranges
+      
       final List<String> potentialSlots = [];
       final timeFormatter = DateFormat('h:mm a'); // Display format
       final timeParser = DateFormat('HH:mm:ss'); // DB format parser
@@ -240,7 +231,7 @@ class DatabaseService {
       debugPrint(
           "[GetAvailability] Generated ${potentialSlots.length} potential slots: $potentialSlots");
 
-      // 3. Get Already Booked Appointment Times for that doctor/date
+   
       final bookedResponse = await supabase
           .from('appointments')
           .select(
@@ -249,12 +240,12 @@ class DatabaseService {
           .eq('appointment_date', formattedDate)
           // Filter out cancelled/completed appointments - ONLY check 'upcoming'
           .eq('appointment_status', 'upcoming');
-      // Add other statuses if needed: .inFilter('appointment_status', ['upcoming', 'confirmed'])
+   
 
       debugPrint(
           "[GetAvailability] Booked Appointments Found: ${bookedResponse.length}");
 
-      // 4. Create a Set of booked times formatted as 'h:mm a' for efficient lookup
+
       final Set<String> bookedTimesSet = {};
       if (bookedResponse.isNotEmpty) {
         for (var booking in bookedResponse) {
@@ -278,12 +269,11 @@ class DatabaseService {
       }
       debugPrint("[GetAvailability] Formatted booked times: $bookedTimesSet");
 
-      // 5. Filter potential slots, removing those that are already booked
       final List<String> finalAvailableSlots = potentialSlots
           .where((slot) => !bookedTimesSet.contains(slot))
           .toList();
 
-      // Optional: Sort the final list (though it should be mostly sorted)
+
       try {
         finalAvailableSlots.sort((a, b) => timeFormatter
             .parseStrict(a)

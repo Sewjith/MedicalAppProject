@@ -1,7 +1,3 @@
-// @@@@@-FILE MODIFICATION START-@@@@@
-// File: lib/features/main_features/Symptom_History_Tracker/SymptomTrackerScreen.dart
-// Reason: Correct SideTitleWidget calls in chart titlesData: add missing 'meta' parameter and remove incorrect 'axisSide' parameter.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -650,4 +646,3 @@ class _SymptomTrackerScreenState extends State<SymptomTrackerScreen> {
     );
   }
 }
-// @@@@@-FILE MODIFICATION END-@@@@@

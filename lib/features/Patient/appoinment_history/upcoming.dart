@@ -1,14 +1,11 @@
-//@annotate:modification:lib/features/Patient/appoinment_history/upcoming.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:medical_app/core/common/cubits/user_session/app_user_cubit.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
-// Import the DB logic from appoinment.dart (or the separate file if created)
 import 'package:medical_app/features/Patient/appoinment_history/appoinment.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-// Renamed widget
 class UpcomingAppointmentsList extends StatefulWidget {
   const UpcomingAppointmentsList({super.key});
 
@@ -18,14 +15,13 @@ class UpcomingAppointmentsList extends StatefulWidget {
 }
 
 class _UpcomingAppointmentsListState extends State<UpcomingAppointmentsList> {
-  // Use the embedded DB class instance
+
   final AppointmentHistoryDb _db = AppointmentHistoryDb();
   List<Map<String, dynamic>> _appointments = [];
   bool _isLoading = true;
   String? _errorMessage;
   String? _patientId;
 
-  // Keep track of deleted items for undo functionality (optional)
   Map<String, dynamic>? _lastCancelledAppointment;
 
   @override
@@ -72,13 +68,13 @@ class _UpcomingAppointmentsListState extends State<UpcomingAppointmentsList> {
     }
   }
 
-  // Navigate to Cancel Form using GoRouter
+
   void _navigateToCancelForm(String appointmentId) {
     context
         .push<bool?>('/patient/appointment/history/cancel-form',
             extra: appointmentId)
         .then((result) {
-      // If the cancellation page returns true (meaning successful cancellation), refresh the list
+
       if (result == true && mounted) {
         debugPrint("Cancellation successful, refreshing upcoming list.");
         _loadAppointments(); // Refresh the list
@@ -101,7 +97,7 @@ class _UpcomingAppointmentsListState extends State<UpcomingAppointmentsList> {
 
   @override
   Widget build(BuildContext context) {
-    // REMOVED Scaffold, AppBar, BottomNavBar
+
 
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -127,7 +123,7 @@ class _UpcomingAppointmentsListState extends State<UpcomingAppointmentsList> {
         final specialty = doctorData?['specialty'] ?? 'N/A';
         final avatarUrl = _db.getDoctorAvatarUrl(doctorData);
 
-        // Use a common card widget structure
+
         return Card(
           color: Colors.blue.shade50, // Different color for upcoming
           shape:
@@ -184,7 +180,7 @@ class _UpcomingAppointmentsListState extends State<UpcomingAppointmentsList> {
                 const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment:
-                      MainAxisAlignment.spaceEvenly, // Adjust button spacing
+                      MainAxisAlignment.spaceEvenly, 
                   children: [
                     ElevatedButton(
                       onPressed: () =>
@@ -198,13 +194,13 @@ class _UpcomingAppointmentsListState extends State<UpcomingAppointmentsList> {
                       ),
                       child: const Text("Cancel"),
                     ),
-                    // Conditionally add Pay Now Button
+  
                     if (needsPayment)
                       ElevatedButton(
                         onPressed: () {
                           final String appointmentId =
                               appointment['appointment_id'];
-                          // Navigate to payment page, passing the ID
+     
                           debugPrint(
                               "Navigating to payment for Appointment ID: $appointmentId"); // Optional debug print
                           context.push('/payment', extra: appointmentId);

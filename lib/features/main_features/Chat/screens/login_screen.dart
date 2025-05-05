@@ -1,12 +1,11 @@
-// @annotate:modified:lib/features/main_features/Chat/screens/login_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:medical_app/core/common/cubits/user_session/app_user_cubit.dart';
-import 'package:medical_app/core/themes/color_palette.dart'; // Added color palette
-import 'package:medical_app/features/main_features/Chat/models/chat_service.dart'; // Import ChatService
+import 'package:medical_app/core/themes/color_palette.dart'; 
+import 'package:medical_app/features/main_features/Chat/models/chat_service.dart'; 
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:uuid/uuid.dart'; // Import Uuid for generating IDs if needed
+import 'package:uuid/uuid.dart'; 
 
 
 class LoginScreen extends StatefulWidget {
@@ -17,24 +16,22 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // Removed consultation ID controller
-  // final TextEditingController _consultationIdController = TextEditingController();
-  final _uuid = const Uuid(); // For generating unique IDs
+ 
+  final _uuid = const Uuid(); 
 
-  bool _isLoading = false; // General loading
-  bool _isLoadingDoctors = false; // Specific loading for doctors list
-  final _supabase = Supabase.instance.client; // Keep for direct calls if needed
+  bool _isLoading = false; 
+  bool _isLoadingDoctors = false; 
+  final _supabase = Supabase.instance.client; 
 
-  // State for doctor selection
+  
   List<Map<String, dynamic>> _doctorsList = [];
-  Map<String, dynamic>? _selectedDoctor; // Store selected doctor map {id: ..., name: ...}
+  Map<String, dynamic>? _selectedDoctor; 
   String? _patientId;
   String? _patientName;
   String? _userRole;
 
 
-  // Instantiate ChatService (or dedicated DB service)
-  // Note: userName and userRole will be set properly in initState
+  
   late ChatService _chatService;
 
   @override
@@ -54,13 +51,13 @@ class _LoginScreenState extends State<LoginScreen> {
         _patientId = userState.user.uid;
         _patientName = '${userState.user.firstname ?? ''} ${userState.user.lastname ?? ''}'.trim();
          if (_patientName!.isEmpty) {
-            // Fallback if name parts are null or empty
+
             _patientName = userState.user.email ?? 'Patient ${_patientId?.substring(0, 6)}'; // Use email or part of ID as fallback
              debugPrint("[LoginScreen] Warning: Patient first/last name missing, using fallback: $_patientName");
         }
         _userRole = userState.user.role;
 
-        // Initialize ChatService *after* getting user info
+
         _chatService = ChatService(userName: _patientName!, userRole: _userRole!);
 
         if (_userRole == 'patient' && _patientId != null) {
@@ -82,13 +79,13 @@ class _LoginScreenState extends State<LoginScreen> {
              }
            }
         } else {
-            // Handle cases where the user is a doctor or patient ID is missing
+
              if (mounted) {
                 setState(() { _isLoading = false; _isLoadingDoctors = false; });
                 ScaffoldMessenger.of(context).showSnackBar(
                    SnackBar(content: Text(_userRole != 'patient' ? 'Doctors can initiate chats from their dashboard.' : 'Could not get patient ID.'), backgroundColor: Colors.orange),
                 );
-                 // Optionally navigate away if needed: context.pop();
+
              }
         }
      } else {
@@ -105,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
 
   Future<void> _startChat() async {
-    // Ensure patient details and selected doctor are available
+
     if (_patientId == null || _patientName == null || _userRole == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Error: User details missing.'), backgroundColor: Colors.red),
@@ -125,17 +122,12 @@ class _LoginScreenState extends State<LoginScreen> {
       final String selectedDoctorId = _selectedDoctor!['id'];
       final String selectedDoctorName = '${_selectedDoctor!['title'] ?? ''} ${_selectedDoctor!['first_name'] ?? ''} ${_selectedDoctor!['last_name'] ?? ''}'.trim();
 
-      // --- Auto-generate Consultation ID ---
-      // Simple convention: sorted IDs to ensure uniqueness regardless of who initiates
+
       final ids = [_patientId!, selectedDoctorId]..sort();
       final consultationId = 'consult_${ids[0]}_${ids[1]}';
-      // Alternative: Use UUID for guaranteed uniqueness if needed
-      // final consultationId = _uuid.v4();
-      debugPrint("Generated Consultation ID: $consultationId");
-      // --- End Auto-generation ---
 
-      // Optional: Pre-create consultation record in DB if needed
-      // await _createConsultationRecordIfNeeded(consultationId, _patientId!, selectedDoctorId);
+      debugPrint("Generated Consultation ID: $consultationId");
+      
 
       if (mounted) {
          // Navigate using GoRouter and pass all required params
@@ -193,7 +185,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const Icon(Icons.chat_bubble_outline, size: 80, color: Colors.blue), // Chat icon
                     const SizedBox(height: 20),
 
-                    // --- Doctor Selection Dropdown ---
+ 
                      const Text("Select a Doctor you've consulted before:", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
                      const SizedBox(height: 8),
                      _isLoadingDoctors
@@ -226,7 +218,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 },
                                 validator: (value) => value == null ? 'Please select a doctor' : null,
                               ),
-                     // --- End Doctor Selection ---
+                
 
                     const SizedBox(height: 24),
                     ElevatedButton.icon(
@@ -256,7 +248,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    // Dispose controllers if any are re-added
     super.dispose();
   }
 }

@@ -1,15 +1,12 @@
-//@annotate:rewritten:lib/features/Patient/appoinment_history/appoinment cancelation.dart
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart'; // Import GoRouter for navigation and state access
+import 'package:go_router/go_router.dart'; 
 import 'package:medical_app/core/themes/color_palette.dart';
-// Import the file containing the embedded AppointmentHistoryDb class
 import 'package:medical_app/features/Patient/appoinment_history/appoinment.dart';
 import 'package:flutter/foundation.dart'; // For debugPrint
 
-// Removed main() and outer MaterialApp wrapper as this is a page within the app
 
 class CancelAppointmentPage extends StatefulWidget {
-  // Constructor remains simple, ID is expected via GoRouter's extra
+
   const CancelAppointmentPage({super.key});
 
   @override
@@ -17,27 +14,25 @@ class CancelAppointmentPage extends StatefulWidget {
 }
 
 class _CancelAppointmentPageState extends State<CancelAppointmentPage> {
-  // State variable to hold the selected reason
-  String selectedReason = 'Rescheduling'; // Default selection
-  // Controller for the "Others" reason details TextField
+
+  String selectedReason = 'Rescheduling'; 
   final TextEditingController _detailsController = TextEditingController();
-  // Loading state for the submission button
+  
   bool _isSubmitting = false;
-  // Instance of the DB class (defined in appoinment.dart)
+
   final AppointmentHistoryDb _db = AppointmentHistoryDb();
 
   @override
   void dispose() {
-    _detailsController.dispose(); // Dispose the controller
+    _detailsController.dispose(); 
     super.dispose();
   }
 
-  // --- Function to handle the actual cancellation ---
+
   Future<void> _submitCancellation() async {
-    // Retrieve the appointment ID passed via GoRouter's 'extra' parameter
+
     final String? appointmentId = GoRouterState.of(context).extra as String?;
 
-    // Validate if appointmentId was received
     if (appointmentId == null || appointmentId.isEmpty) {
        ScaffoldMessenger.of(context).showSnackBar(
          const SnackBar(content: Text('Error: Could not identify appointment to cancel.'), backgroundColor: Colors.red),
@@ -45,20 +40,20 @@ class _CancelAppointmentPageState extends State<CancelAppointmentPage> {
        return;
     }
 
-    // Prepare the reason string
+
     String reasonDetails = selectedReason;
-    // If "Others" is selected, validate and use the text field content
+
     if (selectedReason == 'Others') {
       if (_detailsController.text.trim().isEmpty) {
          ScaffoldMessenger.of(context).showSnackBar(
            const SnackBar(content: Text('Please provide details for "Others".'), backgroundColor: Colors.orange),
          );
-         return; // Stop submission if details are missing for "Others"
+         return; 
       }
       reasonDetails = _detailsController.text.trim();
     }
 
-    // Set loading state
+
     if (!mounted) return;
     setState(() => _isSubmitting = true);
 
@@ -72,8 +67,7 @@ class _CancelAppointmentPageState extends State<CancelAppointmentPage> {
       );
       // Pop back to the previous screen (likely Upcoming list)
       context.pop();
-      // Note: The previous screen (Upcoming list) will need a refresh mechanism
-      // to reflect the change immediately (e.g., pull-to-refresh or state management).
+
 
     } catch (e) {
        if (!mounted) return;
@@ -87,7 +81,7 @@ class _CancelAppointmentPageState extends State<CancelAppointmentPage> {
        }
     }
   }
-  // --- End cancellation function ---
+
 
   @override
   Widget build(BuildContext context) {
@@ -99,12 +93,12 @@ class _CancelAppointmentPageState extends State<CancelAppointmentPage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: AppPallete.primaryColor),
                 onPressed: ()  {
-            // Use context.pop() for GoRouter navigation back
+
             if (context.canPop()) {
               context.pop();
             } else {
-              // Fallback if it cannot pop (e.g., deep linked)
-              context.go('/patient/appointment/history'); // Go back to history base
+     
+              context.go('/patient/appointment/history'); 
             } 
           },
         ),
@@ -134,12 +128,12 @@ class _CancelAppointmentPageState extends State<CancelAppointmentPage> {
                     _buildRadioButton('Rescheduling'),
                     _buildRadioButton('Weather Conditions'),
                     _buildRadioButton('Unexpected Work'),
-                    _buildRadioButton('Others'), // Selecting this shows the TextField
+                    _buildRadioButton('Others'), 
                  ]
               ),
               const SizedBox(height: 20),
 
-              // Conditionally display the TextField for "Others" reason
+
               if (selectedReason == 'Others')
                 Column(
                    crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,10 +160,10 @@ class _CancelAppointmentPageState extends State<CancelAppointmentPage> {
                    ],
                 ),
 
-              // Confirmation Button
+
               Center(
                 child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submitCancellation, // Disable while submitting
+                  onPressed: _isSubmitting ? null : _submitCancellation, 
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppPallete.primaryColor, // Button color
                     foregroundColor: AppPallete.whiteColor, // Text color
@@ -199,11 +193,10 @@ class _CancelAppointmentPageState extends State<CancelAppointmentPage> {
           ),
         ),
       ),
-      // No BottomNavigationBar here, assuming it's handled by MainLayout/ShellRoute
+
     );
   }
 
-  // Helper widget for creating RadioListTiles
   Widget _buildRadioButton(String title) {
     return RadioListTile<String>(
       title: Text(title),
@@ -211,14 +204,14 @@ class _CancelAppointmentPageState extends State<CancelAppointmentPage> {
       groupValue: selectedReason, // Tracks the currently selected value
       activeColor: AppPallete.primaryColor, // Color when selected
       onChanged: (value) {
-        // Update the state when a radio button is tapped
+
         if (value != null) {
           setState(() {
             selectedReason = value;
           });
         }
       },
-      // Optional styling for better appearance
+ 
       tileColor: selectedReason == title ? AppPallete.primaryColor.withOpacity(0.1) : null,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 0),
@@ -227,4 +220,3 @@ class _CancelAppointmentPageState extends State<CancelAppointmentPage> {
   }
 }
 
-// Removed redundant BottomNavBar class definition

@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
 import 'package:medical_app/features/main_features/health_articles/health_articles_db.dart';
-import 'package:flutter_markdown/flutter_markdown.dart'; // Import for Markdown rendering
+import 'package:flutter_markdown/flutter_markdown.dart'; 
 
 class PatientArticleDetailPage extends StatefulWidget {
   final String articleId;
@@ -120,7 +120,7 @@ class _PatientArticleDetailPageState extends State<PatientArticleDetailPage> {
                             data: _articleData!['content'] ?? 'No content available.',
                             styleSheet: MarkdownStyleSheet(
                               p: const TextStyle(fontSize: 16, height: 1.5), // Style paragraphs
-                              // Add more styles as needed (h1, h2, code, etc.)
+         
                             ),
                           ),
                         ],

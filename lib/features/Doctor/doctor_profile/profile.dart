@@ -5,12 +5,10 @@ import 'package:medical_app/core/themes/color_palette.dart';
 import 'package:medical_app/features/doctor/doctor_profile/pages/settings.dart';
 import 'package:medical_app/features/doctor/doctor_profile/pages/terms_and_conditions.dart';
 import 'package:medical_app/features/doctor/doctor_profile/pages/privacy_and_policy.dart';
-// Remove direct import of edit_profile, navigation handled by GoRouter
-// import 'package:medical_app/features/doctor/doctor_profile/pages/edit_profile.dart';
 import 'package:medical_app/features/doctor/doctor_profile/profile_db.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:medical_app/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:go_router/go_router.dart'; // Import GoRouter
+import 'package:go_router/go_router.dart'; 
 
 
 class Profile extends StatelessWidget {
@@ -234,7 +232,7 @@ class _ProfilePageState extends State<ProfilePage> {
       onTap: () {
         if (text == "Profile") {
            if (doctorData != null && _currentDoctorId != null) {
-              // Use context.push with extra map for GoRouter navigation
+
               context.push(
                  '/doctor/profile/edit',
                  extra: {

@@ -1,5 +1,3 @@
-// @annotate:modified:lib/core/router.dart
-//@annotate:rewritten:lib/core/router.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:medical_app/core/main_layout.dart';
@@ -9,8 +7,6 @@ import 'package:medical_app/features/Doctor/Patient_Management/d_doctor_patient_
 import 'package:medical_app/features/Doctor/Patient_Management/d_patient_detail_page.dart';
 import 'package:medical_app/features/Patient/hospitals_and_pharmacies/hospitals.dart';
 import 'package:medical_app/features/Patient/hospitals_and_pharmacies/pharmacies.dart';
-
-// --- Core & Common ---
 
 // --- Auth ---
 import 'package:medical_app/features/auth/presentation/screens/login_page.dart';
@@ -55,7 +51,7 @@ import 'package:medical_app/features/Doctor/doctor_dahboard/firstpage.dart'
 import 'package:medical_app/features/Doctor/doctor_profile/profile.dart'
     as DoctorProfileEntry;
 import 'package:medical_app/features/Doctor/doctor_profile/pages/edit_profile.dart'
-    as DoctorEditProfile; // Renamed import
+    as DoctorEditProfile; 
 import 'package:medical_app/features/Doctor/doctor_profile/pages/settings.dart'
     as DoctorSettings;
 import 'package:medical_app/features/Doctor/doctor_profile/pages/terms_and_conditions.dart'
@@ -111,9 +107,8 @@ final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
   debugLogDiagnostics: true,
   routes: <RouteBase>[
-    // ========================================================================
     // Routes OUTSIDE the MainLayout Shell (using _rootNavigatorKey)
-    // ========================================================================
+  
 
     // --- Auth ---
     GoRoute(
@@ -186,40 +181,7 @@ final GoRouter appRouter = GoRouter(
         );
       },
     ),
-    // GoRoute(
-    //   path: '/video-call',
-    //   parentNavigatorKey: _rootNavigatorKey,
-    //   builder: (context, state) {
-    //     final params = state.extra as Map<String, String>?;
-    //     if (params == null ||
-    //         !params.containsKey('appId') ||
-    //         !params.containsKey('token') ||
-    //         !params.containsKey('channelName')) {
-    //       debugPrint(
-    //           "Router Error: [/video-call] Missing required parameters in extra data.");
-    //       return const Scaffold(
-    //           body: Center(
-    //               child: Text(
-    //                   "Error: Video call details missing or incomplete.")));
-    //     }
-    //     return DoctorConsultation(
-    //       appId: params['appId']!,
-    //       token: params['token']!,
-    //       channelName: params['channelName']!,
-    //     );
-    //   },
-    // ),
-
-//     GoRoute(
-//   path: '/index',
-//   builder: (context, state) {
-//     final appointmentId = state.extra != null
-//         ? (state.extra as Map<String, dynamic>)['appointmentId'] as String?
-//         : null;
-//     return IndexPage(appointmentId: appointmentId);
-//   },
-// ),
-
+   
     // --- Patient Appointment Flow (Full Screen Steps) ---
     GoRoute(
       path: '/patient/appointment/confirm',
@@ -638,9 +600,8 @@ final GoRouter appRouter = GoRouter(
       },
     ),
 
-    // ========================================================================
     // ShellRoute for Routes INSIDE the MainLayout (using _shellNavigatorKey)
-    // ========================================================================
+
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
       builder: (context, state, child) {
@@ -738,16 +699,15 @@ final GoRouter appRouter = GoRouter(
             path: '/doctor/earnings',
             builder: (context, state) =>
                 const DoctorDashboardEarnings.EarningsPage()),
-        // --- FIX: Use pageBuilder with ValueKey for /doctor/articles ---
+
         GoRoute(
           path: '/doctor/articles',
           pageBuilder: (context, state) => const NoTransitionPage(
             child: DoctorMyArticlesPage(),
             key: ValueKey('doctor_articles_list'), // Unique key
           ),
-          // builder: (context, state) => const DoctorMyArticlesPage(), // Original builder
         ),
-        // --- END FIX ---
+  
 
         // --- Shared Features (Inside Shell) ---
         GoRoute(

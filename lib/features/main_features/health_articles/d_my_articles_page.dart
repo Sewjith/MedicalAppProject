@@ -193,8 +193,7 @@ class _DoctorMyArticlesPageState extends State<DoctorMyArticlesPage> {
                                    ),
                                 ],
                               ),
-                              // Optional: Add onTap to view the article as a patient would see it
-                              // onTap: () => context.push('/patient/articles/${article['article_id']}'),
+          
                             ),
                           );
                         },

@@ -47,11 +47,6 @@ Future<void> initDependencies() async {
     // You might want to re-throw or handle this critical failure appropriately
   }
 
-  // await dotenv.load(fileName: ".env");
-  // Stripe.publishableKey = dotenv.env["STRIPE_PUBLISH_KEY"]!;
-  // Stripe.merchantIdentifier = 'merchant.flutter.stripe.test';
-  // Stripe.urlScheme = 'flutterstripe';
-  // await Stripe.instance.applySettings();
 }
 
 void _initAuth() {

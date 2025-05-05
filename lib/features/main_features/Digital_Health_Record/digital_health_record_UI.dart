@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart'; // Import Bloc
-import 'package:go_router/go_router.dart';     // Import GoRouter
+import 'package:flutter_bloc/flutter_bloc.dart'; 
+import 'package:go_router/go_router.dart';   
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as path;
 import 'package:url_launcher/url_launcher.dart';
-import '../../../core/common/cubits/user_session/app_user_cubit.dart'; // Import Cubit
-import '../../../core/themes/color_palette.dart'; // Import ColorPalette
+import '../../../core/common/cubits/user_session/app_user_cubit.dart'; 
+import '../../../core/themes/color_palette.dart'; 
 import 'H_Record_backend.dart';
 import 'add_report.dart';
 import 'package:flutter/foundation.dart';

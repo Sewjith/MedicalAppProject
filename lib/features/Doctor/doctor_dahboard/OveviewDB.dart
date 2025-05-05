@@ -6,7 +6,7 @@ class OverviewDB {
 
   Future<int> getNewAppointments(String doctorId) async {
     try {
-      // *** FIX: Correct count syntax ***
+
       final response = await _supabase
           .from('appointments')
           .select() // Select something (or nothing specific if just counting)
@@ -25,7 +25,7 @@ class OverviewDB {
     // This still counts ALL patients. Needs schema adjustment or different logic
     // for doctor-specific patient count.
     try {
-      // *** FIX: Correct count syntax ***
+
        final response = await _supabase
            .from('patients')
            .select() // Select something
@@ -40,10 +40,10 @@ class OverviewDB {
   Future<double> getTotalEarnings(String doctorId) async {
     try {
       final response = await _supabase
-          .from('payments') // Assuming an 'earnings' or 'payments' table linked to doctor
+          .from('payments') 
           .select('amount')
           .eq('doctor_id', doctorId) // Filter by doctor_id
-          .eq('status', 'completed'); // Example: only count completed payments
+          .eq('status', 'completed'); // only count completed payments
 
       if (response.isEmpty) return 0.0;
 

@@ -1,4 +1,3 @@
-//@annotate:modification:lib/features/Patient/p_appointment_schedule/p_appointment_schedule.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -8,7 +7,7 @@ import 'package:medical_app/features/Patient/p_appointment_schedule/p_appointmen
 import 'package:medical_app/features/Patient/p_appointment_schedule/p_appointment_schedule_db.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
-// Removed unused import: import 'package:medical_app/core/errors/common/expection.dart';
+
 
 class AppointmentSchedulePage extends StatefulWidget {
   final Map<String, dynamic>? doctorInfo;
@@ -256,16 +255,14 @@ class _AppointmentSchedulePageState extends State<AppointmentSchedulePage> {
          }
      }
 
-     // Show error SnackBar *after* dialog is closed if an error occurred
      if (mounted && saveErrorMessage != null) {
          ScaffoldMessenger.of(context).showSnackBar(
            SnackBar(content: Text(saveErrorMessage), backgroundColor: Colors.red)
          );
-         // Note: Navigation back happens in the confirmation dialog's OK button
+
      }
   }
 
-  // Build Method
   @override
   Widget build(BuildContext context) {
      if (_isPageLoading) {
@@ -329,7 +326,7 @@ class _AppointmentSchedulePageState extends State<AppointmentSchedulePage> {
     );
   }
 
-  // --- WIDGET BUILDER METHODS ---
+
 
   // Widget to show doctor selection dropdown
   Widget _doctorSelectionSection() {

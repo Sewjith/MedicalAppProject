@@ -1,4 +1,3 @@
-// @annotate:modified:lib/features/main_features/Chat/screens/chat_screen.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:medical_app/core/bottom_nav_bar.dart'; // Added Bottom Nav Bar
@@ -53,16 +52,13 @@ class _ChatScreenState extends State<ChatScreen> {
     _chatService = ChatService(
       userName: widget.userName,
       userRole: widget.userRole,
-      // Pass IDs to ChatService if it needs them
-      // patientId: widget.patientId,
-      // doctorId: widget.doctorId,
     );
 
     _chatService.onMessageReceived = (senderName, message, senderRole) {
       if (!mounted) return; // Check if widget is still in the tree
       setState(() {
         _messages.add(ChatMessage(
-          id: DateTime.now().millisecondsSinceEpoch.toString(), // Temporary ID
+          id: DateTime.now().millisecondsSinceEpoch.toString(), 
           consultationId: widget.consultationId,
           senderName: senderName,
           senderRole: senderRole,
@@ -70,9 +66,7 @@ class _ChatScreenState extends State<ChatScreen> {
           timestamp: DateTime.now(),
           doctorName: widget.doctorName,
           patientName: widget.patientName,
-           // Store IDs if needed in ChatMessage model
-          // doctorId: widget.doctorId,
-          // patientId: widget.patientId,
+
         ));
       });
       _scrollToBottom();
@@ -81,10 +75,10 @@ class _ChatScreenState extends State<ChatScreen> {
     _chatService.initialize().then((_) {
       
       _chatService.joinConsultation(
-        patientId: widget.patientId,    // Use named argument patientId
-        doctorId: widget.doctorId,      // Use named argument doctorId
-        doctorName: widget.doctorName,  // Use named argument doctorName
-        patientName: widget.patientName, // Use named argument patientName
+        patientId: widget.patientId,   
+        doctorId: widget.doctorId,      
+        doctorName: widget.doctorName,  
+        patientName: widget.patientName, 
       );
      
     });

@@ -134,7 +134,7 @@ class _DoctorAppointmentsList extends StatefulWidget {
   State<_DoctorAppointmentsList> createState() => _DoctorAppointmentsListState();
 }
 
-// Use AutomaticKeepAliveClientMixin to preserve state across tabs
+
 class _DoctorAppointmentsListState extends State<_DoctorAppointmentsList> with AutomaticKeepAliveClientMixin {
   final DoctorHistoryDB _db = DoctorHistoryDB();
   List<Map<String, dynamic>> _appointments = [];

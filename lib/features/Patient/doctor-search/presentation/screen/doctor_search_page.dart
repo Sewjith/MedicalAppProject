@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
-// Use the updated data source from this feature
 import 'package:medical_app/features/Patient/doctor-search/data/source/supabase_remote_doctors.dart';
 import 'package:medical_app/features/Patient/doctor-search/presentation/widgets/profile_widget.dart';
 import 'package:medical_app/features/Patient/doctor-search/presentation/widgets/searchbar_widget.dart';
@@ -30,8 +29,7 @@ class _DoctorProfilesPageState extends State<DoctorProfilesPage> {
   void initState() {
     super.initState();
     _controller = TextEditingController();
-    // Trigger initial search if needed
-    // _searchDoctors('');
+
   }
 
   void _onSearchChanged(String query) {

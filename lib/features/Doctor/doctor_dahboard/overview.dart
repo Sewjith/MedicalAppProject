@@ -15,8 +15,7 @@ class OverviewPage extends StatefulWidget {
 }
 
 class _OverviewPageState extends State<OverviewPage> {
-  // Remove local BottomNavBar state
-  // int _selectedIndex = 0;
+
   final OverviewDB _db = OverviewDB();
   String? _currentDoctorId; // Store dynamic doctor ID
 
@@ -204,17 +203,17 @@ class _OverviewPageState extends State<OverviewPage> {
       children: [
         _buildInfoCard(
           "New Appointments",
-          "$newAppointments", // Removed '+' for clarity
-          "Status: Upcoming", // Example detail
-          Icons.calendar_today_outlined, // Changed icon
+          "$newAppointments",
+          "Status: Upcoming", 
+          Icons.calendar_today_outlined, 
           Colors.purple,
         ),
-        const SizedBox(width: 16), // Add spacing between cards
+        const SizedBox(width: 16), 
         _buildInfoCard(
           "Total Patients",
-          "$totalPatients", // Removed '+'
-          "Under your care", // Example detail
-          Icons.people_alt_outlined, // Changed icon
+          "$totalPatients", 
+          "Under your care", 
+          Icons.people_alt_outlined, 
           Colors.orangeAccent,
         ),
       ],
@@ -224,11 +223,11 @@ class _OverviewPageState extends State<OverviewPage> {
   Widget _buildEarningsCard() {
     return _buildInfoCard(
       "Total Earnings",
-      "\$${totalEarnings.toStringAsFixed(2)}", // Removed '+'
-      "All Time", // Example detail
+      "\$${totalEarnings.toStringAsFixed(2)}", 
+      "All Time", 
       Icons.attach_money,
       Colors.green,
-      isFullWidth: true, // Make this card full width
+      isFullWidth: true, 
     );
   }
 
@@ -398,5 +397,4 @@ class _OverviewPageState extends State<OverviewPage> {
     );
   }
 
-  // Removed local BottomNavBar build method
 }

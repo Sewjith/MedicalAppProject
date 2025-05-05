@@ -1,15 +1,13 @@
-// File: lib/features/Patient/appoinment_history/details.dart
-// @annotate:modified:lib/features/Patient/appoinment_history/details.dart
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart'; // Import GoRouter
+import 'package:go_router/go_router.dart'; 
 import 'package:medical_app/core/themes/color_palette.dart';
-import 'package:medical_app/features/Patient/appoinment_history/appoinment.dart'; // Import the DB class
-import 'package:cached_network_image/cached_network_image.dart'; // For doctor image
-import 'package:flutter/foundation.dart'; // For debugPrint
+import 'package:medical_app/features/Patient/appoinment_history/appoinment.dart'; 
+import 'package:cached_network_image/cached_network_image.dart'; 
+import 'package:flutter/foundation.dart'; 
 import 'package:url_launcher/url_launcher.dart';
 
 class AppointmentDetailsPage extends StatefulWidget {
-  final String appointmentId; // Accept only appointmentId
+  final String appointmentId; 
 
   const AppointmentDetailsPage({
     Key? key,
@@ -21,8 +19,8 @@ class AppointmentDetailsPage extends StatefulWidget {
 }
 
 class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
-  final AppointmentHistoryDb _db = AppointmentHistoryDb(); // Use the DB class
-  Map<String, dynamic>? _appointmentData; // State to hold fetched data
+  final AppointmentHistoryDb _db = AppointmentHistoryDb(); 
+  Map<String, dynamic>? _appointmentData; 
   bool _isLoading = true;
   String? _errorMessage;
   String? _prescriptionPdfUrl;
@@ -72,7 +70,7 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
       bool launched = await launchUrl(
         url,
         mode: LaunchMode
-            .externalApplication, // Try opening in external app/browser
+            .externalApplication, 
       );
       if (!launched) {
         debugPrint('Could not launch $url');
@@ -98,11 +96,11 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
           icon:
               const Icon(Icons.arrow_back_ios, color: AppPallete.primaryColor),
           onPressed: () {
-            // Use GoRouter's pop for navigation consistency
+   
             if (context.canPop()) {
               context.pop();
             } else {
-              // Fallback if cannot pop (e.g., deep link)
+
               context.go('/patient/appointment/history');
             }
           },
@@ -439,4 +437,4 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
   }
 }
 
-// Removed redundant BottomNavBar class
+

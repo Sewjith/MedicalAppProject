@@ -1,7 +1,3 @@
-// @@@@@-FILE MODIFICATION START-@@@@@
-// File: lib/features/main_features/Chat/models/chat_service.dart
-// Reason: Remove RPC call and implement client-side grouping for getDoctorConsultations because the RPC function doesn't exist in the database.
-
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -295,7 +291,6 @@ class ChatService {
   }
 
 
-  // --- MODIFIED METHOD FOR DOCTOR - USING CLIENT-SIDE GROUPING ---
   Future<List<Map<String, dynamic>>> getDoctorConsultations(String doctorId) async {
       debugPrint('[ChatService] Fetching consultations for Doctor ID: $doctorId (Client-side grouping)');
       if (doctorId.isEmpty) {
@@ -303,10 +298,10 @@ class ChatService {
           throw Exception('Doctor ID cannot be empty.');
       }
       try {
-          // Fetch all messages involving the doctor, ordered to get latest first per group
+ 
           final response = await _supabase
               .from('consultation_messages')
-              // Select necessary fields for display and identification
+ 
               .select('consultation_id, patient_name, patient_id, content, timestamp, doctor_id')
               .eq('doctor_id', doctorId) // Filter by doctor_id
               .order('timestamp', ascending: false); // Order by time DESC
@@ -323,7 +318,7 @@ class ChatService {
               final consultId = message['consultation_id'] as String?;
               if (consultId == null) continue;
 
-              // Since messages are ordered descending, the first time we see a consultId, it's the latest message
+
               if (!latestConsultations.containsKey(consultId)) {
                   latestConsultations[consultId] = {
                       'consultation_id': consultId,
@@ -339,7 +334,7 @@ class ChatService {
           }
 
           final resultList = latestConsultations.values.toList();
-          // Optional: Sort the final list again by timestamp if needed (though it should be implicitly sorted by latest message time)
+          
           resultList.sort((a, b) => DateTime.parse(b['last_timestamp']).compareTo(DateTime.parse(a['last_timestamp'])));
 
           debugPrint('[ChatService] Found ${resultList.length} unique consultations for Doctor ID: $doctorId via client-side grouping.');
@@ -354,7 +349,7 @@ class ChatService {
           throw Exception('Failed to fetch consultations: $e');
       }
   }
-  // --- END MODIFIED METHOD ---
+
 
 
   void dispose() {
@@ -369,4 +364,3 @@ class ChatService {
     debugPrint('[ChatService] Disposed.');
   }
 }
-// @@@@@-FILE MODIFICATION END-@@@@@

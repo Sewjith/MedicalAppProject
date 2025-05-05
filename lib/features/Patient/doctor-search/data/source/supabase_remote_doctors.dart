@@ -5,9 +5,9 @@ import 'package:flutter/foundation.dart'; // For debugPrint
 
 abstract interface class DoctorListRemoteSource {
   Future<List<DoctorListModel>> getAllDoctors();
-  // Added: Method to search doctors (returns List<Map>)
+
   Future<List<Map<String, dynamic>>> searchDoctors(String query);
-  // Added: Method to get full details for profile page (returns Map)
+
   Future<Map<String, dynamic>> getDoctorProfileDetails(String doctorId);
 }
 
@@ -16,7 +16,6 @@ class DoctorListRemoteSourceImp implements DoctorListRemoteSource {
 
   DoctorListRemoteSourceImp(this.supabaseClient);
 
-  // Kept for potential compatibility, but searchDoctors is preferred
   @override
   Future<List<DoctorListModel>> getAllDoctors() async {
     try {
@@ -33,7 +32,6 @@ class DoctorListRemoteSourceImp implements DoctorListRemoteSource {
     }
   }
 
-  // Added: Implementation for searching doctors
   @override
   Future<List<Map<String, dynamic>>> searchDoctors(String query) async {
     try {
@@ -51,7 +49,7 @@ class DoctorListRemoteSourceImp implements DoctorListRemoteSource {
           '''); // Select fields needed for list display
 
       if (query.isNotEmpty) {
-        // Use case-insensitive search on relevant fields
+
         dbQuery = dbQuery.or(
           'first_name.ilike.%$query%,last_name.ilike.%$query%,specialty.ilike.%$query%',
         );
@@ -59,7 +57,7 @@ class DoctorListRemoteSourceImp implements DoctorListRemoteSource {
 
       final response = await dbQuery.order('last_name', ascending: true);
 
-      // Return list of maps directly
+
       return List<Map<String, dynamic>>.from(response);
 
     } catch (e) {
@@ -68,7 +66,7 @@ class DoctorListRemoteSourceImp implements DoctorListRemoteSource {
     }
   }
 
-  // Added: Implementation for getting full profile details
+
   @override
   Future<Map<String, dynamic>> getDoctorProfileDetails(String doctorId) async {
     if (doctorId.isEmpty) {

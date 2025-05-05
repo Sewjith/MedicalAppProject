@@ -1,4 +1,3 @@
-// @annotate:modified:lib/features/Doctor/d_patient_management/d_patient_detail_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -6,7 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:medical_app/core/common/cubits/user_session/app_user_cubit.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'd_patient_notes_db.dart'; // Import the DB service
+import 'd_patient_notes_db.dart'; 
 
 class DoctorPatientDetailPage extends StatefulWidget {
   final String patientId;
@@ -43,25 +42,25 @@ class _DoctorPatientDetailPageState extends State<DoctorPatientDetailPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    // --- FIX: Add listener to trigger rebuilds for FAB visibility ---
+
     _tabController.addListener(() {
-      if (mounted) { // Check if widget is still mounted before calling setState
-        setState(() {}); // Force rebuild when tab changes
+      if (mounted) { 
+        setState(() {}); 
       }
     });
-    // --- END FIX ---
+
     _loadAllData();
   }
 
   @override
   void dispose() {
-    // --- FIX: Remove listener before disposing controller ---
+ 
     _tabController.removeListener(() {
        if (mounted) {
          setState(() {});
        }
     });
-    // --- END FIX ---
+
     _tabController.dispose();
     super.dispose();
   }
@@ -227,7 +226,7 @@ class _DoctorPatientDetailPageState extends State<DoctorPatientDetailPage>
                         _buildNotesTab(),
                       ],
                     ),
-      // --- FIX: FAB visibility now depends on the listener added in initState ---
+  
       floatingActionButton: _tabController.index == 2 // Show FAB only on Notes tab
           ? FloatingActionButton(
               onPressed: _navigateToAddNote,
@@ -236,7 +235,7 @@ class _DoctorPatientDetailPageState extends State<DoctorPatientDetailPage>
               child: const Icon(Icons.add, color: Colors.white),
             )
           : null,
-      // --- END FIX ---
+
     );
   }
 
@@ -244,7 +243,7 @@ class _DoctorPatientDetailPageState extends State<DoctorPatientDetailPage>
 
   Widget _buildProfileTab(Map<String, dynamic> data) {
     final avatarUrl = data['avatar_url'] as String?;
-    // --- FIX: Handle potential null or invalid date string ---
+
     String dob = 'N/A';
     if (data['date_of_birth'] != null) {
         try {
@@ -254,7 +253,7 @@ class _DoctorPatientDetailPageState extends State<DoctorPatientDetailPage>
             // Keep dob as 'N/A' or handle as appropriate
         }
     }
-    // --- END FIX ---
+
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
@@ -397,8 +396,7 @@ class _DoctorPatientDetailPageState extends State<DoctorPatientDetailPage>
          leading: Icon(_getIconForType(record['type']), color: _getColorForType(record['type'])),
          title: Text(record['title'] ?? 'Untitled Record'),
          subtitle: Text('Category: ${record['category'] ?? 'N/A'} • Date: ${_formatDate(record['record_date'])}'),
-         // Add onTap to view full details if needed
-         // onTap: () => _viewMedicalRecordDetails(record), // Example
+
        ),
      );
   }
@@ -412,8 +410,7 @@ class _DoctorPatientDetailPageState extends State<DoctorPatientDetailPage>
          leading: Icon(Icons.calendar_today_outlined, color: AppPallete.primaryColor),
          title: Text('Consultation on ${_formatDate(appointment['appointment_date'])}'),
          subtitle: Text('Status: ${appointment['appointment_status'] ?? 'N/A'} • Time: ${appointment['appointment_time'] ?? 'N/A'}'),
-         // Add onTap to view full appointment details if needed
-         // onTap: () => _viewAppointmentDetails(appointment), // Example
+
        ),
      );
   }
@@ -475,7 +472,7 @@ class _DoctorPatientDetailPageState extends State<DoctorPatientDetailPage>
     );
   }
 
-  // --- Formatting Helpers ---
+
   String _formatDate(String? dateString) {
     if (dateString == null) return 'N/A';
     try {

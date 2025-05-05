@@ -6,7 +6,7 @@ import 'package:medical_app/core/themes/color_palette.dart';
 import 'package:medical_app/features/main_features/health_articles/health_articles_db.dart';
 
 class CreateEditArticlePage extends StatefulWidget {
-  final Map<String, dynamic>? articleData; // Null for creating, populated for editing
+  final Map<String, dynamic>? articleData; 
 
   const CreateEditArticlePage({
     Key? key,

@@ -1,4 +1,3 @@
-// @annotate:fixed:lib/features/Patient/doctor-search/presentation/screen/doctor_profile_page.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
@@ -97,30 +96,30 @@ class _DoctorProfileState extends State<DoctorProfile> {
   }
 
   Widget _buildProfileContent() {
-    // --- FIX: Added null check and fallback for gender ---
+  
     final String firstName = _doctorData!['first_name'] ?? '';
     final String lastName = _doctorData!['last_name'] ?? '';
     final String title = _doctorData!['title'] ?? '';
     final String specialty = _doctorData!['specialty'] ?? 'N/A';
     final String gender = _doctorData!['gender'] ?? 'Unknown'; // Provide fallback
-    // --- End FIX ---
+
     final int experience = _doctorData!['years_of_experience'] ?? 0;
     final String description = (_doctorData!['description']?.isNotEmpty ?? false)
                              ? _doctorData!['description']
                              : 'No detailed profile information available.';
     final List<dynamic> qualificationsList = _doctorData!['qualifications'] ?? [];
     final List<dynamic> languagesList = _doctorData!['language'] ?? [];
-    // Ensure qualifications are strings before joining
+
     final String qualifications = (qualificationsList is List && qualificationsList.isNotEmpty)
                                  ? qualificationsList.whereType<String>().join(', ') // Filter for strings
                                  : 'Not specified';
-    // Ensure languages are strings before joining
+
     final String languages = (languagesList is List && languagesList.isNotEmpty)
                              ? languagesList.whereType<String>().join(', ') // Filter for strings
                              : 'Not specified';
 
     final String fullName = '$title $firstName $lastName'.trim();
-    // Pass the potentially null-checked gender to the image asset function
+
     final String imageAssetPath = _getProfileImageAsset(gender == 'Unknown' ? null : gender);
 
 
@@ -223,7 +222,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
    }
 
    Widget _buildDetailRow(IconData icon, String title, String value) {
-     // Ensure value is not null before displaying
+
      final displayValue = value.isNotEmpty ? value : 'Not specified';
      return Padding(
        padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -299,13 +298,13 @@ class _DoctorProfileState extends State<DoctorProfile> {
           child: ElevatedButton(
                 onPressed: () {
                     debugPrint("Navigating to schedule. Passing extra: {'doctorId': $doctorId, 'doctorName': $doctorName}");
-                    // Pass the map as extra, ensure keys match what AppointmentSchedulePage expects
+    
                     context.go(
                        '/patient/appointment/schedule',
                         extra: {
                             'doctorId': doctorId,
                             'doctorName': doctorName,
-                            // Add other doctor details if AppointmentSchedulePage needs them
+
                             'specialty': _doctorData!['specialty'] ?? 'N/A',
                        }
                     );

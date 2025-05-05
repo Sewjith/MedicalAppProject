@@ -1,15 +1,10 @@
-// @@@@@-FILE MODIFICATION START-@@@@@
-// File: lib/features/Doctor/doctor_dahboard/inbox.dart
-// Reason: Add support for displaying and navigating to live chat consultations.
-
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart'; // Import Bloc
-import 'package:go_router/go_router.dart';    // Import GoRouter
-import 'package:intl/intl.dart';            // Import intl
-import 'package:medical_app/core/common/cubits/user_session/app_user_cubit.dart'; // Import Cubit
+import 'package:flutter_bloc/flutter_bloc.dart'; 
+import 'package:go_router/go_router.dart';   
+import 'package:intl/intl.dart';            
+import 'package:medical_app/core/common/cubits/user_session/app_user_cubit.dart'; 
 import 'package:medical_app/core/themes/color_palette.dart';
-import 'package:medical_app/features/main_features/Chat/models/chat_service.dart'; // Import ChatService
-// Keep existing imports
+import 'package:medical_app/features/main_features/Chat/models/chat_service.dart'; 
 import 'package:medical_app/features/doctor/doctor_dahboard/inbox_db.dart';
 import 'package:medical_app/features/doctor/doctor_dahboard/message_detail.dart';
 
@@ -20,17 +15,17 @@ class InboxPage extends StatefulWidget {
   State<InboxPage> createState() => _InboxPageState();
 }
 
-class _InboxPageState extends State<InboxPage> with SingleTickerProviderStateMixin { // Added TickerProvider
+class _InboxPageState extends State<InboxPage> with SingleTickerProviderStateMixin { 
   final InboxDB _db = InboxDB();
   final TextEditingController _searchController = TextEditingController();
 
   Map<String, List<Map<String, dynamic>>> _groupedMessages = {};
   Map<String, List<Map<String, dynamic>>> _filteredMessages = {};
-  Map<String, bool> _readStatus = {}; // For regular messages
-  bool _isLoadingMessages = true; // Loading state for regular messages
+  Map<String, bool> _readStatus = {}; 
+  bool _isLoadingMessages = true; 
   String? _messageError;
 
-  // --- State for Consultation Chats ---
+  
   late ChatService _chatService; // Use ChatService to fetch chats
   List<Map<String, dynamic>> _consultations = [];
   List<Map<String, dynamic>> _filteredConsultations = [];
@@ -38,11 +33,11 @@ class _InboxPageState extends State<InboxPage> with SingleTickerProviderStateMix
   String? _chatError;
   String? _doctorId;
   String? _doctorName;
-  // --- End State for Consultation Chats ---
+  
 
-  // --- Tab Controller ---
+
   late TabController _tabController;
-  // --- End Tab Controller ---
+
 
 
   @override
@@ -123,7 +118,7 @@ class _InboxPageState extends State<InboxPage> with SingleTickerProviderStateMix
     }
   }
 
-  // --- New function to load consultation chats ---
+  
   Future<void> _loadConsultationChats() async {
     if (_doctorId == null || !mounted) {
        debugPrint("[InboxPage] Cannot load chats, Doctor ID is null or widget not mounted.");
@@ -132,7 +127,7 @@ class _InboxPageState extends State<InboxPage> with SingleTickerProviderStateMix
     }
     setState(() { _isLoadingChats = true; _chatError = null; });
     try {
-      // Use the new ChatService method
+
       final consultations = await _chatService.getDoctorConsultations(_doctorId!);
       if (!mounted) return;
       setState(() {
@@ -148,10 +143,9 @@ class _InboxPageState extends State<InboxPage> with SingleTickerProviderStateMix
       ScaffoldMessenger.of(context).showSnackBar( SnackBar(content: Text(_chatError!), backgroundColor: Colors.red), );
     }
   }
-  // --- End new function ---
 
 
-  void _filterContent() { // Modified to filter both lists
+  void _filterContent() { 
     final query = _searchController.text.toLowerCase();
     setState(() {
       // Filter Regular Messages
@@ -213,7 +207,7 @@ class _InboxPageState extends State<InboxPage> with SingleTickerProviderStateMix
        },
      );
   }
-  // --- End Helper ---
+
 
   String _formatTime(DateTime time) {
     return DateFormat('h:mm a').format(time); // Use intl for formatting
@@ -252,7 +246,7 @@ class _InboxPageState extends State<InboxPage> with SingleTickerProviderStateMix
             }
           },
         ) : null, // Otherwise no leading button (e.g., if root of a tab)
-        // --- Add TabBar ---
+
         bottom: TabBar(
            controller: _tabController,
            labelColor: AppPallete.primaryColor,
@@ -263,7 +257,7 @@ class _InboxPageState extends State<InboxPage> with SingleTickerProviderStateMix
               Tab(text: 'Chats'),
            ],
         ),
-        // --- End TabBar ---
+
       ),
       body: Padding(
         padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 0), // Adjust top padding
@@ -294,7 +288,7 @@ class _InboxPageState extends State<InboxPage> with SingleTickerProviderStateMix
               ),
             ),
             const SizedBox(height: 16),
-            // --- Add TabBarView ---
+
             Expanded(
               child: TabBarView(
                 controller: _tabController,
@@ -304,7 +298,7 @@ class _InboxPageState extends State<InboxPage> with SingleTickerProviderStateMix
                 ],
               ),
             ),
-            // --- End TabBarView ---
+
           ],
         ),
       ),
@@ -352,7 +346,6 @@ class _InboxPageState extends State<InboxPage> with SingleTickerProviderStateMix
            onTap: () {
               // Mark as read and navigate to detail
              setState(() => _readStatus[sender] = true);
-              // *** Navigate to Message Detail Page (Not ChatScreen) ***
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -362,7 +355,6 @@ class _InboxPageState extends State<InboxPage> with SingleTickerProviderStateMix
                   ),
                 ),
               ).then((_) {
-                 // Optional: Refresh read status if needed after returning
               });
            },
          );
@@ -370,7 +362,7 @@ class _InboxPageState extends State<InboxPage> with SingleTickerProviderStateMix
      );
   }
 
-  // --- New Widget builder for consultation chats ---
+
   Widget _buildChatList() {
      if (_isLoadingChats) return const Center(child: CircularProgressIndicator());
      if (_chatError != null) return Center(child: Text(_chatError!, style: TextStyle(color: Colors.red)));
@@ -392,7 +384,7 @@ class _InboxPageState extends State<InboxPage> with SingleTickerProviderStateMix
          final consultation = _filteredConsultations[index];
          final patientName = consultation['patient_name'] ?? 'Unknown Patient';
          final latestMessageContent = consultation['latest_message'] ?? 'No messages yet';
-         // Assuming the timestamp comes from the RPC or is calculated
+
          DateTime lastTimestamp;
          try {
            lastTimestamp = DateTime.parse(consultation['last_timestamp'] ?? DateTime.now().toIso8601String());
@@ -400,7 +392,7 @@ class _InboxPageState extends State<InboxPage> with SingleTickerProviderStateMix
            lastTimestamp = DateTime.now();
          }
 
-         // TODO: Implement unread count logic for chats if needed
+
          final bool isChatRead = true; // Placeholder - needs unread logic
          final int chatMessageCount = 0; // Placeholder
 
@@ -416,7 +408,7 @@ class _InboxPageState extends State<InboxPage> with SingleTickerProviderStateMix
        },
      );
   }
-  // --- End new Widget builder ---
+
 
   // Modified _buildMessageItem to handle both messages and chats
   Widget _buildMessageItem({

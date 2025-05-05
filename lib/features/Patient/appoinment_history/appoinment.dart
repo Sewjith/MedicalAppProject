@@ -1,28 +1,27 @@
-//@annotate:modification:lib/features/Patient/appoinment_history/appoinment.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:medical_app/core/common/cubits/user_session/app_user_cubit.dart';
 import 'package:medical_app/core/themes/color_palette.dart';
-import 'package:medical_app/features/Patient/appoinment_history/upcoming.dart'; // Import UpcomingAppointmentsList
-import 'package:medical_app/features/Patient/appoinment_history/cancelled.dart'; // Import CancelledAppointmentsList
-import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase
-import 'package:cached_network_image/cached_network_image.dart'; // Import CachedNetworkImage
-import 'package:flutter/foundation.dart'; // For debugPrint
+import 'package:medical_app/features/Patient/appoinment_history/upcoming.dart'; 
+import 'package:medical_app/features/Patient/appoinment_history/cancelled.dart'; 
+import 'package:supabase_flutter/supabase_flutter.dart'; 
+import 'package:cached_network_image/cached_network_image.dart'; 
+import 'package:flutter/foundation.dart';
 
-// --- BEGIN EMBEDDED DB LOGIC ---
+
 class AppointmentHistoryDb {
   final _supabase = Supabase.instance.client;
 
-  // --- Method to fetch details for a single appointment ---
+ 
   Future<Map<String, dynamic>> getAppointmentDetails(
       String appointmentId) async {
     if (appointmentId.isEmpty) {
       throw Exception('Appointment ID cannot be empty.');
     }
     try {
-      // --- MODIFICATION: Fetch primary key 'id' along with other details ---
+
       final appointmentResponse = await _supabase
           .from('appointments')
           .select('''
@@ -46,15 +45,15 @@ class AppointmentHistoryDb {
               avatar_path
             )
           ''')
-          .eq('appointment_id', appointmentId) // Still filter by the varchar ID
+          .eq('appointment_id', appointmentId) 
           .maybeSingle();
-      // --- END MODIFICATION ---
+
 
       if (appointmentResponse == null) {
         throw Exception('Appointment not found.');
       }
 
-      // Fetch avatar URL for the doctor (remains the same)
+
       if (appointmentResponse['doctor'] != null &&
           appointmentResponse['doctor']['avatar_path'] != null) {
         try {
@@ -73,7 +72,6 @@ class AppointmentHistoryDb {
         }
       }
 
-      // --- NEW: Fetch prescription PDF URL using the appointment's primary key 'id' ---
       final String? appointmentUUID = appointmentResponse['id'] as String?;
       String? prescriptionPdfUrl;
 
@@ -82,8 +80,8 @@ class AppointmentHistoryDb {
           final prescriptionResponse = await _supabase
               .from('prescriptions')
               .select('pdf_url')
-              .eq('appointment_id', appointmentUUID) // Match foreign key
-              .maybeSingle(); // Expecting 0 or 1 prescription per appointment
+              .eq('appointment_id', appointmentUUID) 
+              .maybeSingle(); 
 
           if (prescriptionResponse != null &&
               prescriptionResponse['pdf_url'] != null) {
@@ -92,16 +90,15 @@ class AppointmentHistoryDb {
         } catch (e) {
           debugPrint(
               "Error fetching prescription for appointment UUID $appointmentUUID: $e");
-          // Optionally rethrow or handle, for now just log it
+      
         }
       } else {
         debugPrint(
             "Appointment primary key 'id' (UUID) not found or empty for appointment_id $appointmentId.");
       }
 
-      // Add the pdf_url to the returned map
       appointmentResponse['prescription_pdf_url'] = prescriptionPdfUrl;
-      // --- END NEW ---
+
 
       return appointmentResponse; // Return the combined data
     } catch (e) {
@@ -117,7 +114,7 @@ class AppointmentHistoryDb {
   Future<List<Map<String, dynamic>>> _fetchAppointmentsByStatus(
       String patientId, List<String> statuses) async {
     try {
-      // --- FIX: Removed the Dart comment from inside the SELECT string ---
+
       final response = await _supabase
           .from('appointments')
           .select('''
@@ -136,19 +133,18 @@ class AppointmentHistoryDb {
               avatar_path
             )
           ''')
-          // --- END FIX ---
+
           .eq('patient_id', patientId)
           .inFilter('appointment_status', statuses)
           .order('appointment_date', ascending: true)
           .order('appointment_time', ascending: true);
 
-      // ...(image URL fetching logic remains the same)...
       for (var appointment in response) {
         if (appointment['doctor'] != null &&
             appointment['doctor']['avatar_path'] != null) {
           try {
             final url = _supabase.storage
-                .from('Doctor Avatars') // Ensure bucket name is correct
+                .from('Doctor Avatars') 
                 .getPublicUrl(appointment['doctor']['avatar_path']);
             appointment['doctor']['avatar_url'] = url;
           } catch (e) {
@@ -175,7 +171,7 @@ class AppointmentHistoryDb {
     }
   }
 
-  // ...(rest of AppointmentHistoryDb methods remain the same)...
+
   Future<List<Map<String, dynamic>>> getCompletedAppointments(
       String patientId) async {
     return _fetchAppointmentsByStatus(patientId, ['completed']);
@@ -193,25 +189,24 @@ class AppointmentHistoryDb {
 
   Future<void> cancelAppointment(String appointmentId, String reason) async {
     try {
-      // --- MODIFICATION: Find appointment UUID first ---
+
       final appointmentData = await _supabase
           .from('appointments')
           .select('id')
           .eq('appointment_id',
-              appointmentId) // Use the varchar ID to find the record
+              appointmentId) 
           .maybeSingle();
 
       if (appointmentData == null || appointmentData['id'] == null) {
         throw Exception('Cannot find appointment to cancel.');
       }
       final String appointmentUUID = appointmentData['id'];
-      // --- END MODIFICATION ---
 
-      // --- MODIFICATION: Update using the primary UUID 'id' ---
+-
       await _supabase.from('appointments').update({
         'appointment_status': 'cancelled',
-      }).eq('id', appointmentUUID); // Use the primary key 'id' for the update
-      // --- END MODIFICATION ---
+      }).eq('id', appointmentUUID); 
+
     } catch (e) {
       debugPrint("Error cancelling appointment $appointmentId: $e");
       if (e is PostgrestException) {
@@ -256,10 +251,9 @@ class AppointmentHistoryDb {
     return doctorData?['avatar_url'] as String?;
   }
 }
-// --- END EMBEDDED DB LOGIC ---
-// --- END EMBEDDED DB LOGIC ---
 
-// --- AppointmentHistoryPage widget remains the same ---
+
+
 class AppointmentHistoryPage extends StatefulWidget {
   final int initialTabIndex;
   const AppointmentHistoryPage({super.key, this.initialTabIndex = 1});
@@ -328,7 +322,7 @@ class _AppointmentHistoryPageState extends State<AppointmentHistoryPage>
   }
 }
 
-// --- _CompletedAppointmentsList widget remains the same ---
+
 class _CompletedAppointmentsList extends StatefulWidget {
   const _CompletedAppointmentsList();
 
@@ -480,7 +474,7 @@ class _CompletedAppointmentsListState
                             foregroundColor: AppPallete.primaryColor),
                         onPressed: () {
                           if (doctorData?['id'] != null) {
-                            // Ensure doctorId is passed as String
+                       
                             context.go('/patient/doctors/profile_view',
                                 extra: doctorData!['id'].toString());
                           }
@@ -506,7 +500,7 @@ class _CompletedAppointmentsListState
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
                               AppPallete.primaryColor, // Match upcoming style
-                          // foregroundColor: AppPallete.whiteColor, // Set text color below
+                   
                         ),
                         onPressed: () {
                           final String? appointmentId =
@@ -539,7 +533,3 @@ class _CompletedAppointmentsListState
     );
   }
 }
-
-// Ensure the classes UpcomingAppointmentsList (in upcoming.dart)
-// and CancelledAppointmentsList (in cancelled.dart) are also using
-// AppointmentHistoryDb and context.go/push for navigation.

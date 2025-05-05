@@ -1,4 +1,3 @@
-//@annotate:modification:lib/features/Patient/patient_dashboard/menu_nav.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:medical_app/core/themes/color_palette.dart';

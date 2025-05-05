@@ -1,12 +1,12 @@
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter/foundation.dart'; // Add this import
+import 'package:flutter/foundation.dart'; 
 
 class ProfileDB {
   final SupabaseClient _supabase = Supabase.instance.client;
 
   Future<Map<String, dynamic>> getDoctorProfile(String doctorId) async {
-    // ... existing code ...
+
      try {
       final response = await _supabase
           .from('doctors')
@@ -32,7 +32,7 @@ class ProfileDB {
       debugPrint('Failed to load profile: ${e.toString()}'); // Keep or remove debugPrint as needed
       throw Exception('Failed to load profile: ${e.toString()}');
     }
-    // ... existing code ...
+
   }
 
   Future<void> updateDoctorProfile({
@@ -50,7 +50,7 @@ class ProfileDB {
     required String language,
     String? avatarPath,
   }) async {
-     // ... existing code ...
+
        try {
       final updateData = {
         'first_name': firstName.trim(),
@@ -76,11 +76,11 @@ class ProfileDB {
       debugPrint('Update failed: ${e.toString()}'); // Keep or remove debugPrint
       throw Exception('Update failed: ${e.toString()}');
     }
-     // ... existing code ...
+
   }
 
   Future<String?> uploadAvatar(String doctorId, String filePath) async {
-     // ... existing code ...
+
         try {
       final fileExt = filePath.split('.').last.toLowerCase();
       if (!['jpg', 'jpeg', 'png'].contains(fileExt)) {
@@ -107,16 +107,16 @@ class ProfileDB {
        debugPrint('Avatar upload failed: ${e.toString()}'); // Keep or remove debugPrint
       throw Exception('Avatar upload failed: ${e.toString()}');
     }
-     // ... existing code ...
+ 
   }
 
-  // Added method
+ 
   String getAvatarUrl(String path) {
      try {
         return _supabase.storage.from('Doctor Avatars').getPublicUrl(path);
      } catch (e) {
         debugPrint("Error getting public URL for path $path: $e");
-        return ''; // Return empty string or handle error as needed
+        return ''; 
      }
   }
 }

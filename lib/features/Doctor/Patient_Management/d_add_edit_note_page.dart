@@ -63,8 +63,7 @@ class _AddEditNotePageState extends State<AddEditNotePage> {
           doctorId: widget.doctorId,
           patientId: widget.patientId,
           noteContent: _noteController.text,
-          // Optionally link appointmentId if available/needed
-          // appointmentId: widget.appointmentId,
+
         );
       }
 
@@ -75,7 +74,7 @@ class _AddEditNotePageState extends State<AddEditNotePage> {
             backgroundColor: Colors.green,
           ),
         );
-        // Pop with result=true to indicate success
+ 
         context.pop(true);
       }
     } catch (e) {

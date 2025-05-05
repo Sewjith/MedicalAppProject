@@ -151,7 +151,7 @@ class _EarningsPageState extends State<EarningsPage> {
       ),
       backgroundColor: AppPallete.backgroundColor, // Lighter background
       body: _buildBody(), // Separate body building logic
-      // Removed local BottomNavBar, relies on MainLayout
+
     );
   }
 
@@ -402,6 +402,4 @@ class _EarningsPageState extends State<EarningsPage> {
       ),
     );
   }
-
-  // Removed local BottomNavBar build method
 }
