@@ -8,6 +8,8 @@ import 'package:medical_app/features/patient/patient_dashboard/menu_nav.dart';
 import 'package:medical_app/features/patient/patient_dashboard/dashboard_db.dart';
 import 'package:medical_app/features/patient/patient_dashboard/pages/doctor_search.dart';
 import 'package:medical_app/features/Patient/doctor-search/data/model/doctor_list_model.dart';
+import 'package:flutter/services.dart';
+import 'package:medical_app/features/main_features/teleconsultation/presentation/index.dart';
 
 class DashboardScreen extends StatefulWidget {
   @override
@@ -493,6 +495,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                         overflow: TextOverflow.ellipsis, // Prevent overflow
                       ),
+
                       Text(
                         doctor['specialty'] ?? 'Unknown Specialty',
                         style: const TextStyle(
@@ -509,6 +512,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           color: AppPallete.whiteColor,
                         ),
                       ),
+                      const SizedBox(height: 4),
+                      GestureDetector(
+        onTap: () {
+          Clipboard.setData(ClipboardData(text: appointmentId));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Appointment ID copied')),
+          );
+        },
+       child: Text(
+          'Appointment ID: $appointmentId',
+          style: const TextStyle(
+            fontSize: 14,
+            color: AppPallete.whiteColor,
+            decoration: TextDecoration.underline,
+          ),
+          overflow: TextOverflow.ellipsis,
+       ),
+                      ),
                     ],
                   ),
                 ),
@@ -521,28 +542,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 ElevatedButton.icon(
                   // Use ElevatedButton.icon
-                  onPressed: () {
-                    // TODO: Fetch actual Agora App ID and Token dynamically
-                    const appId =
-                        "bc06bf6bab7645abbc9b9d56db3f2868"; // Placeholder
-                    const token =
-                        "007eJxTYLh7OefL0v7fU7e+81X30H74mZ369K6Jz993fT6/uMX+a84KDKZGhqkmhqlppoYWRhamxkbJyebJiUbGyeZJqUaGacmmzJ59SmsIZGTY8X9kYIRCEH4GRkYGJmZmlgaGADK+H/s="; // Placeholder/Temporary
+                    onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => IndexPage(appointmentId: appointmentId),
+      ),
+    );
+  },
 
-                    if (appId.isEmpty || token.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Video call configuration missing.')),
-                      );
-                      return;
-                    }
-                    // Navigate to video call screen
-                    context.go('/video-call', extra: {
-                      'appId': appId,
-                      'token': token,
-                      'channelName':
-                          appointmentId, // Use appointment ID as channel name
-                    });
-                  },
                   icon: const Icon(Icons.video_call_rounded,
                       color: AppPallete.primaryColor),
                   label: const Text(

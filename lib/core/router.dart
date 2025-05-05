@@ -186,29 +186,39 @@ final GoRouter appRouter = GoRouter(
         );
       },
     ),
-    GoRoute(
-      path: '/video-call',
-      parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) {
-        final params = state.extra as Map<String, String>?;
-        if (params == null ||
-            !params.containsKey('appId') ||
-            !params.containsKey('token') ||
-            !params.containsKey('channelName')) {
-          debugPrint(
-              "Router Error: [/video-call] Missing required parameters in extra data.");
-          return const Scaffold(
-              body: Center(
-                  child: Text(
-                      "Error: Video call details missing or incomplete.")));
-        }
-        return DoctorConsultation(
-          appId: params['appId']!,
-          token: params['token']!,
-          channelName: params['channelName']!,
-        );
-      },
-    ),
+    // GoRoute(
+    //   path: '/video-call',
+    //   parentNavigatorKey: _rootNavigatorKey,
+    //   builder: (context, state) {
+    //     final params = state.extra as Map<String, String>?;
+    //     if (params == null ||
+    //         !params.containsKey('appId') ||
+    //         !params.containsKey('token') ||
+    //         !params.containsKey('channelName')) {
+    //       debugPrint(
+    //           "Router Error: [/video-call] Missing required parameters in extra data.");
+    //       return const Scaffold(
+    //           body: Center(
+    //               child: Text(
+    //                   "Error: Video call details missing or incomplete.")));
+    //     }
+    //     return DoctorConsultation(
+    //       appId: params['appId']!,
+    //       token: params['token']!,
+    //       channelName: params['channelName']!,
+    //     );
+    //   },
+    // ),
+
+//     GoRoute(
+//   path: '/index',
+//   builder: (context, state) {
+//     final appointmentId = state.extra != null
+//         ? (state.extra as Map<String, dynamic>)['appointmentId'] as String?
+//         : null;
+//     return IndexPage(appointmentId: appointmentId);
+//   },
+// ),
 
     // --- Patient Appointment Flow (Full Screen Steps) ---
     GoRoute(

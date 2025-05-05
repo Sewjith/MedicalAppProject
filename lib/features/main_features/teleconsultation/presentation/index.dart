@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'consultation_page.dart'; 
-import 'package:medical_app/features/main_features/teleconsultation/Domain/config.dart'; // Import your config file
+import 'package:medical_app/features/main_features/teleconsultation/Domain/config.dart';
+
 
 class IndexPage extends StatefulWidget {
-  const IndexPage({Key? key}) : super(key: key);
+  final String? appointmentId;
+
+  const IndexPage({Key? key, this.appointmentId}) : super(key: key);
 
   @override
   State<IndexPage> createState() => _IndexPageState();
@@ -15,10 +18,19 @@ class _IndexPageState extends State<IndexPage> {
   final TextEditingController _channelController = TextEditingController();
 
   final String appId = "bc06bf6bab7645abbc9b9d56db3f2868";
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.appointmentId != null) {
+      _channelController.text = widget.appointmentId!;
+    }
+  }
+
   // Function to fetch token from the server
   Future<String> fetchToken(String appointmentId, String uid) async {
     final response = await http.get(
-    Uri.parse('${AppConfig.serverUrl}/get-token?appointmentId=$appointmentId&uid=$uid'),
+      Uri.parse('${AppConfig.serverUrl}/get-token?appointmentId=$appointmentId&uid=$uid'),
     );
 
     if (response.statusCode == 200) {
@@ -60,9 +72,9 @@ class _IndexPageState extends State<IndexPage> {
                   if (_channelController.text.isNotEmpty) {
                     try {
                       String appointmentId = _channelController.text;
-                      String uid = '12345'; // Set the user ID (or generate dynamically)
+                      String uid = '12345'; // Set user ID here
 
-                      // Show loading spinner while fetching
+                      // Show loading spinner
                       showDialog(
                         context: context,
                         barrierDismissible: false,
@@ -76,6 +88,7 @@ class _IndexPageState extends State<IndexPage> {
                       // Close loading spinner
                       Navigator.of(context).pop();
 
+                      // Navigate to consultation page
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -87,7 +100,7 @@ class _IndexPageState extends State<IndexPage> {
                         ),
                       );
                     } catch (e) {
-                      Navigator.of(context).pop(); // Close loading spinner
+                      Navigator.of(context).pop(); // Close spinner
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text("Failed to generate token")),
                       );
